@@ -410,7 +410,7 @@ const exportCSV = () => {
         <!-- data Table -->
 
         <!-- Choose Target Branch and Academy -->
-    <div v-if="!isBranchesFetched" class=" flex justify-content-center my-5 mx-auto">
+    <div v-if="!isBranchesFetched && !currentRoute.query.branchId" class=" flex justify-content-center my-5 mx-auto">
         <i class="pi pi-spin pi-spinner text-white" style="font-size: 2rem"></i>
     </div>
     <div v-if="chooseTargetBranch && isBranchesFetched">
@@ -532,14 +532,8 @@ const exportCSV = () => {
 .automaticPaymentDate .formkit-panel-wrapper{
     direction: ltr; /* it's responsible for making the datepicker filter ltr */
 }
-.noDropDownFilterOptions .p-column-filter-overlay-menu .p-column-filter-operator{
-    display: none !important;
-}
-.noDropDownFilterOptions .p-column-filter-overlay-menu .p-column-filter-constraint .p-column-filter-matchmode-dropdown{
-    display: none !important;
-}
-.p-column-filter-overlay-menu .p-column-filter-operator {
-    display: none;
+.formkit-panel-wrapper{
+    direction: ltr; /* it's responsible for making the datepicker filter ltr */
 }
 
 .p-dropdown-clear-icon {

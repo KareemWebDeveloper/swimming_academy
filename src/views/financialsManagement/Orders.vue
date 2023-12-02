@@ -318,8 +318,9 @@ const exportCSV = () => {
 .p-datepicker .p-datepicker-header {
     direction: ltr; /* it's responsible for making the datepicker filter ltr */
 }
-.p-column-filter-overlay-menu .p-column-filter-operator {
-    display: none;
+
+.formkit-panel-wrapper{
+    direction: ltr; /* it's responsible for making the datepicker filter ltr */
 }
 
 .p-dropdown-clear-icon {

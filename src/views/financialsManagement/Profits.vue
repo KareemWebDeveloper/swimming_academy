@@ -22,7 +22,7 @@ import { isEmpAuthorizedFor } from '@/global-functions/isEmployeeAuthorizedFor';
 
 const confirm = useConfirm();
 
-const isFetched : any = ref(false);
+const isChartGenerated : any = ref(false);
 const isTargetBranchReportLoading : any = ref(false);
 const isBranchesFetched : any = ref(false);
 const totalRevenue : any = ref(0);
@@ -68,6 +68,8 @@ const options = {
     };
 const dateTimeFormatter = new Intl.DateTimeFormat('ar', options);
 const getExpenses = (req : any) => {
+    req.start_date = new Date(req.start_date).toLocaleDateString()
+    req.end_date = new Date(req.end_date).toLocaleDateString()
     axios.post(`http://127.0.0.1:8000/api/expensesInInterval/${req.branch_id}`,req).then((result) => {
         console.log(result.data);
         result.data.variableExpenses.forEach((expense : any) => {
@@ -76,9 +78,11 @@ const getExpenses = (req : any) => {
         result.data.constantExpenses.forEach((expense : any) => {
             totalExpenses.value += expense.expense_cost
         });
-        result.data.salaries.forEach((expense : any) => {
-            totalExpenses.value += expense.amount
-        });
+        if(result.data.salaries){
+            result.data.salaries.forEach((expense : any) => {
+                totalExpenses.value += expense.amount
+            });
+        }
         chartData.value = {
             labels: ['الايرادات', 'المصروفات'],
             datasets: [
@@ -91,6 +95,7 @@ const getExpenses = (req : any) => {
                 }
             ]
         };
+        isChartGenerated.value = true
     }).catch((err) => {
         console.log(err);
     });
@@ -114,7 +119,6 @@ const getRevenues = (req : any) => {
         getExpenses(req)
         isTargetBranchReportLoading.value = false
         chooseTargetBranch.value = false
-        isFetched.value = true
     }).catch((err) => {
         console.log(err);
     });
@@ -235,12 +239,18 @@ const exportCSV = () => {
                 <Button type="submit" class="submitBtn" label="التالي" :loading="isTargetBranchReportLoading" />
             </FormKit>
         </div>
-        <div v-else class="m-auto">
+        <div v-else-if="isChartGenerated && !chooseTargetBranch" class="m-auto">
             <div class="text-center m-auto">
                 <span style="color: rgba(3, 203, 0, 0.565);" class="material-symbols-outlined text-7xl text-center m-auto">
                     table_chart_view
                 </span>
                 <h3 class="textColor my-3">منذ {{ new Date(targetProfits.start_date).toLocaleDateString() }} إلي {{ new Date(targetProfits.end_date).toLocaleDateString() }}</h3>
+            </div>
+            <div class="flex justify-content-center textColor align-items-center p-5 m-auto">
+                <h4 class="cursor-pointer" @click="chooseTargetBranch = !chooseTargetBranch">رجوع</h4> 
+                <span class="material-symbols-outlined cursor-pointer mx-2 text-5xl" @click="chooseTargetBranch = !chooseTargetBranch">
+                    arrow_back
+                </span>
             </div>
             <div class="flex align-items-center w-full">
                 <div class="bg-card borderRound p-3 m-auto w-6">
@@ -330,8 +340,9 @@ const exportCSV = () => {
 .p-datepicker .p-datepicker-header {
     direction: ltr; /* it's responsible for making the datepicker filter ltr */
 }
-.p-column-filter-overlay-menu .p-column-filter-operator {
-    display: none;
+
+.formkit-panel-wrapper{
+    direction: ltr; /* it's responsible for making the datepicker filter ltr */
 }
 
 .p-dropdown-clear-icon {

@@ -497,15 +497,7 @@ const exportCSV = () => {
 .automaticPaymentDate .formkit-panel-wrapper{
     direction: ltr; /* it's responsible for making the datepicker filter ltr */
 }
-.noDropDownFilterOptions .p-column-filter-overlay-menu .p-column-filter-operator{
-    display: none !important;
-}
-.noDropDownFilterOptions .p-column-filter-overlay-menu .p-column-filter-constraint .p-column-filter-matchmode-dropdown{
-    display: none !important;
-}
-.p-column-filter-overlay-menu .p-column-filter-operator {
-    display: none;
-}
+
 
 .p-dropdown-clear-icon {
     position: absolute;
