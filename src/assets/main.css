@@ -1,0 +1,60 @@
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@700&family=Lemonada&display=swap');
+*{
+  font-family: 'Lato', sans-serif;
+  font-family: 'Lemonada', cursive;
+  margin: 0;
+  padding: 0;
+}
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: #f1f1f153;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.605);
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+
+:root {
+  --primary-text-color : #FFFFFF;
+  --bg-card : rgba(255, 255, 255, 0.07);
+  --color1 : #343651;
+  --error-color : #EF5350;
+  --color2 : #071239f0;
+  --background : linear-gradient(to bottom, var(--color1), var(--color2)) !important;
+  /* Add more CSS variables */
+}
+
+body { 
+  direction: rtl !important;
+  background: var(--background);
+  min-height: 100vh;
+}
+
+.gredBg{
+  background: var(--background);
+}
+.textColor{
+  color: var(--primary-text-color);
+}
+.bgColor{
+  background-color: var(--bg-card);
+}
+.borderRound{
+  border-radius: 8px;
+}
+.error{
+  background-color: var(--error-color);
+}
