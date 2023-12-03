@@ -89,7 +89,7 @@ const options = {
 const dateTimeFormatter = new Intl.DateTimeFormat('ar', options);
 
 const getBranches = () => {
-    axios.get('http://127.0.0.1:8000/api/branches').then((result) => {
+    axios.get('https://akademia.website/api/branches').then((result) => {
         console.log(result.data);
         branches.value = result.data.branches
         isFetched.value = true
@@ -105,7 +105,7 @@ const getBranches = () => {
 const getBranchDetails = (branchId : number) => {
     isBranchFetched.value = false
     isDialogVisible.value = true
-    axios.get(`http://127.0.0.1:8000/api/branch/${branchId}`).then((result) => {
+    axios.get(`https://akademia.website/api/branch/${branchId}`).then((result) => {
         activeBranch.value = result.data.branch
         let workingDays : string[] = []
         activeBranch.value.categories = activeBranch.value.categories.map((category : any) => {
@@ -147,7 +147,7 @@ const bulkDelete = () => {
     let req : any = {
         branch_ids : branch_ids
     }
-    axios.post('http://127.0.0.1:8000/api/branchBulkDelete', req ).then((result) => {
+    axios.post('https://akademia.website/api/branchBulkDelete', req ).then((result) => {
         console.log(result);
         deletedSuccessfully.value = true
         isErrorReturned.value = false

@@ -81,7 +81,7 @@ const options = {
 const dateTimeFormatter = new Intl.DateTimeFormat('ar', options);
 
 const getCategories = () => {
-    axios.get('http://127.0.0.1:8000/api/categories').then((result) => {
+    axios.get('https://akademia.website/api/categories').then((result) => {
         console.log(result.data);
         categories.value = result.data.categories
         categories.value.forEach((category : any) => {
@@ -96,7 +96,7 @@ const getCategories = () => {
 
 const updateCategory = (req : any) => {
     updateLoading.value = true
-    axios.put(`http://127.0.0.1:8000/api/updateCategory/${activeCategory.value.id}`, req).then((result) => {
+    axios.put(`https://akademia.website/api/updateCategory/${activeCategory.value.id}`, req).then((result) => {
         console.log(result.data);
         updateLoading.value = false
         updatedSuccessfully.value = true
@@ -127,7 +127,7 @@ const bulkDelete = () => {
     let req : any = {
         category_ids : category_ids
     }
-    axios.post('http://127.0.0.1:8000/api/categoryBulkDelete', req ).then((result) => {
+    axios.post('https://akademia.website/api/categoryBulkDelete', req ).then((result) => {
         console.log(result);
         deletedSuccessfully.value = true
         selectedCategories.value = []

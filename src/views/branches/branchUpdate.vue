@@ -20,7 +20,7 @@ const isLoading = ref(false)
 const branchId : number = parseInt(currentRoute.value.params.id as string)
 
 const getBranchDetails = () => {
-    axios.get(`http://127.0.0.1:8000/api/branch/${branchId}`).then((result) => {
+    axios.get(`https://akademia.website/api/branch/${branchId}`).then((result) => {
         branch.value = result.data.branch
         let workingDays : string[] = []
         branch.value.categories = branch.value.categories.map((category : any) => {
@@ -54,7 +54,7 @@ const updateBranch = (req : any) => {
         console.log(req , 'req after stringfy');
         console.log(jsonString , 'jsonString');
     });
-    axios.put(`http://127.0.0.1:8000/api/updateBranch/${branchId}` , req).then((result) => {
+    axios.put(`https://akademia.website/api/updateBranch/${branchId}` , req).then((result) => {
         console.log(result.data); 
         isLoading.value = false
         isErrorReturned.value = false
@@ -84,7 +84,7 @@ const updateBranch = (req : any) => {
     });
 }
 const getCategories = () => {
-    axios.get('http://127.0.0.1:8000/api/categories').then((result) => {
+    axios.get('https://akademia.website/api/categories').then((result) => {
         console.log(result.data);
         result.data.categories.forEach((category : any) => {
             categories.value.push({label : category.category_name , value : category.id})

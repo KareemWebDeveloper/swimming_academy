@@ -83,7 +83,7 @@ const freezeSubscription = (req : any) => {
     
     req.expiration_date = expirationDate.toISOString().substr(0, 19).replace('T', ' ');
     console.log(req);
-    axios.put(`http://127.0.0.1:8000/api/freezeSubscription/${SubscriptionId}` , req).then((result) => {
+    axios.put(`https://akademia.website/api/freezeSubscription/${SubscriptionId}` , req).then((result) => {
         console.log(result.data);
         isFreezeLoading.value = false
         updatedSuccessfully.value = true
@@ -124,7 +124,7 @@ const cancelFreeze = () => {
         expiration_date : expirationDate.toISOString().substr(0, 19).replace('T', ' ') ,
         avail_freeze_days : availFreezeDays
     }
-    axios.put(`http://127.0.0.1:8000/api/freezeCancellation/${SubscriptionId}` , req).then((result) => {
+    axios.put(`https://akademia.website/api/freezeCancellation/${SubscriptionId}` , req).then((result) => {
         console.log(result.data);
         isFreezeCancellingLoading.value = false
         updatedSuccessfully.value = true
@@ -144,7 +144,7 @@ const editInstallment = (installmentId : number , index : number) => {
     console.log(installmentData);
     console.log(installmentData.due_date);
     
-    axios.put(`http://127.0.0.1:8000/api/updateInstallment/${installmentId}` , installmentData).then((result) => {
+    axios.put(`https://akademia.website/api/updateInstallment/${installmentId}` , installmentData).then((result) => {
         console.log(result.data);
         isInstallmentLoading.value = false
         // updatedSuccessfully.value = true
@@ -157,7 +157,7 @@ const editInstallment = (installmentId : number , index : number) => {
 }
 
 const payInstallment = (installmentId : number) => {
-    axios.put(`http://127.0.0.1:8000/api/payInstallment/${installmentId}`).then((result) => {
+    axios.put(`https://akademia.website/api/payInstallment/${installmentId}`).then((result) => {
         console.log(result.data.installment);
         getCustomerDetailes()
     }).catch((err) => {
@@ -166,7 +166,7 @@ const payInstallment = (installmentId : number) => {
 }
 
 const deleteInstallment = (installmentId : number) => {
-    axios.delete(`http://127.0.0.1:8000/api/deleteInstallment/${installmentId}`).then((result) => {
+    axios.delete(`https://akademia.website/api/deleteInstallment/${installmentId}`).then((result) => {
         console.log(result.data);
         getCustomerDetailes()
     }).catch((err) => {
@@ -175,7 +175,7 @@ const deleteInstallment = (installmentId : number) => {
 }
 
 const getCustomerDetailes = () => {
-    axios.get(`http://127.0.0.1:8000/api/customerSubcription/${SubscriptionId}`).then((result) => {
+    axios.get(`https://akademia.website/api/customerSubcription/${SubscriptionId}`).then((result) => {
         console.log(result.data);
         customerDetails.value = result.data.subscription 
         subLevel.value = result.data.sublevel 
@@ -202,7 +202,7 @@ const getCustomerDetailes = () => {
     });
 }
 const getLevelsTree = () => {
-    axios.get(`http://127.0.0.1:8000/api/levelsTree`).then((result) => {
+    axios.get(`https://akademia.website/api/levelsTree`).then((result) => {
         console.log(result.data);
         levelsNodes.value = result.data.levelsTree
     }).catch((err) => {
@@ -224,7 +224,7 @@ const updateCustomerLevel = () => {
         req.level_id = parseInt(LevelKey) as any
     }
     console.log(req , 'req');
-    axios.put(`http://127.0.0.1:8000/api/customerLevelUpdate/${customerDetails.value.customer_id}` , req).then((result) => {
+    axios.put(`https://akademia.website/api/customerLevelUpdate/${customerDetails.value.customer_id}` , req).then((result) => {
         console.log(result.data);
         isDialogVisible.value = false
     }).catch((err) => {

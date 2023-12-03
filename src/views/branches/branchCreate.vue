@@ -27,7 +27,7 @@ const createBranch = (req : any) => {
         console.log(req , 'req after stringfy');
         console.log(jsonString , 'jsonString');
     });
-    axios.post('http://127.0.0.1:8000/api/createBranch' , req).then((result) => {
+    axios.post('https://akademia.website/api/createBranch' , req).then((result) => {
         console.log(result.data); 
         isLoading.value = false
         isErrorReturned.value = false
@@ -63,7 +63,7 @@ const createBranch = (req : any) => {
     });
 }
 const getCategories = () => {
-    axios.get('http://127.0.0.1:8000/api/categories').then((result) => {
+    axios.get('https://akademia.website/api/categories').then((result) => {
         console.log(result.data);
         result.data.categories.forEach((category : any) => {
             categories.value.push({label : category.category_name , value : category.id})

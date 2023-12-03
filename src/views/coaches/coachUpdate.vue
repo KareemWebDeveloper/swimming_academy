@@ -28,7 +28,7 @@ const isDialogVisible = ref(false)
 const updateCoach = (req : any) => {
     isLoading.value = true
     console.log(req);
-    axios.put(`http://127.0.0.1:8000/api/updateCoach/${coachId}` , req).then((result) => {
+    axios.put(`https://akademia.website/api/updateCoach/${coachId}` , req).then((result) => {
         createdCoach.value = result.data.coach
         isLoading.value = false
         isErrorReturned.value = false
@@ -62,7 +62,7 @@ const updateCoach = (req : any) => {
 }
 
 const getCoachDetails = () => {
-    axios.get(`http://127.0.0.1:8000/api/coach/${coachId}`).then((result) => {
+    axios.get(`https://akademia.website/api/coach/${coachId}`).then((result) => {
         coachDetails.value = result.data.coach
         coachDetails.value.password = ''
         coachDetails.value.branchIds = []
@@ -77,7 +77,7 @@ const getCoachDetails = () => {
 }
 
 const getBranches = () => {
-    axios.get('http://127.0.0.1:8000/api/branches').then((result) => {
+    axios.get('https://akademia.website/api/branches').then((result) => {
         console.log(result.data);
         result.data.branches.forEach((branch : any) => {
             branches.value.push({label : branch.branch_name , value : branch.id})

@@ -29,7 +29,7 @@ onBeforeMount(() => {
 
 const adminLogin = (req : any) => {
     loading.value = true
-    axios.post('http://127.0.0.1:8000/api/adminLogin' , req).then((result) => {
+    axios.post('https://akademia.website/api/adminLogin' , req).then((result) => {
         console.log(result);
         adminLoginError.value = false
         internalServerError.value = false
@@ -51,7 +51,7 @@ const adminLogin = (req : any) => {
 
 const coachLogin = (req : any) => {
     loading.value = true
-    axios.post('http://127.0.0.1:8000/api/coachLogin' , req).then((result) => {
+    axios.post('https://akademia.website/api/coachLogin' , req).then((result) => {
         console.log(result);
         coachLoginError.value = false
         internalServerError.value = false
@@ -72,7 +72,7 @@ const coachLogin = (req : any) => {
 } 
 const employeeLogin = (req : any) => {
     loading.value = true
-    axios.post('http://127.0.0.1:8000/api/employeeLogin' , req).then((result) => {
+    axios.post('https://akademia.website/api/employeeLogin' , req).then((result) => {
         console.log(result);
         employeeLoginError.value = false
         internalServerError.value = false
@@ -93,7 +93,7 @@ const employeeLogin = (req : any) => {
 } 
 const customerLogin = (req : any) => {
     loading.value = true
-    axios.post('http://127.0.0.1:8000/api/customerLogin' , req).then((result) => {
+    axios.post('https://akademia.website/api/customerLogin' , req).then((result) => {
         console.log(result);
         customerLoginError.value = false
         internalServerError.value = false
@@ -115,7 +115,7 @@ const customerLogin = (req : any) => {
 </script>
 <template>
     <div class="flex w-full align-items-center justify-content-center lg:justify-content-start">
-        <img src="../assets/swimming_bg.jpg" class="max-h-screen hidden lg:flex" alt="">
+        <img src="../assets/swimming_bg(1).jpg" class="max-h-screen hidden lg:flex" alt="">
         <div v-if="userType == 'admin'" class="marginnnx w-11 lg:w-3 m-auto">
             <h1 class="text-center py-5 lg:py-2 textColor">أكاديمية السباحة</h1>
             <br class="bg-white w-2 h-1">

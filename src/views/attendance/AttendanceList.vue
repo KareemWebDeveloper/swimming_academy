@@ -185,7 +185,7 @@ const attendCustomers = () => {
             session_duration : session_duration.value,
             customers : customersArrayRequest,
         }
-        axios.post('http://127.0.0.1:8000/api/bulkAttendance', request).then((result) => {
+        axios.post('https://akademia.website/api/bulkAttendance', request).then((result) => {
             console.log(result);
             attendedSuccessfully.value = true
             selectedCustomers.value = []
@@ -214,7 +214,7 @@ const attendCoaches = () => {
             session_duration : session_duration.value,
             coach_ids : CoachIds,
         }
-        axios.post('http://127.0.0.1:8000/api/bulkAttendance', request).then((result) => {
+        axios.post('https://akademia.website/api/bulkAttendance', request).then((result) => {
             console.log(result);
             attendedSuccessfully.value = true
             selectedCustomers.value = []
@@ -255,10 +255,10 @@ const submitAttendanceData = (req : any) => {
 }
 
 const getAttendees = () => {
-    axios.get(`http://127.0.0.1:8000/api/coaches/active/${activeBranch.value}`).then((result : any) => {
+    axios.get(`https://akademia.website/api/coaches/active/${activeBranch.value}`).then((result : any) => {
         console.log(result.data.coaches);
         activeCoaches.value = result.data.coaches
-        axios.get(`http://127.0.0.1:8000/api/customers/active/${activeBranch.value}`).then((result : any) => {
+        axios.get(`https://akademia.website/api/customers/active/${activeBranch.value}`).then((result : any) => {
             console.log(result.data.customers);
             activeCustomers.value = result.data.customers
             generateCustomerSubscriptionsOptions()
@@ -272,7 +272,7 @@ const getAttendees = () => {
     });
 }
 const getBranches = () => {
-    axios.get('http://127.0.0.1:8000/api/branches').then((result) => {
+    axios.get('https://akademia.website/api/branches').then((result) => {
         console.log(result.data);
         result.data.branches.forEach((branch : any) => {
             branches.value.push({label : branch.branch_name , value : branch.id})
@@ -283,7 +283,7 @@ const getBranches = () => {
     });
 }
 const getCategories = () => {
-    axios.get('http://127.0.0.1:8000/api/categories').then((result) => {
+    axios.get('https://akademia.website/api/categories').then((result) => {
         console.log(result.data);
         result.data.categories.forEach((category : any) => {
             categories.value.push({label : category.category_name , value : category.id})
