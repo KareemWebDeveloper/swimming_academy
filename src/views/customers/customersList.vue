@@ -369,7 +369,7 @@ const exportCSV = () => {
     
     
     <!-- Customers List -->
-    <div class="w-12 md:w-10 my-5 m-auto p-2 md:p-5 branchesList" style="direction: rtl;">
+    <div class="w-12 md:w-10 my-5 m-auto p-2 md:p-5 customersList" style="direction: rtl;">
         <!-- Breadcrumb -->
         <div class="w-full m-auto flex justify-content-center p-4 MargAutoMob padding-1-breadcrumbs" style="direction: ltr;">
             <Breadcrumb :home="home" :model="breadCrumbs" />
@@ -377,8 +377,8 @@ const exportCSV = () => {
         <ConfirmPopup></ConfirmPopup>
         <!-- data Table -->
         <successMsg v-if="deletedSuccessfully" class="fadeinright animation-duration-500 animation-iteration-1 my-4">تم الحذف بنجاح</successMsg>
-    <div>
-        <DataTable v-model:filters="filters" filter-locale="ar" export-filename="المشتركين" ref="dt"  stripedRows :value="customers"  v-model:selection="selectedCustomers" :loading="!isCustomersFetched"
+    <div class="customersList">
+        <DataTable class="customersList" v-model:filters="filters" filter-locale="ar" export-filename="المشتركين" ref="dt"  stripedRows :value="customers"  v-model:selection="selectedCustomers" :loading="!isCustomersFetched"
          paginator :rows="10" :rowsPerPageOptions="[10, 15 , 20, 50]" filterDisplay="menu"
          dataKey="id" removableSort :globalFilterFields="['id' , 'customer_name' , 'customer_phone']" tableStyle="min-width: 50rem">
         <template #header>
@@ -388,12 +388,12 @@ const exportCSV = () => {
                     <Button type="button" v-if="isEmpAuthorizedFor(empPermissions , 'تجديد و تسجيل اشتراكات' , UserType)" :disabled="selectedCustomers.length == 0" severity="danger" class="mb-3 lg:mb-0 mx-2" label="حذف المحدد" />
                 </div>
                 <h3 class="hidden md:my-2 lg:my-0 md:flex">المشتركين</h3>
-                <div>
-                    <span class="p-input-icon-left">
+                <div class="flex flex-column md:flex-row ">
+                    <span class="p-input-icon-left my-2">
                         <i class="pi pi-search" />
                         <InputText v-model="filters['global'].value" class="mx-2" placeholder="بحث شامل" />
                     </span>
-                    <Dropdown v-model="filters['state'].value" :options="statuses" placeholder="اختر حالة" class="p-column-filter" style="min-width: 12rem" :showClear="true">
+                    <Dropdown v-model="filters['state'].value" :options="statuses" placeholder="اختر حالة" class="p-column-filter my-2" style="min-width: 12rem" :showClear="true">
                         <template #option="slotProps">
                             <Tag :value="getStateValue(slotProps.option)" :severity="getSeverity(slotProps.option)" />
                         </template>
@@ -523,8 +523,8 @@ const exportCSV = () => {
 .p-datepicker .p-datepicker-header {
     direction: ltr; /* it's responsible for making the datepicker filter ltr */
 }
-.p-column-filter-overlay-menu .p-column-filter-constraint .p-column-filter-matchmode-dropdown {
-    display: none; /* it hides the ability to choose the filter match mode */
+.customersList .p-column-filter-overlay-menu .p-column-filter-constraint .p-column-filter-matchmode-dropdown {
+    display: none !important; /* it hides the ability to choose the filter match mode */
 }
 .p-dropdown-clear-icon {
     position: absolute;

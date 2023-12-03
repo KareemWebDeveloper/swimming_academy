@@ -234,7 +234,7 @@ const exportCSV = () => {
             </div>
         </div>
         <div class="bg-card flex justify-content-center m-auto w-10 p-3 borderRound">
-            <Chart type="doughnut" :data="doughnutChartData" :options="chartData" class="h-30rem w-7 m-auto flex justify-content-center" />
+            <Chart type="doughnut" :data="doughnutChartData" :options="chartData" class="md:h-30rem w-full md:w-7 m-auto flex justify-content-center" />
         </div>
     </div>
 </template>

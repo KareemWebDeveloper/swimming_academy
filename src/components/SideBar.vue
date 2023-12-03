@@ -68,7 +68,7 @@ const closeSideBar = () => {
     </span>
   </div>
   <div v-if="visible && fetched">
-    <span @click="isMobExpanded = true; isExpanded = true" class="absolute top-0 right-0 m-3 material-symbols-outlined textColor text-4xl bgColor p-2 borderRound flex lg:hidden">
+    <span @click="isMobExpanded = true; isExpanded = true" class="fixed top-0 right-0 m-3 material-symbols-outlined textColor text-4xl bgColor p-2 borderRound flex lg:hidden">
       menu
       </span>
   </div>
@@ -238,7 +238,7 @@ const closeSideBar = () => {
             </span>            
             <router-link v-if="isExpanded" to="/"><h5 class="textColor">لوحة التحكم</h5></router-link>
           </div>
-          <div class="flex align-items-center my-5 div-hover" @click="showCustomersCategories = !showCustomersCategories" :class="{'justify-content-center' : !isExpanded }" >
+          <div class="flex align-items-center mt-5 mb-2 div-hover" @click="showCustomersCategories = !showCustomersCategories" :class="{'justify-content-center' : !isExpanded }" >
             <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
               group
             </span>            
@@ -374,6 +374,9 @@ const closeSideBar = () => {
 </template>
 
 <style>
+.p-sidebar .p-sidebar-header .p-sidebar-close, .p-sidebar .p-sidebar-header .p-sidebar-icon {
+  display: none !important ;
+}
 .p-sidebar-close-icon{
   display: none !important ;
 }

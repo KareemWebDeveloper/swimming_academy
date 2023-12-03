@@ -448,7 +448,7 @@ onBeforeMount(() => {
                     <p>{{ slotProps.data.subscriptions[0].number_of_sessions }} حصص</p>
                 </template>
             </Column>
-            <Column  header="تسجيل الحضور" style="max-width: 20rem;">
+            <Column  header="تسجيل الحضور" style="min-width: 20rem;">
                 <template #body="slotProps">
                 <div v-if="!areDatesEqual(slotProps.data.last_attendance_date)">
                     <FormKit type="dropdown" id="branch" v-model="slotProps.data.chosenSubscription" validation="required"

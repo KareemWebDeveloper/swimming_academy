@@ -369,7 +369,7 @@ const exportCSV = () => {
     
     
     <!-- Customers List -->
-    <div class="w-12 md:w-10 my-5 m-auto p-2 md:p-5 branchesList" style="direction: rtl;">
+    <div class="w-12 md:w-10 my-5 m-auto p-2 md:p-5 privateList" style="direction: rtl;">
         <!-- Breadcrumb -->
         <div class="w-full m-auto flex justify-content-center p-4 MargAutoMob padding-1-breadcrumbs" style="direction: ltr;">
             <Breadcrumb :home="home" :model="breadCrumbs" />
@@ -537,7 +537,7 @@ const exportCSV = () => {
 .p-datepicker .p-datepicker-header {
     direction: ltr; /* it's responsible for making the datepicker filter ltr */
 }
-.p-column-filter-overlay-menu .p-column-filter-constraint .p-column-filter-matchmode-dropdown {
+.privateList .p-column-filter-overlay-menu .p-column-filter-constraint .p-column-filter-matchmode-dropdown {
     display: none; /* it hides the ability to choose the filter match mode */
 }
 .p-dropdown-clear-icon {
