@@ -104,7 +104,7 @@ const options = {
 const dateTimeFormatter = new Intl.DateTimeFormat('ar', options);
 
 const getCoaches = () => {
-    axios.get('https://akademia.website/api/coaches').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/coaches').then((result) => {
         console.log(result.data);
         coaches.value = result.data.coaches
         isCoachesFetched.value = true
@@ -118,7 +118,7 @@ const getCoaches = () => {
 }
 
 const getBranches = () => {
-    axios.get('https://akademia.website/api/branches').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/branches').then((result) => {
         console.log(result.data);
         result.data.branches.forEach((branch : any) => {
             branches.value.push({label : branch.branch_name , value : branch.id})
@@ -132,7 +132,7 @@ const getBranches = () => {
 const getCoachDetails = (coachId : number) => {
     isCoachFetched.value = false
     isDialogVisible.value = true
-    axios.get(`https://akademia.website/api/coach/${coachId}`).then((result) => {
+    axios.get(`http://127.0.0.1:8000/api/coach/${coachId}`).then((result) => {
         activeCoach.value = result.data.coach
         activeCoach.value.numberOfSubscriptions = result.data.activeSubscriptions.length
         selectedBranches.value = {branchIds : []}
@@ -149,7 +149,7 @@ const getCoachDetails = (coachId : number) => {
 
 const attachBranches = (req : any) => {
     isAttachBranchLoading.value = true
-    axios.put(`https://akademia.website/api/coach/attachBranches/${activeCoach.value.id}` , req).then((result) => {
+    axios.put(`http://127.0.0.1:8000/api/coach/attachBranches/${activeCoach.value.id}` , req).then((result) => {
         console.log(result);
         isAttachBranchLoading.value = false
         isCoachFetched.value = false
@@ -169,7 +169,7 @@ const UpdateCoachesSubscriptions = () => {
         });
     });
     console.log(subscriptionsNewCoaches);
-    axios.post(`https://akademia.website/api/subscriptionCoaches/update` , subscriptionsNewCoaches).then((result) => {
+    axios.post(`http://127.0.0.1:8000/api/subscriptionCoaches/update` , subscriptionsNewCoaches).then((result) => {
         isUpdateCoachesSubscriptionsLoading.value = false
         bulkDelete()
     }).catch((err) => {
@@ -196,7 +196,7 @@ const bulkDelete = () => {
     let req : any = {
         coaches_ids : coaches_ids
     }
-    axios.post('https://akademia.website/api/coachBulkDelete', req).then((result) => {
+    axios.post('http://127.0.0.1:8000/api/coachBulkDelete', req).then((result) => {
         console.log(result);
         deletedSuccessfully.value = true
         isFailedDeletionDialogVisible.value = false
@@ -397,7 +397,7 @@ const exportCSV = () => {
             <div class="flex flex-column lg:flex-row justify-content-between align-items-center">
                 <div class="flex align-items-center">
                     <Button v-if="isEmpAuthorizedFor(empPermissions , 'تسجيل و تعديل المدربين' , UserType)" type="button" class="mb-3 lg:mb-0 mx-2" @click="push('/coach/create')" label="تسجيل مدرب" />
-                    <Button v-if="isEmpAuthorizedFor(empPermissions , 'تسجيل و تعديل المدربين' , UserType)" type="button" :disabled="selectedCoaches.length == 0" severity="danger" class="mb-3 lg:mb-0 mx-2" label="حذف المحدد" />
+                    <Button v-if="isEmpAuthorizedFor(empPermissions , 'تسجيل و تعديل المدربين' , UserType)" type="button" :disabled="selectedCoaches.length == 0" severity="danger" @click="bulkDelete" class="mb-3 lg:mb-0 mx-2" label="حذف المحدد" />
                 </div>
                 <h3 class="hidden md:my-2 lg:my-0 md:flex">المدربين</h3>
                 <span class="p-input-icon-left">

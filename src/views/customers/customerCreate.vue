@@ -39,16 +39,22 @@ const dbError = ref()
 const isLoading = ref(false)
 const createdCustomer = ref()
 const workingDays = ref([])
+const workingSchedule = ref()
+const savedSchedule : any = ref([])
 const isDialogVisible = ref(false)
 const isCustomerRegistered = ref(false)
+const istrainingTimeHasError = ref(false)
+const isPrivateSubscription = ref(false)
+const trainingTimeError = ref()
 const remainingFromInstallments = ref()
 
 const createCustomer = (req : any) => {
     isLoading.value = true
     console.log(req);
+    req.customer_name = req.fname + ' ' + req.sname + ' ' + req.thirdName
     req.birthdate = new Date(req.birthdate);
     req.birthdate = req.birthdate.toISOString().substr(0, 19).replace('T', ' ');
-    axios.post('https://akademia.website/api/createCustomer' , req).then((result) => {
+    axios.post('http://127.0.0.1:8000/api/createCustomer' , req).then((result) => {
         createdCustomer.value = result.data.customer
         localStorage.setItem('waitingForSubscription' , JSON.stringify(result.data.customer))
         console.log(localStorage.getItem('waitingForSubscription'));
@@ -83,7 +89,7 @@ const createCustomer = (req : any) => {
     });
 }
 const getBranches = () => {
-    axios.get('https://akademia.website/api/branches').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/branches').then((result) => {
         console.log(result.data);
         allBranches.value = result.data.branches
         result.data.branches.forEach((branch : any) => {
@@ -96,20 +102,22 @@ const getBranches = () => {
 }
 
 const getAcademies = () => {
-    axios.get('https://akademia.website/api/academies').then((result) => {
+    return new Promise<any[]>((resolve) => {
+    axios.get(`http://127.0.0.1:8000/api/academiesOfBranch/${subscriptionFields.value.branch_id}`).then((result) => {
         console.log(result.data);
-        // allAcademies.value = result.data.academies
         result.data.academies.forEach((academy : any) => {
             allAcademies.value.push({label : academy.academy_name , value : academy.id})
         });
+        resolve(allAcademies.value)
     }).catch((err) => {
         console.log(err);
     });
+})
 }
 
 const coachesOptions = () => {
     return new Promise<any[]>((resolve) => {
-        axios.get(`https://akademia.website/api/coachesOfBranch/${subscriptionFields.value.branch_id}`).then((result) => {
+        axios.get(`http://127.0.0.1:8000/api/coachesOfBranch/${subscriptionFields.value.branch_id}`).then((result) => {
         console.log(result.data);
         coaches.value = []
         result.data.coaches.forEach((coach : any) => {
@@ -121,7 +129,7 @@ const coachesOptions = () => {
 }
 const categoriesOptions = () => {
     return new Promise<any[]>((resolve) => {
-        axios.get(`https://akademia.website/api/categoriesOfBranch/${subscriptionFields.value.branch_id}`).then((result) => {
+        axios.get(`http://127.0.0.1:8000/api/categoriesOfBranch/${subscriptionFields.value.branch_id}`).then((result) => {
         console.log(result.data);
         categories.value = []
         result.data.categories.forEach((category : any) => {
@@ -133,8 +141,9 @@ const categoriesOptions = () => {
 }
 const workingDaysOptions = () => {
     return new Promise<any[]>((resolve) => {
-        axios.get(`https://akademia.website/api/branch/workingDays/${subscriptionFields.value.branch_id}`).then((result) => {
+        axios.get(`http://127.0.0.1:8000/api/branch/workingDays/${subscriptionFields.value.branch_id}`).then((result) => {
         console.log(result.data);
+        workingSchedule.value = result.data.workingDays
         workingDays.value = []
         result.data.workingDays.forEach((day : any) => {
             workingDays.value.push(day.day);
@@ -153,12 +162,16 @@ const createSubscription = (req : any) => {
     req.subscription_date = new Date(req.subscription_date);
     req.subscription_date = req.subscription_date.toISOString().substr(0, 19).replace('T', ' ');
     req.expiration_date = new Date(req.expiration_date);
-    req.expiration_date = req.expiration_date.toISOString().substr(0, 19).replace('T', ' ');
+    req.expiration_date.setHours(13)
+    req.expiration_date = new Date(req.expiration_date).toISOString().substr(0, 19).replace('T', ' ');
     if(createCustomerSubscription.value && customerDetails){
         req.customer_id = customerDetails.id
     }
     if(paymentType.value){
         req.subscription_type = paymentType.value
+    }
+    if(isPrivateSubscription.value == true){
+        req.is_private = true
     }
     if(paymentType.value == 'installments'){
         installments.value.installments.forEach((installment : any) => {
@@ -168,7 +181,7 @@ const createSubscription = (req : any) => {
         req.installments = installments.value.installments
     }
     console.log(req);
-    axios.post('https://akademia.website/api/createSubscription' , req).then((result) => {
+    axios.post('http://127.0.0.1:8000/api/createSubscription' , req).then((result) => {
         createdSubscription.value = result.data.subscription
         createdSubscription.value.customer_name = customerDetails.customer_name
         isSubscriptionLoading.value = false
@@ -204,6 +217,51 @@ const validateInstallments = () => {
     else{
         showInstallmentsError.value = true
     }
+}
+
+function isTimeInRange(startTime : string, endTime : string, checkTime : string) {
+    const startDate = new Date(`2000-01-01 ${startTime}`);
+    const endDate = new Date(`2000-01-01 ${endTime}`);
+    const checkDate = new Date(`2000-01-01 ${checkTime}`);
+    return checkDate >= startDate && checkDate <= endDate;
+}
+
+const validateTrainingTime = () => {
+    let schedules = workingSchedule.value
+    setTimeout(() => {
+        let currentValue = subscriptionFields.value.training_schedules
+        console.log(currentValue , 'validateTrainingTime');
+        // console.log(subscriptionFields.value.training_schedules[index] , 'validateTrainingTime');
+    currentValue.forEach((schedule : any , index : any) => {
+        const filteredData = schedules.filter((workingSchedule : any) => workingSchedule.day == schedule.day && isTimeInRange(workingSchedule.start_time, workingSchedule.end_time, schedule.time));
+        if(filteredData.length > 0){
+            console.log('hii');
+            istrainingTimeHasError.value = false
+            return
+        }
+        else{
+            istrainingTimeHasError.value = true
+            let chosenDaySchedules = schedules.filter((workingSchedule : any) => workingSchedule.day == schedule.day)
+            trainingTimeError.value = {
+                index : index,
+                schedule : chosenDaySchedules   
+            }
+        }
+    });
+}, 400);
+    
+}
+const showSavedSchedule = (req : any) => {
+    let schedules = workingSchedule.value
+    console.log(req , 'showSavedSchedule');
+    const filteredData = schedules.filter((schedule : any) => schedule.day == req);
+    filteredData.forEach((element : any , index : any) => {
+        let isExists = savedSchedule.value.some((schedule : any) => schedule.id === element.id)
+        if(!isExists){
+            savedSchedule.value.push(filteredData[index])
+        }
+    });
+    
 }
 
 watch((installments) , () => {    
@@ -243,11 +301,9 @@ watch(subscriptionFields, (newValue, oldValue) => {
                 subscriptionFields.value.price = null
             }
         }
-        // if(newValue.price != oldValue.price){
-        //     if(subscriptionFields.value.price != subscriptionSavedPrice.value){
-        //         showSavedPrice.value = false
-        //     }
-        // }
+        if(newValue.training_schedules != oldValue.training_schedules){
+            validateTrainingTime()
+        }
     }
     else{
         showSavedPrice.value = false
@@ -255,10 +311,10 @@ watch(subscriptionFields, (newValue, oldValue) => {
 });
 
 const getCustomers = () => {
-    axios.get('https://akademia.website/api/customers').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/customers').then((result) => {
         console.log(result.data);
         result.data.customers.forEach((customer : any) => {
-            customers.value.push({label : customer.customer_name , value : customer.id})
+            customers.value.push({label : `${customer.customer_name} - ${customer.customer_phone}` , value : customer.id})
         });
         isCustomersFetched.value = true
     }).catch((err) => {
@@ -267,7 +323,11 @@ const getCustomers = () => {
 }
 
 const handleDialogClosed = () => {
-    if(!stayAtTheSamePage.value) {
+    if(!stayAtTheSamePage.value && isPrivateSubscription.value) {
+        localStorage.removeItem('waitingForSubscription')
+        push('/privateSubscriptions')
+    }
+    if(!stayAtTheSamePage.value && !isPrivateSubscription.value) {
         localStorage.removeItem('waitingForSubscription')
         push('/customers')
     }
@@ -279,6 +339,8 @@ const handleDialogClosed = () => {
         }, 1000);
     }
 }
+const currentDate = new Date();
+const defaultExpirationDate = currentDate.setDate(currentDate.getDate() + 30);
 
 const empPermissions = ref()
 type userType = 'admin' | 'employee' 
@@ -294,24 +356,28 @@ onBeforeMount(() => {
                 }
                 empPermissions.value = employee.permissions
                 UserType.value = 'employee'
+                if(currentRoute.value.query.isPrivate == 'true'){
+                    isPrivateSubscription.value = true
+                }
                 getCustomers()
                 getBranches()
-                getAcademies()
             })
         } 
         else{
+            if(currentRoute.value.query.isPrivate == 'true'){
+                isPrivateSubscription.value = true
+            }
             getCustomers()
             getBranches()
-            getAcademies()
         }
     })
 })
 
 </script>
 <template>
-    <Dialog v-model:visible="isDialogVisible" @after-hide="handleDialogClosed" modal header="بيانات الاشتراك" :style="{ width: '50vw' }" :breakpoints="{ '960px': '75vw', '641px': '100vw' }">
+    <Dialog v-model:visible="isDialogVisible" @after-hide="handleDialogClosed" modal header="بيانات الاشتراك" :style="{ width: '58vw' }" :breakpoints="{ '960px': '75vw', '641px': '100vw' }">
         <div class="flex align-items-center justify-content-center">
-            <div class="flex align-items-center mx-5 justify-content-center flex-column">
+            <div class="flex align-items-center text-center mx-5 justify-content-center flex-column">
                 <div class="flex align-items-center my-2">
                     <span class="material-symbols-outlined mx-1 text-2xl">
                         tag
@@ -320,7 +386,7 @@ onBeforeMount(() => {
                 </div>
                 <p>{{ createdSubscription.customer_id }}</p>
             </div>
-            <div class="flex align-items-center mx-5 justify-content-center flex-column">
+            <div class="flex align-items-center text-center mx-5 justify-content-center flex-column">
                 <div class="flex align-items-center my-2">
                     <h4>الاسم</h4>
                     <span class="material-symbols-outlined text-2xl">
@@ -329,7 +395,7 @@ onBeforeMount(() => {
                 </div>
                 <p>{{ createdSubscription.customer_name }}</p>
             </div>
-            <div class="flex align-items-center mx-5 justify-content-center flex-column">
+            <div class="flex align-items-center text-center mx-5 justify-content-center flex-column">
                 <div class="flex align-items-center my-2">
                     <span class="material-symbols-outlined mx-1 text-2xl">
                         calendar_month
@@ -358,11 +424,23 @@ onBeforeMount(() => {
             <!-- Customer Create Form -->
             <FormKit type="form" :actions="false" @submit="createCustomer">
                 <div class="flex grid w-full">
+                <div class="mt-3 md:col-6 col-12">
+                    <div class="flex align-items-center">
+                        <label for="name" class="px-3 py-1 text-white text-sm">الاسم الأول</label>
+                    </div>
+                    <FormKit prefix-icon="avatarMan" id="name" type="text" label="الاسم الأول للمشترك" placeholder="أدخل اسم المشترك الأول" name="fname" validation="required|length:2" />
+                </div>
+                <div class="mt-3 md:col-6 col-12">
+                    <div class="flex align-items-center">
+                        <label for="name" class="px-3 py-1 text-white text-sm">الاسم الثاني</label>
+                    </div>
+                    <FormKit prefix-icon="avatarMan" id="name" type="text" label="اسم الثاني للمشترك" placeholder="أدخل اسم المشترك الثاني" name="sname" validation="required|length:2" />
+                </div>
                 <div class="mt-3 col-12">
                     <div class="flex align-items-center">
-                        <label for="name" class="px-3 py-1 text-white text-sm">اسم المشترك</label>
+                        <label for="name" class="px-3 py-1 text-white text-sm">اللقب</label>
                     </div>
-                    <FormKit prefix-icon="avatarMan" id="name" type="text" label="اسم المشترك" placeholder="أدخل اسم المشترك" name="customer_name" validation="required|length:2" />
+                    <FormKit prefix-icon="avatarMan" id="name" type="text" label="لقب المشترك" placeholder="أدخل لقب المشترك" name="thirdName" validation="required|length:2" />
                 </div>
                     <div class="mt-3 col-12 md:col-6">
                         <div class="flex align-items-center">
@@ -466,7 +544,7 @@ onBeforeMount(() => {
                                 <label for="expiration_date" class="px-3 py-1 text-white text-sm">تاريخ انتهاء الاشتراك</label>
                             </div>
                             <FormKit type="datepicker" name="expiration_date"  label="تاريخ الانتهاء" id="expiration_date"
-                            :min-date="new Date()" validation="required" :format="{ date: 'short' }" />
+                            :min-date="new Date()" :value="new Date(defaultExpirationDate)" validation="required" :format="{ date: 'short' }" />
                         </div>
     
                         <div class="mt-3 col-12 md:col-6">
@@ -474,13 +552,13 @@ onBeforeMount(() => {
                                 <label for="academy" class="px-3 py-1 text-white text-sm">الأكاديمية</label>
                             </div>
                             <FormKit type="dropdown" id="academy" name="academy_id" label="الأكاديمية" placeholder="اختر الأكاديمية"
-                            :options="allAcademies" validation="required"/>
+                            :options="getAcademies" validation="required"/>
                         </div>
                         <div class="mt-3 col-12 md:col-6">
                             <div class="flex align-items-center">
                                 <label for="avail_freeze_days" class="px-3 py-1 text-white text-sm">الأيام المتاحة للتجميد</label>
                             </div>
-                            <FormKit prefix-icon="number" number="integer" id="avail_freeze_days" type="number" label="أيام التجميد" placeholder="أدخل الأيام المتاحة لتجميد الاشتراك" name="avail_freeze_days" validation="required|min:0" />
+                            <FormKit prefix-icon="number" :value="14" number="integer" id="avail_freeze_days" type="number" label="أيام التجميد" placeholder="أدخل الأيام المتاحة لتجميد الاشتراك" name="avail_freeze_days" validation="min:0" />
                         </div>
                         <div class="mt-3 col-12 md:col-6">
                             <div class="flex align-items-center">
@@ -499,11 +577,22 @@ onBeforeMount(() => {
                             <FormKit id="repeater" name="training_schedules" type="repeater" add-label="اضافة موعد"
                              label="جدول المواعيد" #default="{ index }">
                              <div class="flex grid w-full align-items-center">
-                                <FormKit type="dropdown" outer-class="col-12 md:col-6" name="day" :label="`${index + 1}. اليوم`" placeholder="اختر اليوم"
-                                :options="workingDaysOptions" always-load-on-open="true" validation="required"/>
-                                <FormKit type="time" label="موعد بدء التمرين" outer-class="col-12 md:col-6" name="time" value="21:00" validation="required" />
-                                </div>
+                                <FormKit type="dropdown"  @input="showSavedSchedule" outer-class="col-12 md:col-6" name="day" :label="`${index + 1}. اليوم`" placeholder="اختر اليوم"
+                                :options="workingDaysOptions" :multiple="false" always-load-on-open="true" validation="required"/>
+                                <FormKit type="time" label="موعد بدء التمرين" @input="validateTrainingTime(index)" outer-class="col-12 md:col-6" name="time" value="21:00" validation="required" />
+                            </div>
+                            <div class="formkit-message" v-if="istrainingTimeHasError && trainingTimeError.index == index">
+                                <h4 class="my-3" v-for="schedule in trainingTimeError.schedule">يرجي اختيار موعد بين {{ new Date(`2000-01-01 ${schedule.start_time}`).toLocaleTimeString('en-US', { hour12: true }) }}
+                                     و  {{  new Date(`2000-01-01 ${schedule.end_time}`).toLocaleTimeString('en-US', { hour12: true }) }}</h4>
+                            </div>
                             </FormKit>
+                            <div v-if="savedSchedule.length > 0" class="fadein animation-duration-500 my-2 animation-iteration-1 text-center p-3 borderRound"
+                            style="color: #256029; background-color: #c8e6c9d3;">
+                                <h4>مواعيد العمل المسجلة لهذا اليوم : </h4>
+                                <h5 v-for="schedule in savedSchedule">
+                                   {{ schedule.day }} من {{ new Date(`2000-01-01 ${schedule.start_time}`).toLocaleTimeString('en-US', { hour12: true }) }} إلي {{ new Date(`2000-01-01 ${schedule.end_time}`).toLocaleTimeString('en-US', { hour12: true }) }}
+                                </h5>
+                            </div>
                         </div>
 
                         <div class="col-12" :class="{'md:col-6' : isSaleFieldVisible}">

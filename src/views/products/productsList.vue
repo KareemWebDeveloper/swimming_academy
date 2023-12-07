@@ -100,7 +100,7 @@ const getProducts = () => {
         isFetched.value = true
         products.value.forEach((product : any) => {
             product.created_at = new Date(product.created_at)
-            product.amount = 1
+            product.amount = 0
         });
         posProducts.value = [result.data.products, []]
     }).catch((err) => {
@@ -287,9 +287,8 @@ const exportCSV = () => {
             <div class="flex flex-column lg:flex-row justify-content-between align-items-center">
                 <div class="flex align-items-center">
                     <Button type="button" v-if="isEmpAuthorizedFor(empPermissions , 'تسجيل المنتجات' , UserType)" class="mb-3 lg:mb-0 mx-2" @click="push('/products/create')" label="تسجيل منتج" />
-                    <Button type="button" v-if="isEmpAuthorizedFor(empPermissions , 'تسجيل المنتجات' , UserType)" :disabled="selectedProducts.length == 0" severity="danger" class="mb-3 lg:mb-0 mx-2" label="حذف المحدد" />
+                    <Button type="button" v-if="isEmpAuthorizedFor(empPermissions , 'تسجيل المنتجات' , UserType)" @click="bulkDelete" :disabled="selectedProducts.length == 0" severity="danger" class="mb-3 lg:mb-0 mx-2" label="حذف المحدد" />
                 </div>
-                <!-- <h3 class="hidden md:my-2 lg:my-0 md:flex">ا   لمنتجات</h3> -->
                 <span class="p-input-icon-left">
                     <i class="pi pi-search" />
                     <InputText v-model="filters['global'].value" placeholder="بحث شامل" />
@@ -360,7 +359,7 @@ const exportCSV = () => {
                         <p class="my-2 text-sm"> الكمية المتاحة: {{ slotProps.item.product_count }}</p>
                     </div>
                     <div class="flex justify-content-center m-auto w-8">
-                        <InputNumber @click="updateTotalPrice" v-model="slotProps.item.amount" :min="1" :max="slotProps.item.product_count" showButtons buttonLayout="horizontal"
+                        <InputNumber @click="updateTotalPrice" v-model="slotProps.item.amount" :min="0" :max="slotProps.item.product_count" showButtons buttonLayout="horizontal"
                         decrementButtonClassName="p-button-secondary" incrementButtonClassName="p-button-secondary" incrementButtonIcon="pi pi-plus" decrementButtonIcon="pi pi-minus" />
                     </div>
                 </div>

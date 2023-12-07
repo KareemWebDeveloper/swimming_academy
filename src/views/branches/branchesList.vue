@@ -89,7 +89,7 @@ const options = {
 const dateTimeFormatter = new Intl.DateTimeFormat('ar', options);
 
 const getBranches = () => {
-    axios.get('https://akademia.website/api/branches').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/branches').then((result) => {
         console.log(result.data);
         branches.value = result.data.branches
         isFetched.value = true
@@ -105,9 +105,9 @@ const getBranches = () => {
 const getBranchDetails = (branchId : number) => {
     isBranchFetched.value = false
     isDialogVisible.value = true
-    axios.get(`https://akademia.website/api/branch/${branchId}`).then((result) => {
+    axios.get(`http://127.0.0.1:8000/api/branch/${branchId}`).then((result) => {
         activeBranch.value = result.data.branch
-        let workingDays : string[] = []
+        let workingDays : any[] = []
         activeBranch.value.categories = activeBranch.value.categories.map((category : any) => {
             const { category_name } = category;
             const { category_id, ...pivotRest } = category.pivot;
@@ -127,7 +127,7 @@ const getBranchDetails = (branchId : number) => {
         console.log(activeBranch.value.categories);
         
         activeBranch.value.working_days.forEach((day : any) => {
-            workingDays.push(day.day)
+            workingDays.push({day : day.day , start_time : day.start_time , end_time: day.end_time})
         });
         activeBranch.value.working_days = workingDays
         isBranchFetched.value = true
@@ -147,7 +147,7 @@ const bulkDelete = () => {
     let req : any = {
         branch_ids : branch_ids
     }
-    axios.post('https://akademia.website/api/branchBulkDelete', req ).then((result) => {
+    axios.post('http://127.0.0.1:8000/api/branchBulkDelete', req ).then((result) => {
         console.log(result);
         deletedSuccessfully.value = true
         isErrorReturned.value = false
@@ -205,6 +205,9 @@ const exportCSV = () => {
     <Dialog v-model:visible="isDialogVisible" maximizable modal header="تفاصيل الفرع" :style="{ width: '60vw' }" :breakpoints="{ '960px': '75vw', '641px': '100vw' }">
         <loading v-if="!isBranchFetched"></loading>
         <div v-else class="branchDetails">
+            <div class="flex justify-content-center">
+                <h4 v-for="academy in activeBranch.academies" class="m-2"> {{ academy.academy_name }} </h4> 
+            </div>
             <DataTable v-model:filters="branchCategoriesFilters"  :export-filename="`تفاصيل فرع ${activeBranch.branch_name}`"  ref="dt"  stripedRows :value="activeBranch.categories"
             paginator :rows="10" :rowsPerPageOptions="[10, 20, 50]" filterDisplay="menu"
              dataKey="id" removableSort :globalFilterFields="['duration', 'category_name']" tableStyle="min-width: 50rem">
@@ -242,6 +245,9 @@ const exportCSV = () => {
             </template>
             <template #footer> في المجموع هناك {{ branches ? branches.length : 0 }} أنواع </template>
             </DataTable>
+            <div class="text-center" v-for="workingDay in activeBranch.working_days">
+                <h3 v-if="workingDay.start_time && workingDay.end_time">{{ workingDay.day }} : من {{ workingDay.start_time }} إلي {{ workingDay.end_time }}</h3>
+            </div>
         </div>
 
         <template #footer>
@@ -266,7 +272,7 @@ const exportCSV = () => {
             <div class="flex flex-column lg:flex-row justify-content-between align-items-center">
                 <div class="flex align-items-center">
                     <Button v-if="isEmpAuthorizedFor(empPermissions , 'تسجيل و تعديل الفروع' , UserType)" type="button" class="mb-3 lg:mb-0 mx-2" @click="push('/branch/create')" label="انشاء فرع" />
-                    <Button v-if="isEmpAuthorizedFor(empPermissions , 'تسجيل و تعديل الفروع' , UserType)" type="button" :disabled="selectedBranches.length == 0" severity="danger" class="mb-3 lg:mb-0 mx-2" label="حذف المحدد" />
+                    <Button v-if="isEmpAuthorizedFor(empPermissions , 'تسجيل و تعديل الفروع' , UserType)" type="button" @click="bulkDelete" :disabled="selectedBranches.length == 0" severity="danger" class="mb-3 lg:mb-0 mx-2" label="حذف المحدد" />
                 </div>
                 <h3 class="hidden md:my-2 lg:my-0 md:flex">الفروع</h3>
                 <span class="p-input-icon-left">

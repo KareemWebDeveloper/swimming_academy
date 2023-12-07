@@ -23,6 +23,8 @@ const confirm = useConfirm();
 
 const isFetched : any = ref(false);
 const isDialogVisible : any = ref(false);
+const isWarningDialogVisible : any = ref(false);
+const isDeleteLoading : any = ref(false);
 const isErrorReturned : any = ref(false);
 const dbError : any = ref(false);
 const updatedSuccessfully : any = ref(false);
@@ -51,7 +53,7 @@ const confirmDeletion = (event : any) => {
         acceptLabel : 'نعم',
         rejectLabel : 'لا',
         accept: () => {
-            bulkDelete()
+            isWarningDialogVisible.value = true
         },  
         reject: () => {
         }
@@ -81,7 +83,7 @@ const options = {
 const dateTimeFormatter = new Intl.DateTimeFormat('ar', options);
 
 const getCategories = () => {
-    axios.get('https://akademia.website/api/categories').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/categories').then((result) => {
         console.log(result.data);
         categories.value = result.data.categories
         categories.value.forEach((category : any) => {
@@ -96,7 +98,7 @@ const getCategories = () => {
 
 const updateCategory = (req : any) => {
     updateLoading.value = true
-    axios.put(`https://akademia.website/api/updateCategory/${activeCategory.value.id}`, req).then((result) => {
+    axios.put(`http://127.0.0.1:8000/api/updateCategory/${activeCategory.value.id}`, req).then((result) => {
         console.log(result.data);
         updateLoading.value = false
         updatedSuccessfully.value = true
@@ -119,6 +121,7 @@ const updateCategory = (req : any) => {
 }
 
 const bulkDelete = () => {
+    isDeleteLoading.value = true
     console.log(selectedCategories.value);
     let category_ids : any = [];
     selectedCategories.value.forEach((category:any) => {
@@ -127,7 +130,7 @@ const bulkDelete = () => {
     let req : any = {
         category_ids : category_ids
     }
-    axios.post('https://akademia.website/api/categoryBulkDelete', req ).then((result) => {
+    axios.post('http://127.0.0.1:8000/api/categoryBulkDelete', req ).then((result) => {
         console.log(result);
         deletedSuccessfully.value = true
         selectedCategories.value = []
@@ -135,9 +138,12 @@ const bulkDelete = () => {
         setTimeout(() => {
             deletedSuccessfully.value = false
         }, 4500);
+        isDeleteLoading.value = false
+        isWarningDialogVisible.value = false
     }).catch((err) => {
         selectedCategories.value = []
         console.log(err);
+        isDeleteLoading.value = false
     });
     
 }
@@ -195,6 +201,19 @@ const exportCSV = () => {
         </template>
     </Dialog>
 
+    <Dialog v-model:visible="isWarningDialogVisible" @after-hide="getCategories" maximizable modal header="تحذير" :style="{ width: '50vw' }" :breakpoints="{ '960px': '75vw', '641px': '100vw' }">
+        <div class="m-auto">
+            <span style="color: rgba(220, 18, 18, 0.759);display: block;" class="text-center m-auto material-symbols-outlined text-6xl">
+                warning
+            </span>
+        </div>
+            <h2 class="text-center" style="color: rgba(220, 18, 18, 0.759);">هل أنت متأكد من القيام بذلك ؟</h2>
+            <h4 class="text-center" style="color: rgba(220, 18, 18, 0.959);">قد يكون هناك اشتراكات نشطة للأنواع المحددة</h4>
+        <template #footer>
+            <Button type="button" severity="danger" class="mb-3 lg:mb-0 mx-2" :loading="isDeleteLoading" @click="bulkDelete" label="متأكد" />
+        </template>
+    </Dialog>
+
     <div class="w-12 md:w-10 my-5 m-auto p-2 md:p-5 branchesList" style="direction: rtl;">
             <!-- Breadcrumb -->
     <div class="w-full m-auto flex justify-content-center p-4 MargAutoMob padding-1-breadcrumbs" style="direction: ltr;">
@@ -211,7 +230,7 @@ const exportCSV = () => {
             <div class="flex flex-column lg:flex-row justify-content-between align-items-center">
                 <div class="flex align-items-center">
                     <Button v-if="isEmpAuthorizedFor(empPermissions , 'انشاء و تعديل أنواع التمارين' , UserType)" type="button" class="mb-3 lg:mb-0 mx-2" @click="push('/category/create')" label="انشاء نوع" />
-                    <Button v-if="isEmpAuthorizedFor(empPermissions , 'انشاء و تعديل أنواع التمارين' , UserType)" type="button" :disabled="selectedCategories.length == 0" severity="danger" class="mb-3 lg:mb-0 mx-2" label="حذف المحدد" />
+                    <Button v-if="isEmpAuthorizedFor(empPermissions , 'انشاء و تعديل أنواع التمارين' , UserType)" type="button" :disabled="selectedCategories.length == 0" @click="isWarningDialogVisible = !isWarningDialogVisible" severity="danger" class="mb-3 lg:mb-0 mx-2" label="حذف المحدد" />
                 </div>
                 <h3 class="hidden md:my-2 lg:my-0 md:flex">أنواع التمارين</h3>
                 <span class="p-input-icon-left">

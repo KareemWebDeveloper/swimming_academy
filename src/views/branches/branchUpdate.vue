@@ -10,19 +10,22 @@ import { isEmpAuthorizedFor } from '@/global-functions/isEmployeeAuthorizedFor';
 const { push , currentRoute } = useRouter();
 
 const categories : any = ref([])
+const allAcademies : any = ref([])
 const branch : any = ref()
 const createdSuccessfully = ref(false)
 const isErrorReturned = ref(false)
 const isBranchFetched = ref(false)
 const isCategoriesFetched = ref(false)
+const isAcademiesFetched = ref(false)
 const dbError = ref()
 const isLoading = ref(false)
 const branchId : number = parseInt(currentRoute.value.params.id as string)
 
 const getBranchDetails = () => {
-    axios.get(`https://akademia.website/api/branch/${branchId}`).then((result) => {
+    axios.get(`http://127.0.0.1:8000/api/branch/${branchId}`).then((result) => {
         branch.value = result.data.branch
-        let workingDays : string[] = []
+        let workingDays : any[] = []
+        let Academies : any[] = []
         branch.value.categories = branch.value.categories.map((category : any) => {
             const { category_id, ...pivotRest } = category.pivot;
             return {
@@ -33,10 +36,14 @@ const getBranchDetails = () => {
         branch.value.categories.forEach((category : any , index : number) => {
             branch.value.categories[index].session_prices = JSON.parse(category.session_prices)
         });
-        branch.value.working_days.forEach((day : any) => {
-            workingDays.push(day.day)
+        branch.value.working_days.forEach((schedule : any) => {
+            workingDays.push({day : schedule.day , start_time : schedule.start_time , end_time : schedule.end_time})
+        });
+        branch.value.academies.forEach((academyId : any) => {
+            Academies.push(academyId.id)
         });
         branch.value.working_days = workingDays
+        branch.value.academies = Academies
         isBranchFetched.value = true
         console.log(branch.value);
 
@@ -54,7 +61,7 @@ const updateBranch = (req : any) => {
         console.log(req , 'req after stringfy');
         console.log(jsonString , 'jsonString');
     });
-    axios.put(`https://akademia.website/api/updateBranch/${branchId}` , req).then((result) => {
+    axios.put(`http://127.0.0.1:8000/api/updateBranch/${branchId}` , req).then((result) => {
         console.log(result.data); 
         isLoading.value = false
         isErrorReturned.value = false
@@ -84,7 +91,7 @@ const updateBranch = (req : any) => {
     });
 }
 const getCategories = () => {
-    axios.get('https://akademia.website/api/categories').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/categories').then((result) => {
         console.log(result.data);
         result.data.categories.forEach((category : any) => {
             categories.value.push({label : category.category_name , value : category.id})
@@ -94,6 +101,19 @@ const getCategories = () => {
         console.log(err);
     });
 }
+
+const getAcademies = () => {
+    axios.get('http://127.0.0.1:8000/api/academies').then((result) => {
+        console.log(result.data);
+        result.data.academies.forEach((academy : any) => {
+            allAcademies.value.push({label : academy.academy_name , value : academy.id})
+        });
+        isAcademiesFetched.value = true
+    }).catch((err) => {
+        console.log(err);
+    });
+}
+
 const empPermissions = ref()
 type userType = 'admin' | 'employee' 
 const UserType : Ref<userType> = ref('admin')
@@ -117,11 +137,13 @@ onBeforeMount(() => {
                 }
                 getBranchDetails()
                 getCategories()
+                getAcademies()
             })
         }
         else{
             getBranchDetails()
             getCategories()
+            getAcademies()
         }
     })
 })
@@ -134,7 +156,7 @@ onBeforeMount(() => {
             <success-msg v-if="createdSuccessfully" class="fadeinright animation-duration-1000 animation-iteration-1 "></success-msg>
             <h5 v-if="isErrorReturned" class="px-3 py-2 textColor text-center borderRound error">{{ dbError }}</h5>
         </div>
-        <div v-if="isBranchFetched && isCategoriesFetched">
+        <div v-if="isBranchFetched && isCategoriesFetched && isAcademiesFetched">
             <FormKit type="form" v-model="branch" :actions="false" @submit="updateBranch">
                 <div class="mt-3">
                     <div class="flex align-items-center">
@@ -144,10 +166,20 @@ onBeforeMount(() => {
                 </div>
                 <div class="mt-3">
                     <div class="flex align-items-center">
-                        <label for="branchName" class="px-3 py-1 text-white text-sm">أيام العمل</label>
+                        <label for="academies" class="px-3 py-1 text-white text-sm">الأكاديميات</label>
                     </div>
-                    <FormKit type="dropdown" outer-class="col-12" name="working_days" label="أيام العمل" placeholder="اختر أيام العمل المتاحة لهذا الفرع"
-                    :options="['السبت','الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة']" multiple="true" validation="required"/>
+                    <FormKit type="dropdown" outer-class="col-12" name="academies" label="الأكاديميات" placeholder="اختر الأكاديميات المتاحة لهذا الفرع"
+                    :options="allAcademies" :multiple="true" validation="required"/>
+                </div>
+                <div class="my-4 repeater">
+                    <FormKit id="repeater" name="working_days" type="repeater" label="مواعيد العمل للفرع" #default="{ index }">
+                        <div class="flex grid w-full">
+                            <FormKit type="dropdown" outer-class="col-12" name="day" label="أيام العمل" placeholder="اختر أيام العمل المتاحة لهذا الفرع"
+                            :options="['السبت','الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة']" validation="required"/>
+                            <FormKit type="time" id="start_time" label=" موعد البداية ( من )" outer-class="col-12 md:col-6" name="start_time" validation="required" />
+                            <FormKit type="time" id="end_time" label="موعد النهاية ( إلي )" outer-class="col-12 md:col-6" name="end_time" validation="required" />
+                        </div>
+                        </FormKit>
                 </div>
                 <div class="w-full m-auto repeater">
                     <FormKit

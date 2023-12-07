@@ -11,10 +11,12 @@ import { isEmpAuthorizedFor } from '@/global-functions/isEmployeeAuthorizedFor';
 const { push , currentRoute } = useRouter();
 
 const categories : any = ref([])
+const allAcademies : any = ref([])
 const createdSuccessfully = ref(false)
 const isErrorReturned = ref(false)
 const stayAtTheSamePage = ref(false)
-const isFetched = ref(false)
+const isCategoriesFetched = ref(false)
+const isAcademiesFetched = ref(false)
 const dbError = ref()
 const isLoading = ref(false)
 
@@ -27,7 +29,7 @@ const createBranch = (req : any) => {
         console.log(req , 'req after stringfy');
         console.log(jsonString , 'jsonString');
     });
-    axios.post('https://akademia.website/api/createBranch' , req).then((result) => {
+    axios.post('http://127.0.0.1:8000/api/createBranch' , req).then((result) => {
         console.log(result.data); 
         isLoading.value = false
         isErrorReturned.value = false
@@ -63,16 +65,29 @@ const createBranch = (req : any) => {
     });
 }
 const getCategories = () => {
-    axios.get('https://akademia.website/api/categories').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/categories').then((result) => {
         console.log(result.data);
         result.data.categories.forEach((category : any) => {
             categories.value.push({label : category.category_name , value : category.id})
         });
-        isFetched.value = true
+        isCategoriesFetched.value = true
     }).catch((err) => {
         console.log(err);
     });
 }
+
+const getAcademies = () => {
+    axios.get('http://127.0.0.1:8000/api/academies').then((result) => {
+        console.log(result.data);
+        result.data.academies.forEach((academy : any) => {
+            allAcademies.value.push({label : academy.academy_name , value : academy.id})
+        });
+        isAcademiesFetched.value = true
+    }).catch((err) => {
+        console.log(err);
+    });
+}
+
 const empPermissions = ref()
 type userType = 'admin' | 'employee' 
 const UserType : Ref<userType> = ref('admin')
@@ -96,10 +111,12 @@ onBeforeMount(() => {
                 }
                 console.log(empPermissions.value);
                 getCategories()
+                getAcademies()
             })
         }
         else{
             getCategories()
+            getAcademies()
         }
     })
 })
@@ -112,7 +129,7 @@ onBeforeMount(() => {
             <success-msg v-if="createdSuccessfully" class="fadeinright animation-duration-1000 animation-iteration-1 "></success-msg>
             <h5 v-if="isErrorReturned" class="px-3 py-2 textColor text-center borderRound error">{{ dbError }}</h5>
         </div>
-        <div v-if="isFetched">
+        <div v-if="isCategoriesFetched && isAcademiesFetched">
             <FormKit type="form" :actions="false" @submit="createBranch">
                 <div class="mt-3">
                     <div class="flex align-items-center">
@@ -122,12 +139,22 @@ onBeforeMount(() => {
                 </div>
                 <div class="mt-3">
                     <div class="flex align-items-center">
-                        <label for="branchName" class="px-3 py-1 text-white text-sm">أيام العمل</label>
+                        <label for="academies" class="px-3 py-1 text-white text-sm">الأكاديميات</label>
                     </div>
-                    <FormKit type="dropdown" outer-class="col-12" name="working_days" label="أيام العمل" placeholder="اختر أيام العمل المتاحة لهذا الفرع"
-                    :options="['السبت','الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة']" multiple="true" validation="required"/>
+                    <FormKit type="dropdown" outer-class="col-12" name="academies" label="الأكاديميات" placeholder="اختر الأكاديميات المتاحة لهذا الفرع"
+                    :options="allAcademies" :multiple="true" validation="required"/>
                 </div>
-                <div class="w-full m-auto repeater">
+                <div class="my-4 repeater">
+                    <FormKit id="repeater" name="working_days" type="repeater" label="مواعيد العمل للفرع" #default="{ index }">
+                        <div class="flex grid w-full">
+                            <FormKit type="dropdown" outer-class="col-12" name="day" label="أيام العمل" placeholder="اختر أيام العمل المتاحة لهذا الفرع"
+                            :options="['السبت','الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة']" validation="required"/>
+                            <FormKit type="time" id="start_time" label=" موعد البداية ( من )" value="21:00" outer-class="col-12 md:col-6" name="start_time" validation="required" />
+                            <FormKit type="time" id="end_time" label="موعد النهاية ( إلي )" value="23:00" outer-class="col-12 md:col-6" name="end_time" validation="required" />
+                        </div>
+                    </FormKit>
+                </div>
+                <div class="w-full my-4 m-auto repeater">
                     <FormKit
                         id="repeater"
                         name="categories"
@@ -171,43 +198,6 @@ onBeforeMount(() => {
                                 </div>
                                 </FormKit>
                             </div>
-                            <!-- <FormKit
-                            type="text"
-                            number
-                            name="price_per_2"
-                            outer-class="col-12 md:col-6"
-                            label="سعر 2 تمرينة"
-                            placeholder="أدخل سعر 2 تمرينة"
-                            prefix-icon="number"
-                            validation="min:0"/>
-                            <FormKit
-                            type="text"
-                            number="float"
-                            name="price_per_4"
-                            outer-class="col-12 md:col-6"
-                            label="سعر 4 تمرينة"
-                            placeholder="أدخل سعر 4 تمرينة"
-                            prefix-icon="number"
-                            validation="min:0"/>
-                            <FormKit
-                            type="text"
-                            number="float"
-                            name="price_per_6"
-                            outer-class="col-12 md:col-6"
-                            label="سعر 6 تمرينة"
-                            placeholder="أدخل سعر 6 تمرينة"
-                            prefix-icon="number"
-                            validation="min:0"/>
-                            <FormKit
-                            type="text"
-                            number="float"
-                            name="price_per_8"
-                            outer-class="col-12 md:col-6"
-                            label="سعر 8 تمرينة"
-                            placeholder="أدخل سعر 8 تمرينة"
-                            prefix-icon="number"
-                            validation="min:0"/> -->
-
                         </div>
                     </FormKit>
                 </div>

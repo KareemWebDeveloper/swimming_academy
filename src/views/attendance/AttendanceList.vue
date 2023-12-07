@@ -67,21 +67,7 @@ function getCurrentTime() {
     currentTime.value = `${hours}:${minutes}`;
 }
 
-const confirmSubmittingCustomers = (event : any , name : string , chosenSubscriptionId : any) => {
-    if(!chosenSubscriptionId){
-        confirm.require({
-            target: event.currentTarget,
-            message: 'من فضلك اختر الاشتراك أولاً',
-            icon: 'pi pi-exclamation-triangle',
-            acceptLabel : 'موافق',
-            rejectLabel : ' ',
-            accept: () => {
-            },  
-            reject: () => {
-            }
-        });
-        return
-    }
+const confirmSubmittingCustomers = (event : any , name : string) => {
     confirm.require({
         target: event.currentTarget,
         message: `هل متأكد أنك تريد تحضير ${name} ؟`,
@@ -138,6 +124,7 @@ const filters = ref(
     {
         global: { value: null, matchMode: FilterMatchMode.CONTAINS },
         customer_name: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }] },
+        coach_name: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.CONTAINS }] },
         id: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.EQUALS }] },
     }
 );
@@ -163,44 +150,32 @@ const dateTimeFormatter = new Intl.DateTimeFormat('ar', options);
 
 const attendCustomers = () => {
     isAttendingLoading.value = true
-    let isSubscriptionsMissing = false
     let customersArrayRequest : any = []
      selectedCustomers.value.forEach((customer : any) => {
-        if(!customer.chosenSubscription){
-            isSubscriptionsMissing = true
-            missingSubscriptionError.value = true
-        }
-        else{
-            customersArrayRequest.push({customer_id : customer.id , subscription_id : customer.chosenSubscription})
-        }
+        customersArrayRequest.push({customer_id : customer.id , subscription_id : customer.subscription_id})
      });
-     if(isSubscriptionsMissing){
-        return
-     }
-     else{
-        missingSubscriptionError.value = false
-        let request = {
-            branch_id : activeBranch.value,
-            training_start_time : training_start_time.value,
-            session_duration : session_duration.value,
-            customers : customersArrayRequest,
-        }
-        axios.post('https://akademia.website/api/bulkAttendance', request).then((result) => {
-            console.log(result);
-            attendedSuccessfully.value = true
-            selectedCustomers.value = []
-            getAttendees()
-            isAttendingLoading.value = false
-            setTimeout(() => {
-                attendedSuccessfully.value = false
-            }, 4500);
-        }).catch((err) => {
-            selectedCustomers.value = []
-            console.log(err);
-            isAttendingLoading.value = false
-        });
-     }
+    let attendeesReq = {
+        branch_id : activeBranch.value,
+        training_start_time : training_start_time.value,
+        session_duration : session_duration.value,
+        customers : customersArrayRequest,
+    }
+    axios.post('http://127.0.0.1:8000/api/bulkAttendance', attendeesReq).then((result) => {
+        console.log(result);
+        attendedSuccessfully.value = true
+        selectedCustomers.value = []
+        getAttendees()
+        isAttendingLoading.value = false
+        setTimeout(() => {
+            attendedSuccessfully.value = false
+        }, 4500);
+    }).catch((err) => {
+        selectedCustomers.value = []
+        console.log(err);
+        isAttendingLoading.value = false
+    });
 }
+
 const attendCoaches = () => {
     isAttendingLoading.value = true
     let CoachIds : any = []
@@ -214,7 +189,7 @@ const attendCoaches = () => {
             session_duration : session_duration.value,
             coach_ids : CoachIds,
         }
-        axios.post('https://akademia.website/api/bulkAttendance', request).then((result) => {
+        axios.post('http://127.0.0.1:8000/api/bulkAttendance', request).then((result) => {
             console.log(result);
             attendedSuccessfully.value = true
             selectedCustomers.value = []
@@ -255,10 +230,10 @@ const submitAttendanceData = (req : any) => {
 }
 
 const getAttendees = () => {
-    axios.get(`https://akademia.website/api/coaches/active/${activeBranch.value}`).then((result : any) => {
+    axios.get(`http://127.0.0.1:8000/api/coaches/active/${activeBranch.value}`).then((result : any) => {
         console.log(result.data.coaches);
         activeCoaches.value = result.data.coaches
-        axios.get(`https://akademia.website/api/customers/active/${activeBranch.value}`).then((result : any) => {
+        axios.get(`http://127.0.0.1:8000/api/customers/active/${activeBranch.value}`).then((result : any) => {
             console.log(result.data.customers);
             activeCustomers.value = result.data.customers
             generateCustomerSubscriptionsOptions()
@@ -272,7 +247,7 @@ const getAttendees = () => {
     });
 }
 const getBranches = () => {
-    axios.get('https://akademia.website/api/branches').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/branches').then((result) => {
         console.log(result.data);
         result.data.branches.forEach((branch : any) => {
             branches.value.push({label : branch.branch_name , value : branch.id})
@@ -283,7 +258,7 @@ const getBranches = () => {
     });
 }
 const getCategories = () => {
-    axios.get('https://akademia.website/api/categories').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/categories').then((result) => {
         console.log(result.data);
         result.data.categories.forEach((category : any) => {
             categories.value.push({label : category.category_name , value : category.id})
@@ -294,17 +269,29 @@ const getCategories = () => {
     });
 }
 const generateCustomerSubscriptionsOptions = () => {
+    let dividedCustomersSubscription : any = []
     activeCustomers.value.forEach((customer : any) => {
-        customer.subscriptionsOptions = []
         customer.subscriptions.forEach((subscription : any) => {
-            if(subscription.is_private){
-                customer.subscriptionsOptions.push({label : `${subscription.category_name} - برايفت` , value : subscription.id})
+            let newCustomerRow = {
+                id : customer.id,
+                customer_name : customer.customer_name,
+                last_attendance_date : customer.last_attendance_date,
+                subscription_id : subscription.id,
+                expiration_date : subscription.expiration_date,
+                number_of_sessions : subscription.number_of_sessions,
+                category_name : subscription.is_private? `${subscription.category_name} - برايفت` : subscription.category_name,
+                coach_name : subscription.coach.name,
             }
-            else{
-                customer.subscriptionsOptions.push({label : `${subscription.category_name} - ${subscription.academy_name}` , value : subscription.id})
-            }
+            dividedCustomersSubscription.push(newCustomerRow)
+            // if(subscription.is_private){
+            //     customer.subscriptionsOptions.push({label : `${subscription.category_name} - برايفت` , value : subscription.id})
+            // }
+            // else{
+            //     customer.subscriptionsOptions.push({label : `${subscription.category_name} - ${subscription.academy_name}` , value : subscription.id})
+            // }
         });
     });
+    activeCustomers.value = dividedCustomersSubscription
     console.log(activeCustomers.value);
 }
 
@@ -424,7 +411,7 @@ onBeforeMount(() => {
             <h5 v-if="missingSubscriptionError" class="px-3 my-2 fadeinup animation-duration-500 animation-iteration-1 py-2 textColor text-center borderRound error">يرجي تحديد الاشتراكات أولاً</h5>
             <DataTable v-model:filters="filters" ref="dt"  stripedRows :value="activeCustomers"  v-model:selection="selectedCustomers"
              paginator :rows="10" :rowsPerPageOptions="[10, 20, 50]" filterDisplay="menu"
-             dataKey="id" removableSort :globalFilterFields="['id', 'customer_name']" tableStyle="min-width: 50rem">
+             dataKey="subscription_id" removableSort :globalFilterFields="['id', 'customer_name', 'coach_name']" tableStyle="min-width: 50rem">
             <template #header>
                 <div class="flex flex-column lg:flex-row justify-content-between align-items-center">
                     <Button type="button" class="mb-3 lg:mb-0 mx-2" @click="attendCustomers" :loading="isAttendingLoading" :disabled="selectedCustomers.length == 0" label="تسجيل المحدد" />
@@ -437,24 +424,17 @@ onBeforeMount(() => {
             </template>
             <Column selectionMode="multiple" headerStyle="width: 3rem"></Column>
             <Column field="id" sortable  header="الكود"></Column>
-            <Column field="customer_name" sortable  header="اسم المشترك"></Column>
-            <Column field="subscriptions[0].expiration_date" sortable  header="تاريخ انتهاء الاشتراك">
-                <template #body="slotProps">
-                    <p>{{ slotProps.data.subscriptions[0].expiration_date }}</p>
-                </template>
+            <Column field="customer_name" sortable  header="اسم المشترك" style="min-width: 13rem;"></Column>
+            <Column field="coach_name" sortable  header="المدرب" style="min-width: 12rem;">
             </Column>
-            <Column field="subscriptions[0].number_of_sessions" sortable  header="الحصص المتبقية">
-                <template #body="slotProps">
-                    <p>{{ slotProps.data.subscriptions[0].number_of_sessions }} حصص</p>
-                </template>
-            </Column>
-            <Column  header="تسجيل الحضور" style="min-width: 20rem;">
+            <Column field="category_name"  header="نوع الاشتراك" style="min-width: 12rem;"></Column>
+            <!-- <Column field="expiration_date" sortable  header="تاريخ انتهاء الاشتراك"></Column> -->
+            <Column field="number_of_sessions" sortable  header="الحصص المتبقية"></Column>
+            <Column  header="تسجيل الحضور" style="min-width: 13rem;">
                 <template #body="slotProps">
                 <div v-if="!areDatesEqual(slotProps.data.last_attendance_date)">
-                    <FormKit type="dropdown" id="branch" v-model="slotProps.data.chosenSubscription" validation="required"
-                    name="subscription_id" label="الاشتراك" placeholder="اختر اشتراك اللاعب" :options="slotProps.data.subscriptionsOptions" />
                     <div class="flex text-center justify-content-center align-items-center cursor-pointer hoverIcon textColor p-2 borderRound" 
-                    @click="selectedCustomers.push(slotProps.data); confirmSubmittingCustomers($event , slotProps.data.customer_name , slotProps.data.chosenSubscription)">
+                    @click="selectedCustomers.push(slotProps.data); confirmSubmittingCustomers($event , slotProps.data.customer_name)">
                         <h3 class="text-center">تسجيل</h3>
                         <span class="material-symbols-outlined mx-2 cursor-pointer text-3xl" >
                         assignment_turned_in

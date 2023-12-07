@@ -28,7 +28,7 @@ const allProducts : any = ref()
 const createProduct = (req : any) => {
     isLoading.value = true
     console.log(req);
-    axios.post('https://akademia.website/api/createProduct' , req).then((result) => {
+    axios.post('http://127.0.0.1:8000/api/createProduct' , req).then((result) => {
         createdProduct.value = result.data.product
         isLoading.value = false
         isErrorReturned.value = false
@@ -60,7 +60,7 @@ const createProduct = (req : any) => {
 const createBuyingOrder = (req : any) => {
     isLoading.value = true
     console.log(req);
-    axios.post('https://akademia.website/api/createBuyingOrder' , req).then((result) => {
+    axios.post('http://127.0.0.1:8000/api/createBuyingOrder' , req).then((result) => {
         createdProduct.value = result.data.product
         isLoading.value = false
         isErrorReturned.value = false
@@ -105,7 +105,7 @@ const calculateTotalPrcie = (type : 'new' | 'exists') => {
     }
 }
 const getProducts = () => {
-    axios.get('https://akademia.website/api/products').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/products').then((result) => {
         allProducts.value = result.data.products
         result.data.products.forEach((product : any) => {
             productsOptions.value.push({label : `${product.product_name} - ${product.product_count} قطع متاحة` , value : product.id})
@@ -227,10 +227,10 @@ onBeforeMount(() => {
                     </div>
                     <div class="mt-3 col-12 md:col-12">
                         <div class="flex align-items-center">
-                            <label for="totalPrice" class="px-3 py-1 text-white text-sm">سعر الشراء النهائي</label>
+                            <label for="totalPrice" class="px-3 py-1 text-white text-sm">اجمالي المشتريات</label>
                         </div>
-                        <FormKit prefix-icon="dollar" id="totalPrice" type="number" number="integer" label="كمية المنتج" placeholder="أدخل سعر الشراء النهائي للمنتج" name="total_price" validation="min:0" />
-                        <Button type="button" label="احسب سعر الشراء النهائي" @click="calculateTotalPrcie('new')" />
+                        <FormKit prefix-icon="dollar" id="totalPrice" type="number" number="integer" label="اجمالي المشتريات" placeholder="أدخل سعر الشراء النهائي للمنتج" name="total_price" validation="min:0" />
+                        <Button type="button" label="احسب اجمالي المشتريات" @click="calculateTotalPrcie('new')" />
                     </div>
                 </div>
                 <div class="flex justify-content-center align-items-center my-3">
@@ -260,7 +260,7 @@ onBeforeMount(() => {
                             <label for="totalPrice" class="px-3 py-1 text-white text-sm">سعر الشراء النهائي</label>
                         </div>
                         <FormKit prefix-icon="dollar" id="totalPrice" type="number" number="integer" label="كمية المنتج" placeholder="أدخل سعر الشراء النهائي للمنتج" name="total_price" validation="min:0" />
-                        <Button type="button" label="احسب سعر الشراء النهائي" @click="calculateTotalPrcie('exists')" />
+                        <Button type="button" label="احسب اجمالي المشتريات" @click="calculateTotalPrcie('exists')" />
                     </div>
                 </div>
                 <div class="flex justify-content-center align-items-center my-3">

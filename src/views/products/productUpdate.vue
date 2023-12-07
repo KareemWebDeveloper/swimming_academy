@@ -20,7 +20,7 @@ const isDialogVisible = ref(false)
 const createProduct = (req : any) => {
     isLoading.value = true
     console.log(req);
-    axios.put(`https://akademia.website/api/updateProduct/${ProductId}` , req).then((result) => {
+    axios.put(`http://127.0.0.1:8000/api/updateProduct/${ProductId}` , req).then((result) => {
         // createdProduct.value = result.data.product
         isLoading.value = false
         isErrorReturned.value = false
@@ -57,7 +57,7 @@ const createProduct = (req : any) => {
 }
 
 const getProductDetails = () => {
-    axios.get(`https://akademia.website/api/product/${ProductId}`).then((result) => {
+    axios.get(`http://127.0.0.1:8000/api/product/${ProductId}`).then((result) => {
         productDetails.value = result.data.product
     }).catch((err) => {
         console.log(err.response.data);

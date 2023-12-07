@@ -93,7 +93,7 @@ const dateTimeFormatter = new Intl.DateTimeFormat('ar', options);
 
 const getCoachAttendances = (coachId : number) => {
     isDialogLoading.value = true
-    axios.get(`https://akademia.website/api/coach/attendances/${coachId}`).then((result) => {
+    axios.get(`http://127.0.0.1:8000/api/coach/attendances/${coachId}`).then((result) => {
         activeCoachAttendances.value = result.data.attendances
         isDialogVisible.value = true
         isDialogLoading.value = false
@@ -104,7 +104,7 @@ const getCoachAttendances = (coachId : number) => {
 
 const getExpectedSalaries = () => {
     isFetched.value = false
-    axios.get('https://akademia.website/api/expectedSalaries').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/expectedSalaries').then((result) => {
         ExpectedSalaries.value = []
         result.data.coaches.forEach((coach : any ) => {
             ExpectedSalaries.value.push({
@@ -143,7 +143,7 @@ const branchesOptions : any = ref([])
 const academies : any = ref([])
 
 const getBranches = () => {
-    axios.get('https://akademia.website/api/branches').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/branches').then((result) => {
         console.log(result.data);
         result.data.branches.forEach((branch : any) => {
             branches.value.push({label : branch.branch_name , value : branch.id})
@@ -156,7 +156,7 @@ const getBranches = () => {
     });
 }
 const payEmployeeSalary = (id : number) => {
-        axios.post(`https://akademia.website/api/payEmployeeSalary/${id}`).then((result) => {
+        axios.post(`http://127.0.0.1:8000/api/payEmployeeSalary/${id}`).then((result) => {
             console.log(result.data);
             window.scrollTo({
                 top: 0,
@@ -174,7 +174,7 @@ const payEmployeeSalary = (id : number) => {
 
 const payCoachSalary = (req : any) => {
         isPayingSalary.value = true
-        axios.post(`https://akademia.website/api/payCoachSalary/${activeCoachInfo.value.id}` , req).then((result) => {
+        axios.post(`http://127.0.0.1:8000/api/payCoachSalary/${activeCoachInfo.value.id}` , req).then((result) => {
             isPayingSalary.value = false
             console.log(result.data);
             window.scrollTo({

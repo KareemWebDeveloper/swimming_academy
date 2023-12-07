@@ -29,7 +29,7 @@ onBeforeMount(() => {
 
 const adminLogin = (req : any) => {
     loading.value = true
-    axios.post('https://akademia.website/api/adminLogin' , req).then((result) => {
+    axios.post('http://127.0.0.1:8000/api/adminLogin' , req).then((result) => {
         console.log(result);
         adminLoginError.value = false
         internalServerError.value = false
@@ -51,7 +51,7 @@ const adminLogin = (req : any) => {
 
 const coachLogin = (req : any) => {
     loading.value = true
-    axios.post('https://akademia.website/api/coachLogin' , req).then((result) => {
+    axios.post('http://127.0.0.1:8000/api/coachLogin' , req).then((result) => {
         console.log(result);
         coachLoginError.value = false
         internalServerError.value = false
@@ -72,7 +72,7 @@ const coachLogin = (req : any) => {
 } 
 const employeeLogin = (req : any) => {
     loading.value = true
-    axios.post('https://akademia.website/api/employeeLogin' , req).then((result) => {
+    axios.post('http://127.0.0.1:8000/api/employeeLogin' , req).then((result) => {
         console.log(result);
         employeeLoginError.value = false
         internalServerError.value = false
@@ -93,7 +93,7 @@ const employeeLogin = (req : any) => {
 } 
 const customerLogin = (req : any) => {
     loading.value = true
-    axios.post('https://akademia.website/api/customerLogin' , req).then((result) => {
+    axios.post('http://127.0.0.1:8000/api/customerLogin' , req).then((result) => {
         console.log(result);
         customerLoginError.value = false
         internalServerError.value = false

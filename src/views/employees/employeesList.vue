@@ -95,7 +95,7 @@ const options = {
 const dateTimeFormatter = new Intl.DateTimeFormat('ar', options);
 
 const getEmployees = () => {
-    axios.get('https://akademia.website/api/employees').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/employees').then((result) => {
         console.log(result.data);
         employees.value = result.data.employees
         isEmployeesFetched.value = true
@@ -108,7 +108,7 @@ const getEmployees = () => {
 }
 
 const getBranches = () => {
-    axios.get('https://akademia.website/api/branches').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/branches').then((result) => {
         console.log(result.data);
         result.data.branches.forEach((branch : any) => {
             branches.value.push({label : branch.branch_name , value : branch.id})
@@ -122,7 +122,7 @@ const getBranches = () => {
 const getEmployeeDetails = (employeeId : number) => {
     isEmployeeFetched.value = false
     isDialogVisible.value = true
-    axios.get(`https://akademia.website/api/employee/${employeeId}`).then((result) => {
+    axios.get(`http://127.0.0.1:8000/api/employee/${employeeId}`).then((result) => {
         activeEmployee.value = result.data.employee
         selectedBranches.value = {branchIds : []}
         result.data.employee.branches.forEach((branch : any) => {
@@ -138,7 +138,7 @@ const getEmployeeDetails = (employeeId : number) => {
 
 const attachBranches = (req : any) => {
     isAttachBranchLoading.value = true
-    axios.put(`https://akademia.website/api/employee/attachBranches/${activeEmployee.value.id}` , req).then((result) => {
+    axios.put(`http://127.0.0.1:8000/api/employee/attachBranches/${activeEmployee.value.id}` , req).then((result) => {
         console.log(result);
         isAttachBranchLoading.value = false
         isEmployeeFetched.value = false
@@ -158,7 +158,7 @@ const bulkDelete = () => {
     let req : any = {
         employees_ids : employees_ids
     }
-    axios.post('https://akademia.website/api/employeeBulkDelete', req).then((result) => {
+    axios.post('http://127.0.0.1:8000/api/employeeBulkDelete', req).then((result) => {
         console.log(result);
         deletedSuccessfully.value = true
         selectedCoaches.value = []
@@ -278,7 +278,7 @@ const exportCSV = () => {
             <div class="flex flex-column lg:flex-row justify-content-between align-items-center">
                 <div class="flex align-items-center">
                     <Button type="button" v-if="isEmpAuthorizedFor(empPermissions , 'تسجيل و تعديل الموظفين' , UserType)" class="mb-3 lg:mb-0 mx-2" @click="push('/employee/create')" label="تسجيل موظف" />
-                    <Button type="button" v-if="isEmpAuthorizedFor(empPermissions , 'تسجيل و تعديل الموظفين' , UserType)" :disabled="selectedCoaches.length == 0" severity="danger" class="mb-3 lg:mb-0 mx-2" label="حذف المحدد" />
+                    <Button type="button" v-if="isEmpAuthorizedFor(empPermissions , 'تسجيل و تعديل الموظفين' , UserType)" @click="bulkDelete" :disabled="selectedCoaches.length == 0" severity="danger" class="mb-3 lg:mb-0 mx-2" label="حذف المحدد" />
                 </div>
                 <h3 class="hidden md:my-2 lg:my-0 md:flex">الموظفين</h3>
                 <span class="p-input-icon-left">

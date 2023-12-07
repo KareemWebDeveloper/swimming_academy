@@ -22,7 +22,7 @@ const isLoading = ref(false)
 const createLevel = (req : any) => {
     isLoading.value = true
     console.log(req);
-        axios.post('https://akademia.website/api/createLevel' , req).then((result) => {
+        axios.post('http://127.0.0.1:8000/api/createLevel' , req).then((result) => {
             console.log(result.data); 
             isLoading.value = false
             isErrorReturned.value = false

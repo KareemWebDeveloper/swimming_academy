@@ -72,7 +72,7 @@ const options = {
 const dateTimeFormatter = new Intl.DateTimeFormat('ar', options);
 
 const getOrders = () => {
-    axios.get('https://akademia.website/api/orders').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/orders').then((result) => {
         result.data.orders.forEach((order : any ) => {
             Orders.value.push({
                 branch : order.branch_id ? order.branch.branch_name : 'مجموع الفروع',
@@ -96,7 +96,7 @@ const branches : any = ref(['مجموع الفروع'])
 const branchNames : any = []
 
 const getBranches = () => {
-    axios.get('https://akademia.website/api/branches').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/branches').then((result) => {
         console.log(result.data);
         result.data.branches.forEach((branch : any) => {
             branches.value.push(branch.branch_name)
