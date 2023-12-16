@@ -20,7 +20,7 @@ const dbError = ref()
 const createAcademy = (req : any) => {
     console.log(req);
     loading.value = true
-    axios.post('http://127.0.0.1:8000/api/createAcademy' , req).then((result) => {
+    axios.post('https://akademia.website/api/createAcademy' , req).then((result) => {
         createdSuccessfully.value = true
         isErrorReturned.value = false
         loading.value = false

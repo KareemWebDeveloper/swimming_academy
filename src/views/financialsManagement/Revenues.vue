@@ -74,7 +74,7 @@ const options = {
 const dateTimeFormatter = new Intl.DateTimeFormat('ar', options);
 
 const getRevenues = (branchId : number) => {
-    axios.get(`http://127.0.0.1:8000/api/revenues/${branchId}`).then((result) => {
+    axios.get(`https://akademia.website/api/revenues/${branchId}`).then((result) => {
         result.data.installments.forEach((installment : any ) => {
             Revenues.value.push({
                 amount : installment.amount,
@@ -117,7 +117,7 @@ const academies : any = ref([])
 const branchNames : any = []
 
 const getBranches = () => {
-    axios.get('http://127.0.0.1:8000/api/branches').then((result) => {
+    axios.get('https://akademia.website/api/branches').then((result) => {
         console.log(result.data);
         result.data.branches.forEach((branch : any) => {
             branches.value.push({label : branch.branch_name , value : branch.id})
@@ -129,7 +129,7 @@ const getBranches = () => {
     });
 }
 const getAcademies = () => {
-    axios.get('http://127.0.0.1:8000/api/academies').then((result) => {
+    axios.get('https://akademia.website/api/academies').then((result) => {
         console.log(result.data);
         result.data.academies.forEach((academy : any) => {
             academies.value.push({label : academy.academy_name , value : academy.id})

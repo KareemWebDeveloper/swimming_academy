@@ -88,7 +88,7 @@ const closeSideBar = () => {
             <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
               group
             </span>            
-            <router-link v-if="isExpanded" to=""><h5 class="textColor">المشتركين و المستويات</h5></router-link>
+            <h3 v-if="isExpanded"><h5 class="textColor">المشتركين و المستويات</h5></h3>
           </div>
           <!-- Sub Categories for Customers   -->
           <div v-if="showCustomersCategories" class="px-3 py-1 fadein animation-duration-400 animation-iteration-1 borderRound" style="background: rgba(255, 255, 255, 0.066);">
@@ -265,7 +265,7 @@ const closeSideBar = () => {
             <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
               group
             </span>            
-            <router-link v-if="isExpanded" to=""><h5 class="textColor">المشتركين و المستويات</h5></router-link>
+            <h3 v-if="isExpanded"><h5 class="textColor">المشتركين و المستويات</h5></h3>
           </div>
           <!-- Sub Categories for Customers   -->
           <div v-if="showCustomersCategories" class="px-3 py-1 fadein animation-duration-400 animation-iteration-1 borderRound" style="background: rgba(255, 255, 255, 0.066);">
@@ -421,6 +421,7 @@ const closeSideBar = () => {
 </template>
 
 <style>
+
 .p-sidebar .p-sidebar-header .p-sidebar-close, .p-sidebar .p-sidebar-header .p-sidebar-icon {
   display: none !important ;
 }
