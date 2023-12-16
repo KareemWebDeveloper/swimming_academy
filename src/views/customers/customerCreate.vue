@@ -139,6 +139,15 @@ const getBranches = () => {
             branches.value.push({label : branch.branch_name , value : branch.id})
         });
         isBranchesFetched.value = true
+        if(currentRoute.value.query.upgrade == 'true'){
+            subscriptionFields.value = JSON.parse(localStorage.getItem('upgradeDetails') as string)
+            console.log(subscriptionFields.value , 'upgradee');       
+            window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+            });
+            isCustomerRegistered.value = true
+        }
     }).catch((err) => {
         console.log(err);
     });
@@ -327,7 +336,7 @@ watch(subscriptionFields, (newValue, oldValue) => {
         const filteredCategory = filteredBranch[0].categories.filter((category : any) => category.id === subscriptionFields.value.category_id) 
         const categoryPivot = filteredCategory[0].pivot
         const sessionPrices = JSON.parse(filteredCategory[0].pivot.session_prices) 
-        if(newValue.number_of_sessions != oldValue.number_of_sessions){
+        if((!oldValue && newValue.number_of_sessions) || (!oldValue.number_of_sessions && newValue.number_of_sessions) || newValue.number_of_sessions != oldValue.number_of_sessions){
             console.log('new != old');
             const SessionsSavedPrice = sessionPrices.filter((sessionPrice : any) => sessionPrice.sessions == sessions)
             if(SessionsSavedPrice.length > 0){
@@ -341,7 +350,7 @@ watch(subscriptionFields, (newValue, oldValue) => {
                 subscriptionFields.value.price = null
             }
         }
-        if(newValue.training_schedules != oldValue.training_schedules){
+        if((!oldValue && newValue.training_schedules) || (!oldValue.training_schedules && newValue.training_schedules) || newValue.training_schedules != oldValue.training_schedules){
             validateTrainingTime()
         }
     }
@@ -399,9 +408,6 @@ onBeforeMount(() => {
                 if(currentRoute.value.query.isPrivate == 'true'){
                     isPrivateSubscription.value = true
                 }
-                if(currentRoute.value.query.upgrade == 'true'){
-                    // isPrivateSubscription.value = true
-                }
                 getCustomers()
                 getBranches()
             })
@@ -453,7 +459,8 @@ onBeforeMount(() => {
         </template>
     </Dialog>
     <div class="w-12 md:w-10 m-auto p-2 md:p-5 customers">
-        <h1 class="p-4 text-center textColor">تسجيل اشتراك لعضو جديد</h1>
+        <h1 v-if="currentRoute.query.upgrade" class="p-4 text-center textColor">تجديد الاشتراك</h1>
+        <h1 v-else class="p-4 text-center textColor">تسجيل اشتراك لعضو جديد</h1>
         <div class="w-8 m-auto">
             <success-msg v-if="createdSuccessfully" class="fadeinright animation-duration-1000 animation-iteration-1 "></success-msg>
             <h5 v-if="isErrorReturned" class="px-3 py-2 textColor text-center borderRound error">{{ dbError }}</h5>

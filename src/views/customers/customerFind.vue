@@ -271,8 +271,8 @@ const getStateValue = (status : any) => {
 }
 
 const subscriptionUpgrade = () => {
-    localStorage.setItem('upgradeDetails' , JSON.stringify(customerDetails))
-    push({path : 'customer/create' , query : {upgrade : 'true'}})
+    localStorage.setItem('upgradeDetails' , JSON.stringify(customerDetails.value))
+    push({name : 'customer_create' , query : {upgrade : 'true'}})
 }
 
 const empPermissions = ref()
@@ -753,7 +753,7 @@ onBeforeMount(() => {
             <h4 v-if="PenultimateSubscription.length == 0 || PenultimateSubscription.id == SubscriptionId" class="text-center" style="color: rgba(255, 0, 0, 0.867);">ليس له اشتراكات سابقة</h4>
         </div>
         <div class="m-auto my-3 w-full flex justify-content-center flex-column">
-            <Button type="button" :disabled="true"
+            <Button type="button" :disabled="false"
             class="mb-3 px-5 w-6 lg:mb-0 m-auto" @click="subscriptionUpgrade" label="تجديد الاشتراك" />
             <!-- <h4  class="text-center" style="color: rgba(255, 0, 0, 0.867);">ليس له اشتراكات سابقة</h4> -->
         </div>

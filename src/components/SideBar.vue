@@ -88,7 +88,7 @@ const closeSideBar = () => {
             <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
               group
             </span>            
-            <h3 v-if="isExpanded"><h5 class="textColor">المشتركين و المستويات</h5></h3>
+            <h3 v-if="isExpanded"><h6 class="textColor">المشتركين و المستويات</h6></h3>
           </div>
           <!-- Sub Categories for Customers   -->
           <div v-if="showCustomersCategories" class="px-3 py-1 fadein animation-duration-400 animation-iteration-1 borderRound" style="background: rgba(255, 255, 255, 0.066);">
@@ -134,7 +134,7 @@ const closeSideBar = () => {
             <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
               home
             </span>            
-            <router-link v-if="isExpanded" to=""><h5 class="textColor">الكيانات</h5></router-link>
+            <h4 v-if="isExpanded"><h5 class="textColor">الكيانات</h5></h4>
           </div>
           <!-- Sub Categories for Branches   -->
           <div v-if="showBracnhesCategories" class="px-3 py-1 fadein animation-duration-400 animation-iteration-1 borderRound" style="background: rgba(255, 255, 255, 0.066);">
@@ -161,7 +161,7 @@ const closeSideBar = () => {
             <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
               badge
             </span>            
-            <router-link v-if="isExpanded" :to="currentRoute.path"><h5 class="textColor">الموظفين</h5></router-link>
+            <h4 v-if="isExpanded"><h5 class="textColor">الموظفين</h5></h4>
           </div>
           <!-- Sub Categories for Employees   -->
             <div v-if="showEmployeeTypes" class="px-3 py-1 fadein animation-duration-400 animation-iteration-1 borderRound" style="background: rgba(255, 255, 255, 0.066);">
@@ -194,7 +194,7 @@ const closeSideBar = () => {
             <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
               payments
             </span>            
-            <router-link v-if="isExpanded" to=""><h5 class="textColor">حسابات مالية</h5></router-link>
+            <h4 v-if="isExpanded"><h5 class="textColor">حسابات مالية</h5></h4>
           </div>
           <!-- Sub Categories for Financials  -->
 
@@ -265,7 +265,7 @@ const closeSideBar = () => {
             <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
               group
             </span>            
-            <h3 v-if="isExpanded"><h5 class="textColor">المشتركين و المستويات</h5></h3>
+            <h3 v-if="isExpanded"><h6 class="textColor">المشتركين و المستويات</h6></h3>
           </div>
           <!-- Sub Categories for Customers   -->
           <div v-if="showCustomersCategories" class="px-3 py-1 fadein animation-duration-400 animation-iteration-1 borderRound" style="background: rgba(255, 255, 255, 0.066);">
@@ -310,7 +310,7 @@ const closeSideBar = () => {
             <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
               home
             </span>            
-            <router-link v-if="isExpanded" to=""><h5 class="textColor">الكيانات</h5></router-link>
+            <h4 v-if="isExpanded"><h5 class="textColor">الكيانات</h5></h4>
           </div>
           <!-- Sub Categories for Branches   -->
           <div v-if="showBracnhesCategories" class="px-3 py-1 fadein animation-duration-400 animation-iteration-1 borderRound" style="background: rgba(255, 255, 255, 0.066);">
@@ -338,7 +338,7 @@ const closeSideBar = () => {
             <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
               badge
             </span>            
-            <router-link v-if="isExpanded" :to="currentRoute.path"><h5 class="textColor">الموظفين</h5></router-link>
+            <h4 v-if="isExpanded"><h5 class="textColor">الموظفين</h5></h4>
           </div>
           <!-- Sub Categories for Employees   -->
             <div v-if="showEmployeeTypes" class="px-4 py-1 fadein animation-duration-400 animation-iteration-1 borderRound" style="background: rgba(255, 255, 255, 0.066);">
@@ -371,7 +371,7 @@ const closeSideBar = () => {
             <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
               payments
             </span>            
-            <router-link v-if="isExpanded" to=""><h5 class="textColor">حسابات مالية</h5></router-link>
+            <h4 v-if="isExpanded"><h5 class="textColor">حسابات مالية</h5></h4>
           </div>
           <!-- Sub Categories for Financials  -->
 
