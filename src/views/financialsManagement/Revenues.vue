@@ -100,6 +100,9 @@ const getRevenues = (branchId : number) => {
             })
         });
         calculateTotalRevenues()
+        if(currentRoute.value.query.filter == 'installments'){
+            filterInstallmentsOnly()
+        }
         isTargetBranchReportLoading.value = false
         chooseTargetBranch.value = false
         isFetched.value = true
@@ -149,6 +152,20 @@ const submitTargetRevenue = (req : any) => {
     }
 }
 const dt = ref();
+
+const filterInstallmentsOnly = () => {
+    
+    let tmp = Revenues.value
+    let totalRev = 0
+    if(tmp.length > 0){
+        tmp = tmp.filter((obj : any) => obj.type == 'تقسيط');
+    }
+    tmp.forEach((revenue : any) => {
+            totalRev += parseFloat(revenue.amount as string)
+    });
+    Revenues.value = tmp
+    TotalRevenue.value = totalRev
+}
 
 const calculateTotalRevenues = () => {
     let tmp = Revenues.value

@@ -34,8 +34,10 @@ const isFreezeLoading = ref(false)
 const isFreezeCancellingLoading = ref(false)
 const isDialogVisible = ref(false)
 const isInstallmentLoading = ref(false)
+const isPenultimateSubscriptionVisible = ref(false)
 const maxFreezeDate = ref()
 const daysLeftForFreezeStart = ref()
+const PenultimateSubscription = ref()
 
 watch((customerDetails) , (newValue, oldValue) => {    
     if(!oldValue){
@@ -173,6 +175,14 @@ const deleteInstallment = (installmentId : number) => {
         console.log(err);
     });
 }
+const getCustomerPenultimateSubscription = () => {
+    axios.get(`http://127.0.0.1:8000/api/customerPenultimateSubscription/${customerDetails.value.customer_id}`).then((result) => {
+        console.log(result.data);
+        PenultimateSubscription.value = result.data.penultimateSubscription
+    }).catch((err) => {
+        console.log(err);
+    });
+}
 
 const getCustomerDetailes = () => {
     axios.get(`http://127.0.0.1:8000/api/customerSubcription/${SubscriptionId}`).then((result) => {
@@ -197,6 +207,7 @@ const getCustomerDetailes = () => {
             maxFreezeDate.value = currentDate
         }
         isCustomerFetched.value = true
+        getCustomerPenultimateSubscription()
     }).catch((err) => {
         console.log(err);
     });
@@ -259,6 +270,11 @@ const getStateValue = (status : any) => {
     }
 }
 
+const subscriptionUpgrade = () => {
+    localStorage.setItem('upgradeDetails' , JSON.stringify(customerDetails))
+    push({path : 'customer/create' , query : {upgrade : 'true'}})
+}
+
 const empPermissions = ref()
 type userType = 'admin' | 'employee' 
 const UserType : Ref<userType> = ref('admin')
@@ -298,6 +314,116 @@ onBeforeMount(() => {
         </template>
     </Dialog>
     <!-- Update Options  -->
+    
+    <Dialog v-model:visible="isPenultimateSubscriptionVisible" modal header="تفاصيل اخر اشتراك" :style="{ width: '55vw' }" :breakpoints="{ '960px': '75vw', '641px': '100vw' }">
+
+        <div class="p-3 py-5 borderRound flex flex-wrap justify-content-center align-items-center" style="background: var(--background);">
+            <div class="flex my-3 lg:my-1 align-items-center mx-5 justify-content-center flex-column">
+                <div class="flex align-items-center my-2">
+                    <h4 class="primaryColor">الحالة</h4>
+                    <span class="material-symbols-outlined primaryColor mx-1 text-2xl">
+                        live_help
+                    </span>
+                </div>
+                <Tag :severity="getSeverity(PenultimateSubscription.state)" class="p-2 px-3" :value="getStateValue(PenultimateSubscription.state)"></Tag>
+            </div>
+            <div class="flex my-3 lg:my-1 align-items-center mx-5 justify-content-center flex-column">
+                <div class="flex align-items-center my-2">
+                    <h4 class="primaryColor">الفرع</h4>
+                    <span class="material-symbols-outlined primaryColor mx-1 text-2xl">
+                        home
+                    </span>
+                </div>
+                <p class="textColor">{{ PenultimateSubscription.branch.branch_name }}</p>
+            </div>
+            <div class="flex my-3 lg:my-1 align-items-center mx-5 justify-content-center flex-column">
+                <div class="flex align-items-center my-2">
+                    <h4 class="primaryColor">الأكاديمية</h4>
+                    <span class="material-symbols-outlined primaryColor mx-1 text-2xl">
+                        group
+                    </span>
+                </div>
+                <p class="textColor">{{ PenultimateSubscription.academy_name }}</p>
+            </div>
+            <div class="flex my-3 lg:my-1 align-items-center mx-5 justify-content-center flex-column">
+                <div class="flex align-items-center my-2">
+                    <h4 class="primaryColor">نوع التمرين</h4>
+                    <span class="material-symbols-outlined primaryColor text-2xl mx-2">
+                        category
+                    </span>
+                </div>
+                <p style="color: white;">{{ PenultimateSubscription.category_name }}</p>
+            </div>
+            <div class="flex my-3 lg:my-4 align-items-center mx-5 justify-content-center flex-column">
+                <div class="flex align-items-center my-2">
+                    <h4 class="primaryColor">المدرب</h4>
+                    <span class="material-symbols-outlined primaryColor text-2xl mx-2">
+                        scuba_diving
+                    </span>
+                </div>
+                <p style="color: white;">كابتن / {{ PenultimateSubscription.coach.name }}</p>
+            </div>
+            <div v-if="PenultimateSubscription.is_private" class="flex my-3 lg:my-4 align-items-center mx-5 justify-content-center flex-column">
+                <div class="flex align-items-center my-2">
+                    <h4 class="primaryColor">نوع الاشتراك</h4>
+                    <span class="material-symbols-outlined primaryColor mx-1 text-2xl mx-2">
+                        supervisor_account
+                    </span>
+                </div>
+                <p class="textColor">برايفت</p>
+            </div>
+            <div class="flex my-3 lg:my-4 align-items-center mx-5 justify-content-center flex-column">
+                <div class="flex align-items-center my-2">
+                    <h4 class="primaryColor">طريقة الدفع</h4>
+                    <span class="material-symbols-outlined primaryColor mx-1 text-2xl">
+                        monetization_on
+                    </span>
+                </div>
+                <p class="textColor" v-if="PenultimateSubscription.subscription_type == 'cash'">كاش</p>
+                <p class="textColor" v-else>تقسيط</p>
+            </div>
+            <div class="flex my-3 lg:my-4 align-items-center mx-5 justify-content-center flex-column">
+                <div class="flex align-items-center my-2">
+                    <h4 class="primaryColor">الحصص المتبقية</h4>
+                    <span class="material-symbols-outlined primaryColor mx-1 text-2xl">
+                        today
+                    </span>
+                </div>
+                <p class="textColor">{{ PenultimateSubscription.number_of_sessions }} حصص</p>
+            </div>
+            <div class="flex my-3 lg:my-4 align-items-center mx-5 justify-content-center flex-column">
+                <div class="flex align-items-center my-2">
+                    <h4 class="primaryColor">الدعوات المتاحة</h4>
+                    <span class="material-symbols-outlined primaryColor mx-1 text-2xl">
+                        today
+                    </span>
+                </div>
+                <p class="textColor" v-if="PenultimateSubscription.invitations">{{ PenultimateSubscription.invitations }} دعوات</p>
+                <p class="textColor" v-else>0 دعوات</p>
+            </div>
+            <div class="flex my-3 lg:my-4 align-items-center mx-5 justify-content-center flex-column">
+                <div class="flex align-items-center my-2">
+                    <h4 class="primaryColor">تاريخ الانتهاء</h4>
+                    <span class="material-symbols-outlined primaryColor mx-1 text-2xl">
+                        calendar_month
+                    </span>
+                </div>
+                <p class="textColor">{{ PenultimateSubscription.expiration_date }}</p>
+            </div>
+            <div class="flex my-3 lg:my-4 align-items-center mx-5 justify-content-center flex-column">
+                <div class="flex align-items-center my-2">
+                    <h4 class="primaryColor">تاريخ الاشتراك</h4>
+                    <span class="material-symbols-outlined primaryColor mx-1 text-2xl">
+                        calendar_month
+                    </span>
+                </div>
+                <p class="textColor">{{ PenultimateSubscription.subscription_date }}</p>
+            </div>
+        </div>
+        <template #footer>
+            <Button label="تم" class="px-4 py-1" @click="isPenultimateSubscriptionVisible = false" autofocus />
+        </template>
+    </Dialog>
 
     <div v-if="isCustomerFetched" class="w-12 md:w-10 my-5 py-5 m-auto md:p-5 customerFind" style="direction: rtl;">
         <div class="w-full m-auto flex justify-content-center p-4 MargAutoMob padding-1-breadcrumbs" style="direction: ltr;">
@@ -462,6 +588,16 @@ onBeforeMount(() => {
             </div>
             <div class="flex my-3 lg:my-4 align-items-center mx-5 justify-content-center flex-column">
                 <div class="flex align-items-center my-2">
+                    <h4 class="primaryColor">الدعوات المتاحة</h4>
+                    <span class="material-symbols-outlined primaryColor mx-1 text-2xl">
+                        today
+                    </span>
+                </div>
+                <p class="textColor" v-if="customerDetails.invitations">{{ customerDetails.invitations }} دعوات</p>
+                <p class="textColor" v-else>0 دعوات</p>
+            </div>
+            <div class="flex my-3 lg:my-4 align-items-center mx-5 justify-content-center flex-column">
+                <div class="flex align-items-center my-2">
                     <h4 class="primaryColor">تاريخ الانتهاء</h4>
                     <span class="material-symbols-outlined primaryColor mx-1 text-2xl">
                         calendar_month
@@ -558,7 +694,7 @@ onBeforeMount(() => {
         </div>
 
         <!-- Installments details and management -->
-        <h3 class="flex text-right sm:text-center mt-5 m-auto textColor">الأقساط</h3>
+        <h3 v-if="customerDetails.installments && customerDetails.installments.length > 0" class="flex text-right sm:text-center mt-5 m-auto textColor">الأقساط</h3>
         <div v-if="customerDetails.installments && customerDetails.installments.length > 0" 
             class="flex bg-card p-2 borderRound my-5 flex-wrap justify-content-center align-items-center w-full">
             <div v-for="(installment , index) in customerDetails.installments" class="max-w-30rem" :key="index">
@@ -609,6 +745,17 @@ onBeforeMount(() => {
                     </FormKit>
                 </div>
             </div>
+        </div>
+
+        <div v-if="PenultimateSubscription" class="mt-5 m-auto w-full flex justify-content-center flex-column">
+            <Button type="button" :disabled="PenultimateSubscription.length == 0 || PenultimateSubscription.id == SubscriptionId"
+            class="mb-3 px-5 w-6 lg:mb-0 m-auto" @click="isPenultimateSubscriptionVisible = true" label="تفاصيل اخر اشتراك" />
+            <h4 v-if="PenultimateSubscription.length == 0 || PenultimateSubscription.id == SubscriptionId" class="text-center" style="color: rgba(255, 0, 0, 0.867);">ليس له اشتراكات سابقة</h4>
+        </div>
+        <div class="m-auto my-3 w-full flex justify-content-center flex-column">
+            <Button type="button" :disabled="true"
+            class="mb-3 px-5 w-6 lg:mb-0 m-auto" @click="subscriptionUpgrade" label="تجديد الاشتراك" />
+            <!-- <h4  class="text-center" style="color: rgba(255, 0, 0, 0.867);">ليس له اشتراكات سابقة</h4> -->
         </div>
 
         <!-- training scheduels  -->

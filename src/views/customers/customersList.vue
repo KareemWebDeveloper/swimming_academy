@@ -62,7 +62,7 @@ const confirmDeletion = (event : any , payment : string) => {
     });
 };
 const statuses = ref(['active' ,'inactive','frozen'])
-const paymentsOptions = ref(['cash','installments'])
+const paymentsOptions = ref(['cash','installments','vodafone','instapay'])
 const customers = ref()
 const branches : any = ref([])
 const categories : any = ref([])
@@ -104,6 +104,7 @@ const getCustomers = () => {
         customers.value.forEach((customer : any) => {
             customer.created_at = new Date(customer.created_at)
             customer.state = customer.subscriptions[0].state
+            customer.created_by = customer.subscriptions[0].created_by
             customer.expiration_date = new Date(customer.subscriptions[0].expiration_date)
             customer.category_name = customer.subscriptions[0].category_name
             customer.subscription_id = customer.subscriptions[0].id
@@ -418,6 +419,12 @@ const exportCSV = () => {
                 <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="الغاء" outlined />
             </template>
         </Column>
+        <Column field="created_by"  header="المسجل" style="min-width: 8rem">
+            <template #body="slotProps" >
+                <p v-if="slotProps.data.created_by">{{ slotProps.data.created_by }}</p>
+                <p v-else>غير محدد</p>
+            </template>
+        </Column>
         <Column field="customer_phone"  header="الهاتف"></Column>
         <Column field="state"  header="الحالة" >
             <template #body="slotProps" >
@@ -440,12 +447,16 @@ const exportCSV = () => {
         <Column field="subscription_type"  header="الدفع" style="min-width: 9rem">
             <template #body="slotProps" >
                 <p v-if="slotProps.data.subscription_type == 'cash'">كاش</p>
+                <p v-if="slotProps.data.subscription_type == 'vodafone'">فودافون كاش</p>
+                <p v-if="slotProps.data.subscription_type == 'instapay'">انستا باي</p>
                 <p v-if="slotProps.data.subscription_type == 'installments'">تقسيط</p>
             </template>
             <template #filter="{ filterModel, filterCallback }">
                 <Dropdown v-model="filterModel.value" @change="filterCallback()" :options="paymentsOptions" placeholder="اختر طريقة دفع" class="p-column-filter" style="min-width: 12rem" :showClear="true">
                     <template #option="slotProps">
                         <p v-if="slotProps.option == 'cash'">كاش</p>
+                        <p v-if="slotProps.option == 'vodafone'">فودافون كاش</p>
+                        <p v-if="slotProps.option == 'instapay'">انستا باي</p>
                         <p v-if="slotProps.option == 'installments'">تقسيط</p>
                     </template>
                 </Dropdown>

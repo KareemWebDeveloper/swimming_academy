@@ -31,6 +31,8 @@ const chooseTargetBranch : any = ref(true);
 const targetProfits = ref()
 const ReportName = ref()
 const Revenues : any = ref([])
+const revenuesDetails : any = ref([{}])
+const expensesDetails : any = ref([{}])
 const TotalRevenue : any = ref(0)
 const chartData = ref();
 const chartOptions = ref();
@@ -74,13 +76,26 @@ const getExpenses = (req : any) => {
         console.log(result.data);
         result.data.variableExpenses.forEach((expense : any) => {
             totalExpenses.value += expense.expense_cost
+            if(req.branch_id == 0){
+                if (expensesDetails.value[0].hasOwnProperty(expense.branch_id)) {
+                    expensesDetails.value[0][expense.branch_id].total += expense.expense_cost; // Updating the `total` property to a new value
+                }
+            }
         });
         result.data.constantExpenses.forEach((expense : any) => {
             totalExpenses.value += expense.expense_cost
+            if(req.branch_id == 0){
+                if (expensesDetails.value[0].hasOwnProperty(expense.branch_id)) {
+                    expensesDetails.value[0][expense.branch_id].total += expense.expense_cost; // Updating the `total` property to a new value
+                }
+            }
         });
         if(result.data.salaries){
             result.data.salaries.forEach((expense : any) => {
                 totalExpenses.value += expense.amount
+                if(req.branch_id == 0){
+                    expensesDetails.value[0]['salaries'].totalSalaries += parseFloat(expense.amount); // Updating the `total` property to a new value
+                }
             });
         }
         chartData.value = {
@@ -108,13 +123,28 @@ const getRevenues = (req : any) => {
             if(subscription.sale){
                 let price = parseFloat(subscription.price) - parseFloat(subscription.sale)
                 totalRevenue.value += price
+                if(req.branch_id == 0){
+                    if (revenuesDetails.value[0].hasOwnProperty(subscription.branch_id)) {
+                        revenuesDetails.value[0][subscription.branch_id].total += price; // Updating the `total` property to a new value
+                    }
+                }
             }
             else{
                 totalRevenue.value += parseFloat(subscription.price)
+                if(req.branch_id == 0){
+                    if (revenuesDetails.value[0].hasOwnProperty(subscription.branch_id)) {
+                        revenuesDetails.value[0][subscription.branch_id].total += subscription.price; // Updating the `total` property to a new value
+                    }
+                }
             }
         });
         result.data.installments.forEach((installment : any) => {   
                 totalRevenue.value += parseFloat(installment.amount)
+                if(req.branch_id == 0){
+                    if (revenuesDetails.value[0].hasOwnProperty(installment.subscription.branch_id)) {
+                        revenuesDetails.value[0][installment.subscription.branch_id].total += parseFloat(installment.amount); // Updating the `total` property to a new value
+                    }
+                }
         });
         getExpenses(req)
         isTargetBranchReportLoading.value = false
@@ -134,7 +164,18 @@ const getBranches = () => {
         result.data.branches.forEach((branch : any) => {
             branches.value.push({label : branch.branch_name , value : branch.id})
             branchNames.push({label : branch.branch_name , value : branch.id})
+            expensesDetails.value[0][branch.id] = {
+                branchName : branch.branch_name,
+                total : 0
+            }
+            revenuesDetails.value[0][branch.id] = {
+                branchName : branch.branch_name,
+                total : 0
+            }
         });
+        expensesDetails.value[0].salaries = {
+            totalSalaries : 0
+        }
         isBranchesFetched.value = true
     }).catch((err) => {
         console.log(err);
@@ -270,6 +311,11 @@ const exportCSV = () => {
                             </div>
                         </div>
                     </div>
+                    <div v-if="targetProfits.branch_id == 0" class="w-full px-4 py-1 flex justify-content-between" v-for="revenue in revenuesDetails[0]">
+                        <h5 class="text-white">فرع {{ revenue.branchName }}</h5>
+                        <h5 class="text-white">{{ revenue.total.toFixed(2) }} ج.م</h5>
+                    </div>
+                    <!-- {{ revenuesDetails }} -->
                     <div class="flex align-items-center justify-content-center">
                         <Button label="تفاصيل الايرادات" @click="push({path : '/revenues' , query : {branchId : targetProfits.branch_id} })" class="px-4 my-2 profitBg" />
                     </div>
@@ -290,6 +336,13 @@ const exportCSV = () => {
                                 </span>
                             </div>
                         </div>
+                    </div>
+                    <div v-if="targetProfits.branch_id == 0" class="w-full px-4 py-1 flex justify-content-between" v-for="expense in expensesDetails[0]">
+                        <h5 class="text-white" v-if="expense.branchName">فرع {{ expense.branchName }}</h5>
+                        <h5 class="text-white" v-if="expense.branchName">{{ parseFloat(expense.total).toFixed(2) }} ج.م</h5>
+                        <h5 class="text-white" v-if="expense.totalSalaries">المرتبات</h5>
+                        <!-- {{ expense }} -->
+                        <h5 class="text-white" v-if="expense.totalSalaries">{{ parseFloat(expense.totalSalaries).toFixed(2) }} ج.م</h5>
                     </div>
                     <div class="flex align-items-center justify-content-center">
                         <Button label="تفاصيل المصروفات" @click="push({path : '/expenses' , query : {branchId : targetProfits.branch_id} })" class="px-4 my-2 lossBg" />
@@ -319,7 +372,6 @@ const exportCSV = () => {
                 <Chart type="bar" :data="chartData" :options="chartOptions" />
             </div>
         </div>
-
     </div>
 </template>
 <style>

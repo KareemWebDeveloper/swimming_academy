@@ -92,11 +92,35 @@ const closeSideBar = () => {
           </div>
           <!-- Sub Categories for Customers   -->
           <div v-if="showCustomersCategories" class="px-3 py-1 fadein animation-duration-400 animation-iteration-1 borderRound" style="background: rgba(255, 255, 255, 0.066);">
-            <div class="flex align-items-center my-3 div-hover" @click="push('/customers')" :class="{'justify-content-center' : !isExpanded , 'activeDivBg' : currentRoute.path.includes('/coach') }" >
+            <div class="flex align-items-center my-3 div-hover" @click="push('/customers')" :class="{'justify-content-center' : !isExpanded , 'activeDivBg' : currentRoute.path.includes('/customers') }" >
               <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
                 group
               </span>            
               <router-link v-if="isExpanded" to="/customers"><h5 class="textColor">المشتركين</h5></router-link>
+            </div>
+            <div class="flex align-items-center my-3 div-hover" @click="push('/customer/create')" :class="{'justify-content-center' : !isExpanded , 'activeDivBg' : currentRoute.path.includes('/customer/create') }" >
+              <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
+                demography
+              </span>            
+              <router-link v-if="isExpanded" to="/customer/create"><h5 class="textColor">تسجيل اشتراك</h5></router-link>
+            </div>
+            <div class="flex align-items-center my-3 div-hover" @click="push({path :'/customer/create' , query : {isPrivate : 'true'}})" :class="{'justify-content-center' : !isExpanded , 'activeDivBg' : currentRoute.path.includes('/customer/create') }" >
+              <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
+                demography
+              </span>            
+              <router-link v-if="isExpanded" to=""><h5 class="textColor">تسجيل برايفت</h5></router-link>
+            </div>
+            <div class="flex align-items-center my-3 div-hover" @click="push({path : '/revenues' , query : {branchId : 0} })" :class="{'justify-content-center' : !isExpanded , 'activeDivBg' : currentRoute.path.includes('/revenues') }" >
+              <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
+                price_check
+              </span>            
+              <router-link v-if="isExpanded" to=""><h5 class="textColor">مدفوعات اللاعبين</h5></router-link>
+            </div>
+            <div class="flex align-items-center my-3 div-hover" @click="push({path : '/revenues' , query : {branchId : 0 , filter : 'installments'} })" :class="{'justify-content-center' : !isExpanded , 'activeDivBg' : currentRoute.path.includes('/revenue') }" >
+              <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
+                payments
+              </span>            
+              <router-link v-if="isExpanded" to=""><h5 class="textColor">جميع الأقساط</h5></router-link>
             </div>
             <div v-if="isEmpAuthorizedFor('المستويات')" class="flex align-items-center my-3 div-hover"  @click="push('/levels')" :class="{'justify-content-center' : !isExpanded }" >
               <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
@@ -106,15 +130,15 @@ const closeSideBar = () => {
             </div>
           </div>
 
-          <div v-if="isEmpAuthorizedFor('عرض الفروع')" class="flex align-items-center my-2 div-hover" @click="showBracnhesCategories = !showBracnhesCategories;" :class="{'justify-content-center' : !isExpanded }" >
+          <div class="flex align-items-center my-2 div-hover" @click="showBracnhesCategories = !showBracnhesCategories;" :class="{'justify-content-center' : !isExpanded }" >
             <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
               home
             </span>            
-            <router-link v-if="isExpanded" to=""><h5 class="textColor">الفروع</h5></router-link>
+            <router-link v-if="isExpanded" to=""><h5 class="textColor">الكيانات</h5></router-link>
           </div>
           <!-- Sub Categories for Branches   -->
           <div v-if="showBracnhesCategories" class="px-3 py-1 fadein animation-duration-400 animation-iteration-1 borderRound" style="background: rgba(255, 255, 255, 0.066);">
-            <div class="flex align-items-center my-3 div-hover" @click="push('/branches')" :class="{'justify-content-center' : !isExpanded , 'activeDivBg' : currentRoute.path.includes('/coach') }" >
+            <div v-if="isEmpAuthorizedFor('عرض الفروع')" class="flex align-items-center my-3 div-hover" @click="push('/branches')" :class="{'justify-content-center' : !isExpanded , 'activeDivBg' : currentRoute.path.includes('/coach') }" >
               <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
                 home
               </span>            
@@ -126,13 +150,12 @@ const closeSideBar = () => {
               </span>            
               <router-link v-if="isExpanded" to="/academies/create"><h5 class="textColor">انشاء أكاديمية</h5></router-link>
             </div>
-          </div>
-
-          <div v-if="isEmpAuthorizedFor('عرض أنواع التمارين')" class="flex align-items-center my-5 div-hover" @click="push('/categories')" :class="{'justify-content-center' : !isExpanded }" >
-            <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
-              category
-            </span>            
-            <router-link v-if="isExpanded" to="/categories"><h5 class="textColor">انواع التمارين</h5></router-link>
+            <div v-if="isEmpAuthorizedFor('عرض أنواع التمارين')" class="flex align-items-center my-3 div-hover" @click="push('/categories')" :class="{'justify-content-center' : !isExpanded }" >
+              <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
+                category
+              </span>            
+              <router-link v-if="isExpanded" to="/categories"><h5 class="textColor">انواع التمارين</h5></router-link>
+            </div>
           </div>
           <div class="flex align-items-center mt-5 mb-2 div-hover" @click="showEmployeeTypes = !showEmployeeTypes" :class="{'justify-content-center' : !isExpanded }" >
             <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
@@ -238,7 +261,7 @@ const closeSideBar = () => {
             </span>            
             <router-link v-if="isExpanded" to="/"><h5 class="textColor">لوحة التحكم</h5></router-link>
           </div>
-          <div class="flex align-items-center mt-5 mb-2 div-hover" @click="showCustomersCategories = !showCustomersCategories" :class="{'justify-content-center' : !isExpanded }" >
+          <div class="flex align-items-center mt-5 mb-2 div-hover" @click="showCustomersCategories = !showCustomersCategories" :class="{'justify-content-center' : !isExpanded , 'mb-4' : isExpanded}" >
             <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
               group
             </span>            
@@ -246,11 +269,35 @@ const closeSideBar = () => {
           </div>
           <!-- Sub Categories for Customers   -->
           <div v-if="showCustomersCategories" class="px-3 py-1 fadein animation-duration-400 animation-iteration-1 borderRound" style="background: rgba(255, 255, 255, 0.066);">
-            <div class="flex align-items-center my-3 div-hover" @click="closeSideBar(); push('/customers')" :class="{'justify-content-center' : !isExpanded , 'activeDivBg' : currentRoute.path.includes('/coach') }" >
+            <div class="flex align-items-center my-3 div-hover" @click="closeSideBar(); push('/customers')" :class="{'justify-content-center' : !isExpanded , 'activeDivBg' : currentRoute.path.includes('/customers') }" >
               <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
                 home
               </span>            
               <router-link v-if="isExpanded" to="/customers"><h5 class="textColor">المشتركين</h5></router-link>
+            </div>
+            <div class="flex align-items-center my-3 div-hover" @click="closeSideBar(); push('/customer/create')" :class="{'justify-content-center' : !isExpanded , 'activeDivBg' : currentRoute.path.includes('/customer/create') }" >
+              <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
+                demography
+              </span>            
+              <router-link v-if="isExpanded" to="/customer/create"><h5 class="textColor">تسجيل اشتراك</h5></router-link>
+            </div>
+            <div class="flex align-items-center my-3 div-hover" @click="closeSideBar(); push({path :'/customer/create' , query : {isPrivate : 'true'}})" :class="{'justify-content-center' : !isExpanded , 'activeDivBg' : currentRoute.path.includes('/customer/create') }" >
+              <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
+                demography
+              </span>            
+              <router-link v-if="isExpanded" to=""><h5 class="textColor">تسجيل برايفت</h5></router-link>
+            </div>
+            <div class="flex align-items-center my-3 div-hover" @click="closeSideBar(); push({path : '/revenues' , query : {branchId : 0} })" :class="{'justify-content-center' : !isExpanded , 'activeDivBg' : currentRoute.path.includes('/revenue') }" >
+              <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
+                price_check
+              </span>            
+              <router-link v-if="isExpanded" to=""><h5 class="textColor">مدفوعات اللاعبين</h5></router-link>
+            </div>
+            <div class="flex align-items-center my-3 div-hover" @click="closeSideBar(); push({path : '/revenues' , query : {branchId : 0 , filter : 'installments'} })" :class="{'justify-content-center' : !isExpanded , 'activeDivBg' : currentRoute.path.includes('/revenue') }" >
+              <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
+                payments
+              </span>            
+              <router-link v-if="isExpanded" to=""><h5 class="textColor">جميع الأقساط</h5></router-link>
             </div>
             <div v-if="isEmpAuthorizedFor('المستويات')" class="flex align-items-center my-3 div-hover"  @click="closeSideBar(); push('/levels')" :class="{'justify-content-center' : !isExpanded }" >
               <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
@@ -259,15 +306,15 @@ const closeSideBar = () => {
               <router-link v-if="isExpanded" to="/levels"><h5 class="textColor">المستويات</h5></router-link>
             </div>
           </div>
-          <div v-if="isEmpAuthorizedFor('عرض الفروع')" class="flex align-items-center my-2 div-hover" @click="showBracnhesCategories = !showBracnhesCategories;" :class="{'justify-content-center' : !isExpanded }" >
+          <div class="flex align-items-center my-2 div-hover" @click="showBracnhesCategories = !showBracnhesCategories;" :class="{'justify-content-center' : !isExpanded }" >
             <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
               home
             </span>            
-            <router-link v-if="isExpanded" to=""><h5 class="textColor">الفروع</h5></router-link>
+            <router-link v-if="isExpanded" to=""><h5 class="textColor">الكيانات</h5></router-link>
           </div>
           <!-- Sub Categories for Branches   -->
           <div v-if="showBracnhesCategories" class="px-3 py-1 fadein animation-duration-400 animation-iteration-1 borderRound" style="background: rgba(255, 255, 255, 0.066);">
-            <div class="flex align-items-center my-3 div-hover" @click="closeSideBar(); push('/branches')" :class="{'justify-content-center' : !isExpanded , 'activeDivBg' : currentRoute.path.includes('/coach') }" >
+            <div v-if="isEmpAuthorizedFor('عرض الفروع')" class="flex align-items-center my-3 div-hover" @click="closeSideBar(); push('/branches')" :class="{'justify-content-center' : !isExpanded , 'activeDivBg' : currentRoute.path.includes('/coach') }" >
               <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
                 home
               </span>            
@@ -279,14 +326,14 @@ const closeSideBar = () => {
               </span>            
               <router-link v-if="isExpanded" to="/academies/create"><h5 class="textColor">انشاء أكاديمية</h5></router-link>
             </div>
+            <div v-if="isEmpAuthorizedFor('عرض أنواع التمارين')" class="flex align-items-center my-5 div-hover" @click="closeSideBar(); push('/categories')" :class="{'justify-content-center' : !isExpanded }" >
+              <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
+                category
+              </span>            
+              <router-link v-if="isExpanded" to="/categories"><h5 class="textColor">انواع التمارين</h5></router-link>
+            </div>
           </div>
 
-          <div v-if="isEmpAuthorizedFor('عرض أنواع التمارين')" class="flex align-items-center my-5 div-hover" @click="closeSideBar(); push('/categories')" :class="{'justify-content-center' : !isExpanded }" >
-            <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
-              category
-            </span>            
-            <router-link v-if="isExpanded" to="/categories"><h5 class="textColor">انواع التمارين</h5></router-link>
-          </div>
           <div class="flex align-items-center mt-5 mb-2 div-hover" @click="showEmployeeTypes = !showEmployeeTypes" :class="{'justify-content-center' : !isExpanded }" >
             <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
               badge

@@ -11,7 +11,7 @@ import InputSwitch from 'primevue/inputswitch';
 import Dialog from 'primevue/dialog';
 const { push , currentRoute } = useRouter();
 
-type payment = 'cash' | 'installments' | undefined
+type payment = 'cash' | 'installments' | 'vodafone' | 'instapay' | undefined
 
 const branches : any = ref([])
 const allAcademies : any = ref([])
@@ -47,28 +47,34 @@ const istrainingTimeHasError = ref(false)
 const isPrivateSubscription = ref(false)
 const trainingTimeError = ref()
 const remainingFromInstallments = ref()
+const customerFields = ref()
+const customerSubscriptionFields = ref()
 
 const createCustomer = (req : any) => {
-    isLoading.value = true
-    console.log(req);
-    req.customer_name = req.fname + ' ' + req.sname + ' ' + req.thirdName
-    req.birthdate = new Date(req.birthdate);
-    req.birthdate = req.birthdate.toISOString().substr(0, 19).replace('T', ' ');
-    axios.post('http://127.0.0.1:8000/api/createCustomer' , req).then((result) => {
+    isSubscriptionLoading.value = true
+    let customerCreateReq = customerFields.value
+    customerSubscriptionFields.value = req
+    if(req.customer_id){
+        createSubscription(req.customer_id)
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+        return
+    }
+    console.log(customerCreateReq);
+    axios.post('http://127.0.0.1:8000/api/createCustomer' , customerCreateReq).then((result) => {
         createdCustomer.value = result.data.customer
         localStorage.setItem('waitingForSubscription' , JSON.stringify(result.data.customer))
         console.log(localStorage.getItem('waitingForSubscription'));
         isLoading.value = false
         isErrorReturned.value = false
-        createdSuccessfully.value= true
+        // createdSuccessfully.value= true
         window.scrollTo({
             top: 0,
             behavior: 'smooth'
         });
-        createCustomerSubscription.value = true
-        setTimeout(() => {
-            createdSuccessfully.value= false
-        }, 1600);
+        createSubscription(result.data.customer.id)
     }).catch((err) => {
         window.scrollTo({
             top: 0,
@@ -88,6 +94,43 @@ const createCustomer = (req : any) => {
         console.log(err);
     });
 }
+
+const openSubscriptionForm = (req : any) => {
+    isLoading.value = true
+    req.customer_name = req.fname + ' ' + req.sname + ' ' + req.thirdName
+    req.birthdate = new Date(req.birthdate);
+    req.birthdate = req.birthdate.toISOString().substr(0, 19).replace('T', ' ');
+    axios.post('http://127.0.0.1:8000/api/validateCustomer' , req).then((result) => {
+        if(result.data.validation){
+            isLoading.value = false
+            isErrorReturned.value = false
+            customerFields.value = req
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+            createCustomerSubscription.value = true
+        }
+    }).catch((err) => {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+        isLoading.value = false
+        isErrorReturned.value = true
+        if(err.response.data.message.includes('The phone has already been taken')){
+            dbError.value = 'هذا الهاتف موجود بالفعل'
+        }
+        else if(err.response.data.message.includes('The email has already been taken')){
+            dbError.value = 'هذا البريد الالكتروني موجود بالفعل'
+        }
+        else{
+            dbError.value = err.response.data.message
+        }
+        console.log(err);
+    });
+}
+
 const getBranches = () => {
     axios.get('http://127.0.0.1:8000/api/branches').then((result) => {
         console.log(result.data);
@@ -153,20 +196,17 @@ const workingDaysOptions = () => {
 })
 }
 
-const createSubscription = (req : any) => {
-    isSubscriptionLoading.value = true
-    let customerDetails : any = {}
-    if(localStorage.getItem('waitingForSubscription')){
-        customerDetails = JSON.parse(localStorage.getItem('waitingForSubscription') as string)
-    }
+const createSubscription = (customerId : number) => {
+    let req = customerSubscriptionFields.value
     req.subscription_date = new Date(req.subscription_date);
     req.subscription_date = req.subscription_date.toISOString().substr(0, 19).replace('T', ' ');
     req.expiration_date = new Date(req.expiration_date);
     req.expiration_date.setHours(13)
     req.expiration_date = new Date(req.expiration_date).toISOString().substr(0, 19).replace('T', ' ');
-    if(createCustomerSubscription.value && customerDetails){
-        req.customer_id = customerDetails.id
-    }
+    req.customer_id = customerId
+    // if(createCustomerSubscription.value && customerDetails){
+    //     req.customer_id = customerDetails.id
+    // }
     if(paymentType.value){
         req.subscription_type = paymentType.value
     }
@@ -183,7 +223,7 @@ const createSubscription = (req : any) => {
     console.log(req);
     axios.post('http://127.0.0.1:8000/api/createSubscription' , req).then((result) => {
         createdSubscription.value = result.data.subscription
-        createdSubscription.value.customer_name = customerDetails.customer_name
+        createdSubscription.value.customer_name = result.data.customer.customer_name
         isSubscriptionLoading.value = false
         isErrorReturned.value = false
         createdSuccessfully.value= true
@@ -359,6 +399,9 @@ onBeforeMount(() => {
                 if(currentRoute.value.query.isPrivate == 'true'){
                     isPrivateSubscription.value = true
                 }
+                if(currentRoute.value.query.upgrade == 'true'){
+                    // isPrivateSubscription.value = true
+                }
                 getCustomers()
                 getBranches()
             })
@@ -422,7 +465,7 @@ onBeforeMount(() => {
         <div v-if="!createCustomerSubscription && !isCustomerRegistered">
 
             <!-- Customer Create Form -->
-            <FormKit type="form" :actions="false" @submit="createCustomer">
+            <FormKit type="form" :actions="false" @submit="openSubscriptionForm">
                 <div class="flex grid w-full">
                 <div class="mt-3 md:col-6 col-12">
                     <div class="flex align-items-center">
@@ -495,7 +538,7 @@ onBeforeMount(() => {
         <!-- Create customer subscription -->
 
         <div v-else-if="(isCustomerRegistered || createCustomerSubscription) && isBranchesFetched" class="subscription w-full m-auto p-2 md:p-4 customers">
-            <FormKit type="form" v-model="subscriptionFields" :actions="false" @submit="createSubscription">
+            <FormKit type="form" v-model="subscriptionFields" :actions="false" @submit="createCustomer">
                 <div class="flex grid w-full">
                     <div v-if="isCustomerRegistered && !createCustomerSubscription" class="mt-3 col-12">
                         <div class="flex align-items-center">
@@ -572,6 +615,12 @@ onBeforeMount(() => {
                             </div>
                             <FormKit prefix-icon="number" number="integer" id="sessions_per_week" type="number" label="عدد الحصص الاسبوعية" placeholder="أدخل عدد الحصص في الاسبوع " name="sessions_per_week" validation="required|min:1" />
                         </div>
+                        <div class="mt-3 col-12 md:col-12">
+                            <div class="flex align-items-center">
+                                <label for="invitations" class="px-3 py-1 text-white text-sm">الدعوات المتاحة</label>
+                            </div>
+                            <FormKit prefix-icon="number" :value="1" number="integer" id="invitations" type="number" label="الدعوات" placeholder="أدخل عدد الدعوات المتاحة للاشتراك" name="invitations" validation="min:0" />
+                        </div>
 
                         <div class="w-full m-auto repeater">
                             <FormKit id="repeater" name="training_schedules" type="repeater" add-label="اضافة موعد"
@@ -620,6 +669,12 @@ onBeforeMount(() => {
                             <div class="col-12 md:col-6 m-auto flex justify-content-center">
                                 <Button type="button" class="w-9" label="تقسيط" :class="{ 'activeButton' : paymentType == 'installments'}"
                                  @click="paymentType = 'installments';isInstallmentsDialogVisible = true" />
+                            </div>
+                            <div class="col-12 md:col-6 m-auto flex justify-content-center">
+                                <Button type="button" class="w-9" label="فودافون كاش" :class="{ 'activeButton' : paymentType == 'vodafone'}" @click="paymentType = 'vodafone'" />
+                            </div>
+                            <div class="col-12 md:col-6 m-auto flex justify-content-center">
+                                <Button type="button" class="w-9" label="انستا باي" :class="{ 'activeButton' : paymentType == 'instapay'}" @click="paymentType = 'instapay'" />
                             </div>
                         </div>
                     </div>

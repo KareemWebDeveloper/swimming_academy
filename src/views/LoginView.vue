@@ -27,6 +27,11 @@ onBeforeMount(() => {
     }
 })
 
+const handleViewPassword = (node : any, e : any) => {
+    node.props.suffixIcon = node.props.suffixIcon === 'eye' ? 'eyeClosed' : 'eye'
+    node.props.type = node.props.type === 'password' ? 'text' : 'password'
+}
+
 const adminLogin = (req : any) => {
     loading.value = true
     axios.post('http://127.0.0.1:8000/api/adminLogin' , req).then((result) => {
@@ -135,7 +140,8 @@ const customerLogin = (req : any) => {
                         <!-- <span class="material-symbols-outlined text-3xl">vpn_key</span> -->
                         <label for="pw" class="px-3 py-1 text-white text-sm">كلمة السر</label>
                     </div>
-                    <FormKit type="password" prefix-icon="password" id="pw" label="كلمة السر" placeholder="أدخل كلمة السر" name="password" validation="required|password" />
+                    <FormKit type="password" prefix-icon="password" suffix-icon="eyeClosed" @suffix-icon-click="handleViewPassword"
+                    suffix-icon-class="hover:text-blue-500"  id="pw" label="كلمة السر" placeholder="أدخل كلمة السر" name="password" validation="required|password" />
                 </div>
                 <Button type="submit" class="submitBtn" label="تسجيل الدخول" :loading="loading" />
             </FormKit>
@@ -157,7 +163,8 @@ const customerLogin = (req : any) => {
                     <div class="flex align-items-center">
                         <label for="pw" class="px-3 py-1 text-white text-sm">كلمة السر</label>
                     </div>
-                    <FormKit type="password" prefix-icon="password" id="pw" label="كلمة السر" placeholder="أدخل كلمة السر" name="password" validation="required|password" />
+                    <FormKit type="password" prefix-icon="password"  suffix-icon="eyeClosed" @suffix-icon-click="handleViewPassword"
+                    suffix-icon-class="hover:text-blue-500" id="pw" label="كلمة السر" placeholder="أدخل كلمة السر" name="password" validation="required|password" />
                 </div>
                 <Button type="submit" class="submitBtn" label="تسجيل الدخول" :loading="loading" />
             </FormKit>
@@ -179,7 +186,8 @@ const customerLogin = (req : any) => {
                     <div class="flex align-items-center">
                         <label for="pw" class="px-3 py-1 text-white text-sm">كلمة السر</label>
                     </div>
-                    <FormKit type="password" prefix-icon="password" id="pw" label="كلمة السر" placeholder="أدخل كلمة السر" name="password" validation="required|password" />
+                    <FormKit type="password" prefix-icon="password" suffix-icon="eyeClosed" @suffix-icon-click="handleViewPassword"
+                    suffix-icon-class="hover:text-blue-500"  id="pw" label="كلمة السر" placeholder="أدخل كلمة السر" name="password" validation="required|password" />
                 </div>
                 <Button type="submit" class="submitBtn" label="تسجيل الدخول" :loading="loading" />
             </FormKit>
@@ -209,6 +217,9 @@ const customerLogin = (req : any) => {
 }
 .formkit-outer .formkit-icon svg {
     max-width: 2em;
+}
+.formkit-icon.formkit-suffix-icon{
+    width: 2.2rem !important;
 }
 .formkit-input{
     padding: 1.8vh;

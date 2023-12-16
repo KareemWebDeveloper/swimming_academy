@@ -16,30 +16,26 @@ import Dialog from 'primevue/dialog';
 
 const confirm = useConfirm();
 
-const isFetched : any = ref(false);
-const isTargetBranchReportLoading : any = ref(false);
-const isBranchesFetched : any = ref(false);
-const totalRevenue : any = ref(0);
-const totalExpenses : any = ref(0);
-const chooseTargetBranch : any = ref(true);
-const targetProfits = ref()
-const ReportName = ref()
-const Revenues : any = ref([])
 const TotalRevenue : any = ref(0)
 const chartData = ref();
+const customerId = ref();
 const chartOptions = ref();
 const doughnutChartData = ref();
 const empPermissions = ref()
+const isDialogVisible = ref(false)
+const isErrorReturned = ref(false)
+const dbError = ref()
+const isSubscriptionFetched = ref(false)
+const isSubscriptionLoading = ref(false)
+const customerDetails = ref()
+const customerActiveSubscriptions = ref()
 
-const filters = ref(
-    {
-        global: { value: null, matchMode: FilterMatchMode.CONTAINS },
-        academy_name: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }] },
-        // paid_date: { value: null, matchMode: FilterMatchMode.DATE_IS },
-        paid_date: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.DATE_AFTER } , { value: null, matchMode: FilterMatchMode.DATE_BEFORE }] },
-        id: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.EQUALS }] },
-    }
-);
+const router = useRouter();
+const openNewTab = (routeName : string) => {
+      const routeUrl = router.resolve({ name: routeName }).href;
+      // Open the route URL in a new tab
+      window.open(routeUrl, '_blank');
+};
 
 const options = {
     weekday: 'long',
@@ -57,6 +53,24 @@ const branches : any = ref([{label : 'كل الفروع' , value : 0}])
 const insights : any = ref()
 const isProfitsFetched = ref(false)
 const isInsightsFetched = ref(false)
+
+const getCustomerSubscriptions = () => {
+    console.log(customerId.value);
+    isSubscriptionFetched.value= false
+    isSubscriptionLoading.value= true
+    axios.get(`http://127.0.0.1:8000/api/customerActiveSubscriptions/${customerId.value}`).then((result) => {
+        console.log(result);
+        isSubscriptionFetched.value= true
+        isSubscriptionLoading.value= false
+        customerDetails.value = result.data.customer
+        customerActiveSubscriptions.value = result.data.activeSubscriptions
+    }).catch((err) => {
+        console.log(err);
+        isErrorReturned.value = true
+        dbError.value = 'كود المشترك غير موجود'
+    });
+    
+}
 
 const getAnnualProfits = () => {
     axios.get('http://127.0.0.1:8000/api/annualProfitsChart').then((result) => {
@@ -147,12 +161,60 @@ const exportCSV = () => {
 </script>
 
 <template>
+
+    <Dialog v-model:visible="isDialogVisible" class="attendancesDialog" maximizable modal header="تفاصيل الاشتراك بالكود" :style="{ width: '65vw' }" :breakpoints="{ '960px': '75vw', '641px': '100vw' }">
+
+        <!-- <FormKit v-model="coachSalaryInfo" type="form" :actions="false" @submit="payCoachSalary"> -->
+            <!-- </FormKit> -->
+        <h5 v-if="isErrorReturned" class="px-3 py-2 textColor text-center borderRound error">{{ dbError }}</h5>
+            <div v-if="!isSubscriptionFetched" class="mt-3 w-8 m-auto flex justify-content-center flex-column">
+                <div class="flex align-items-center">
+                    <label for="customer_id" class="px-3 py-1 text-white text-sm">كود اللاعب</label>
+                </div>
+                <FormKit prefix-icon="number" v-model="customerId" id="customer_id" type="number" number="integer" label="كود اللاعب" placeholder="يرجي ادخال كود اللاعب" name="customer_id" validation="min:0" />
+            </div>
+            <div v-else>
+                <div class="mt-3 w-12 py-2 borderRound m-auto flex justify-content-center flex-wrap" style="background: var(--background);">
+                    <h5 class="text-white m-2 bgColor py-2 px-3 borderRound">اسم اللاعب : {{ customerDetails.customer_name }}</h5>
+                    <h5 class="text-white m-2 bgColor py-2 px-3 borderRound">البريد الالكتروني : {{ customerDetails.customer_email }}</h5>
+                    <h5 class="text-white m-2 bgColor py-2 px-3 borderRound">رقم الهاتف : {{ customerDetails.customer_phone }}</h5>
+                </div>
+                <div v-for="subscription in customerActiveSubscriptions" class="mt-3 w-12 py-2 borderRound m-auto" style="background: var(--background);">
+                    <h4 :class="{'profitBg' : subscription.state == 'active' , 'lossBg' : subscription.state == 'inactive' , 'bgColor' : subscription.state == 'frozen'}" class="text-white text-center m-2 py-2 px-3 borderRound">{{ subscription.category_name }} / {{ subscription.branch.branch_name }} - {{ subscription.academy_name }} </h4>
+                    <div class="flex justify-content-center flex-wrap">
+                        <h5 class="text-white m-2 bgColor py-2 px-3 borderRound">اسم المدرب : كابتن / {{ subscription.coach.name }}</h5>
+                        <h5 class="text-white m-2 bgColor py-2 px-3 borderRound">تاريخ الاشتراك : {{ subscription.subscription_date }}</h5>
+                        <h5 class="text-white m-2 bgColor py-2 px-3 borderRound">تاريخ الانتهاء : {{ subscription.expiration_date }}</h5>
+                        <h5 class="text-white m-2 bgColor py-2 px-3 borderRound">أيام التجميد المتاحة : {{ subscription.avail_freeze_days }} يوم</h5>
+                        <h5 class="text-white m-2 bgColor py-2 px-3 borderRound">عدد الحصص المتبقية : {{ subscription.number_of_sessions }} حصص</h5>
+                        <h5 class="text-white m-2 bgColor py-2 px-3 borderRound">طريقة الدفع : {{ subscription.subscription_type }}</h5>
+                        <h5 v-if="subscription.is_private" class="text-white m-2 bgColor py-2 px-3 borderRound">برايفت</h5>
+                        <h5 v-if="!subscription.invitations || subscription.invitations == 0" class="text-white m-2 bgColor py-2 px-3 borderRound">الدعوات : 0</h5>
+                        <h5 v-else class="text-white m-2 bgColor py-2 px-3 borderRound">الدعوات : {{ subscription.invitations }}</h5>
+                    </div>
+                    <div class="mx-auto flex justify-content-center my-2">
+                        <Button label="تعديل الاشتراك" class="py-2 px-3" @click="push(`/customer/${subscription.id}`)"  />
+                    </div>
+                </div>
+            </div>
+        <template #footer>
+            <Button v-if="!isSubscriptionFetched" type="submit" class="px-3 py-2" label="التالي" @click="getCustomerSubscriptions" :loading="isSubscriptionLoading" />
+            <Button v-else type="submit" class="px-3 py-2" label="رجوع" @click="isSubscriptionFetched = !isSubscriptionFetched" />
+        </template>
+    </Dialog>
     <div v-if="isProfitsFetched && isInsightsFetched" class="w-12 md:w-10 my-5 m-auto p-2 md:p-5 branchesList" style="direction: rtl;">
         <h2 class="text-center text-white my-3">لوحة التحكم</h2>
         <ConfirmPopup></ConfirmPopup>
         <div class="bg-card m-auto w-10 p-3 borderRound">
             <Chart type="line" :data="chartData" :options="chartOptions" class="h-full " />
         </div>
+
+        <div class="flex justify-content-center my-5">
+            <Button label="تسجيل اشتراك" class="py-3 px-4 mx-2" @click="openNewTab('customer_create')" />
+            <Button label="تفاصيل الاشتراك بالكود" class="py-3 px-4 mx-2" @click="isDialogVisible = true" />
+            <Button label="تسجيل حضور" class="py-3 px-4 mx-2" @click="openNewTab('attendance_list')" />
+        </div>
+
         <div class="flex flex-wrap my-5 justify-content-center">
             <div class="flex boxShadowRight w-20rem my-5 p-3 bg-card borderRound align-items-center mx-3 justify-content-center flex-column">
                 <div class="flex align-items-center my-2">
@@ -169,6 +231,32 @@ const exportCSV = () => {
             </div>
             <div class="flex shadowBottom w-20rem my-5 p-3 bg-card borderRound align-items-center mx-3 justify-content-center flex-column">
                 <div class="flex align-items-center my-2">
+                    <h3 class=" primaryColor">عدد الأعضاء الذكور</h3>
+                    <span class="material-symbols-outlined primaryColor  mx-1 text-4xl">
+                        boy
+                    </span>
+                </div>
+                <div class="">
+                    <div class="flex align-items-center justify-content-center">
+                        <p class="textColor font-bold text-xl my-2">{{ insights.maleCustomersCount }} أعضاء</p>
+                    </div>
+                </div>
+            </div>
+            <div class="flex boxShadowLeft w-20rem my-5 p-3 bg-card borderRound align-items-center mx-3 justify-content-center flex-column">
+                <div class="flex align-items-center my-2">
+                    <h3 class=" primaryColor">عدد الأعضاء الإناث</h3>
+                    <span class="material-symbols-outlined primaryColor  mx-1 text-4xl">
+                        girl
+                    </span>
+                </div>
+                <div class="">
+                    <div class="flex align-items-center justify-content-center">
+                        <p class="textColor font-bold text-xl my-2">{{ insights.femaleCustomersCount }} أعضاء</p>
+                    </div>
+                </div>
+            </div>
+            <div class="flex boxShadowRight w-20rem my-5 p-3 bg-card borderRound align-items-center mx-3 justify-content-center flex-column">
+                <div class="flex align-items-center my-2">
                     <h3 class=" primaryColor">الاشتراكات النشطة</h3>
                     <span class="material-symbols-outlined primaryColor  mx-1 text-4xl">
                         group
@@ -180,7 +268,7 @@ const exportCSV = () => {
                     </div>
                 </div>
             </div>
-            <div class="flex boxShadowLeft w-20rem my-5 p-3 bg-card borderRound align-items-center mx-3 justify-content-center flex-column">
+            <div class="flex shadowBottom w-20rem my-5 p-3 bg-card borderRound align-items-center mx-3 justify-content-center flex-column">
                 <div class="flex align-items-center my-2">
                     <h3 class=" primaryColor">الاشتراكات المجمدة</h3>
                     <span class="material-symbols-outlined primaryColor  mx-1 text-4xl">
@@ -193,7 +281,7 @@ const exportCSV = () => {
                     </div>
                 </div>
             </div>
-            <div class="flex boxShadowRight w-20rem my-5 p-3 bg-card borderRound align-items-center mx-3 justify-content-center flex-column">
+            <div class="flex boxShadowLeft w-20rem my-5 p-3 bg-card borderRound align-items-center mx-3 justify-content-center flex-column">
                 <div class="flex align-items-center my-2">
                     <h3 class=" primaryColor">المديونيات</h3>
                     <span class="material-symbols-outlined primaryColor  mx-1 text-4xl">
@@ -206,7 +294,7 @@ const exportCSV = () => {
                     </div>
                 </div>
             </div>
-            <div class="flex shadowBottom w-20rem my-5 p-3 bg-card borderRound align-items-center mx-3 justify-content-center flex-column">
+            <div class="flex boxShadowRight w-20rem my-5 p-3 bg-card borderRound align-items-center mx-3 justify-content-center flex-column">
                 <div class="flex align-items-center my-2">
                     <h3 class=" primaryColor">عدد المدربين</h3>
                     <span class="material-symbols-outlined primaryColor  mx-1 text-4xl">
@@ -219,7 +307,7 @@ const exportCSV = () => {
                     </div>
                 </div>
             </div>
-            <div class="flex boxShadowLeft w-20rem my-5 p-3 bg-card borderRound align-items-center mx-3 justify-content-center flex-column">
+            <div class="flex shadowBottom w-20rem my-5 p-3 bg-card borderRound align-items-center mx-3 justify-content-center flex-column">
                 <div class="flex align-items-center my-2">
                     <h3 class=" primaryColor">عدد الموظفين</h3>
                     <span class="material-symbols-outlined primaryColor  mx-1 text-4xl">
@@ -232,6 +320,32 @@ const exportCSV = () => {
                     </div>
                 </div>
             </div>
+            <div class="flex boxShadowLeft w-20rem my-5 p-3 bg-card borderRound align-items-center mx-3 justify-content-center flex-column">
+                <div class="flex align-items-center my-2">
+                    <h3 class=" primaryColor">عدد الفروع</h3>
+                    <span class="material-symbols-outlined primaryColor  mx-1 text-4xl">
+                        home
+                    </span>
+                </div>
+                <div class="">
+                    <div class="flex align-items-center justify-content-center">
+                        <p class="textColor font-bold text-xl my-2">{{ insights.branchesCount }} فروع</p>
+                    </div>
+                </div>
+            </div>
+            <div class="flex boxShadowLeft w-20rem my-5 p-3 bg-card borderRound align-items-center mx-3 justify-content-center flex-column">
+                <div class="flex align-items-center my-2">
+                    <h3 class=" primaryColor">عدد المنتجات</h3>
+                    <span class="material-symbols-outlined primaryColor  mx-1 text-4xl">
+                        database
+                    </span>
+                </div>
+                <div class="">
+                    <div class="flex align-items-center justify-content-center">
+                        <p class="textColor font-bold text-xl my-2">{{ insights.productsCount }} منتجات</p>
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="bg-card flex justify-content-center m-auto w-10 p-3 borderRound">
             <Chart type="doughnut" :data="doughnutChartData" :options="chartData" class="md:h-30rem w-full md:w-7 m-auto flex justify-content-center" />
@@ -239,6 +353,68 @@ const exportCSV = () => {
     </div>
 </template>
 <style>
+.submitBtn{
+    background-color: white;
+    color: black;
+    margin: 2vh auto;
+    padding: 1.5vh;
+    width: 100%;
+    border: none;
+    box-shadow: 0px 0px 8px rgba(0, 0, 0, 0.342);
+    border-radius: 8px;
+    transition-duration: 0.2s;
+}
+.p-confirm-popup .p-confirm-popup-icon {
+    margin: 0 2vh;
+}
+.formkit-placeholder {
+    font-family: 'Lato', sans-serif;
+    font-family: 'Lemonada', cursive;
+    font-size: 12px !important;
+}
+.formkit-outer .formkit-icon {
+    color: white;
+    width: 3.2rem !important;
+    background: var(--background) !important;
+}
+.formkit-outer .formkit-icon svg {
+    max-width: 2em;
+}
+.formkit-select-icon{
+    border-radius: 5px;
+}
+.formkit-input{
+    padding: 2.5vh;
+    margin: auto;
+    border: none;
+    border-radius: 3px;
+    width: 100%;
+    font-size: 13px;
+    border: 1.4px solid rgba(0, 0, 0, 0.696);
+    background-color: rgba(255, 255, 255, 0.623);
+}
+.formkit-input::placeholder{
+    color: rgba(0, 0, 0, 0.79);
+}
+.formkit-input:focus{
+    outline: none;
+    box-shadow: 0px 0px 7px rgba(0, 0, 0, 0.442);
+}
+.formkit-wrapper{
+    padding:  1vh;
+    max-width: 100% !important;
+}
+.formkit-messages{
+    list-style: none;
+    padding: 0;
+}
+.formkit-message{
+    color: white;
+    background-color: rgba(255, 0, 0, 0.684);
+    padding: 1.5vh;
+    margin: 1vh 2vh;
+    border-radius: 3px;
+}
 .profitBg{
     background-color: rgba(3, 203, 0, 0.41);
     box-shadow: 0px 0px 8px rgba(0, 0, 0, 0.437);
@@ -286,10 +462,6 @@ const exportCSV = () => {
     color: black;
     margin: 0.5vh;
 }
-.formkit-form{
-    margin: 2vh auto;
-    width: 65%;
-}
 .formkit-wrapper{
     max-width: 100%;
 }
@@ -304,19 +476,6 @@ const exportCSV = () => {
 [data-type='dropdown'] .formkit-inner {
     background-color: rgba(255, 255, 255, 0.623);
 }
-.formkit-select-icon{
-    border-radius: 5px;
-}
-.formkit-input{
-    padding: 2.5vh;
-    margin: auto;
-    border: none;
-    border-radius: 3px;
-    width: 100%;
-    font-size: 15px;
-    border: 1.4px solid rgba(0, 0, 0, 0.696);
-    background-color: rgba(255, 255, 255, 0.623);
-}
 .formkit-input::placeholder{
     color: rgba(0, 0, 0, 0.79);
 }
@@ -326,10 +485,7 @@ const exportCSV = () => {
 }
 .formkit-form{
     margin: 2vh auto;
-    width: 65%;
-}
-.formkit-wrapper{
-    padding:  1vh;
+    width: 100%;
 }
 .formkit-messages{
     list-style: none;
@@ -360,19 +516,9 @@ const exportCSV = () => {
 label{
     padding: 0 1.8vh;
 }
-.repeater .formkit-label{
-    display: flex;
-    padding: 2vh;
-    color: white;
-    font-family: 'Lato', sans-serif;
-    font-family: 'Lemonada', cursive;
-}
 .formkit-label{
     display: none;
     padding: 1vh;
-}
-.login .p-selectbutton .p-button.p-highlight{
-    background-color: #00a650;
 }
 .p-confirm-popup .p-confirm-popup-icon {
     margin: 0 2vh;

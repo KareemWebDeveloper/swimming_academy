@@ -41,6 +41,12 @@ const isPrivate = ref(false)
 const updateCustomerView = ref(true)
 const UpdateOptions = ref(["تعديل اللاعب" , "تعديل الاشتراك"])
 const UpdateOptionsValue = ref("تعديل اللاعب")
+const workingSchedule = ref()
+const workingDays : any = ref([])
+const savedSchedule : any = ref([])
+const istrainingTimeHasError = ref(false)
+const trainingTimeError = ref()
+
 
 const updateCustomer = (req : any) => {
     isLoading.value = true
@@ -188,6 +194,64 @@ const handleDialogClosed = () => {
     else{
         push('/customers')
     }
+}
+
+function isTimeInRange(startTime : string, endTime : string, checkTime : string) {
+    const startDate = new Date(`2000-01-01 ${startTime}`);
+    const endDate = new Date(`2000-01-01 ${endTime}`);
+    const checkDate = new Date(`2000-01-01 ${checkTime}`);
+    return checkDate >= startDate && checkDate <= endDate;
+}
+
+const validateTrainingTime = () => {
+    let schedules = workingSchedule.value
+    setTimeout(() => {
+        let currentValue = lastSubscription.value.training_schedules
+        console.log(currentValue , 'validateTrainingTime');
+        // console.log(subscriptionFields.value.training_schedules[index] , 'validateTrainingTime');
+    currentValue.forEach((schedule : any , index : any) => {
+        const filteredData = schedules.filter((workingSchedule : any) => workingSchedule.day == schedule.day && isTimeInRange(workingSchedule.start_time, workingSchedule.end_time, schedule.time));
+        if(filteredData.length > 0){
+            console.log('hii');
+            istrainingTimeHasError.value = false
+            return
+        }
+        else{
+            istrainingTimeHasError.value = true
+            let chosenDaySchedules = schedules.filter((workingSchedule : any) => workingSchedule.day == schedule.day)
+            trainingTimeError.value = {
+                index : index,
+                schedule : chosenDaySchedules   
+            }
+        }
+    });
+}, 400);   
+}
+
+const showSavedSchedule = (req : any) => {
+    let schedules = workingSchedule.value
+    console.log(req , 'showSavedSchedule');
+    const filteredData = schedules.filter((schedule : any) => schedule.day == req);
+    filteredData.forEach((element : any , index : any) => {
+        let isExists = savedSchedule.value.some((schedule : any) => schedule.id === element.id)
+        if(!isExists){
+            savedSchedule.value.push(filteredData[index])
+        }
+    });   
+}
+
+const workingDaysOptions = () => {
+    return new Promise<any[]>((resolve) => {
+        axios.get(`http://127.0.0.1:8000/api/branch/workingDays/${lastSubscription.value.branch_id}`).then((result) => {
+        console.log(result.data);
+        workingSchedule.value = result.data.workingDays
+        workingDays.value = []
+        result.data.workingDays.forEach((day : any) => {
+            workingDays.value.push(day.day);
+        });
+        resolve(workingDays.value)
+    })
+})
 }
 
 const getAcademies = () => {
@@ -464,16 +528,32 @@ onBeforeMount(() => {
                             </div>
                             <FormKit prefix-icon="number" number="integer" id="sessions_per_week" type="number" label="عدد الحصص الاسبوعية" placeholder="أدخل عدد الحصص في الاسبوع " name="sessions_per_week" validation="required|min:1" />
                         </div>
-
+                        <div class="mt-3 col-12 md:col-12">
+                            <div class="flex align-items-center">
+                                <label for="invitations" class="px-3 py-1 text-white text-sm">الدعوات المتاحة</label>
+                            </div>
+                            <FormKit prefix-icon="number" :value="1" number="integer" id="invitations" type="number" label="الدعوات" placeholder="أدخل عدد الدعوات المتاحة للاشتراك" name="invitations" validation="min:0" />
+                        </div>
                         <div class="w-full m-auto repeater">
                             <FormKit id="repeater" name="training_schedules" type="repeater" add-label="اضافة موعد"
                              label="جدول المواعيد" #default="{ index }">
                              <div class="flex grid w-full align-items-center">
-                                <FormKit type="dropdown" outer-class="col-12 md:col-6" name="day" :label="`${index + 1}. اليوم`" placeholder="اختر اليوم"
-                                :options="['السبت','الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة']" validation="required"/>
-                                <FormKit type="time" label="موعد بدء التمرين" outer-class="col-12 md:col-6" name="time" value="21:00" validation="required" />
-                                </div>
+                                <FormKit type="dropdown"  @input="showSavedSchedule" outer-class="col-12 md:col-6" name="day" :label="`${index + 1}. اليوم`" placeholder="اختر اليوم"
+                                :options="workingDaysOptions" :multiple="false" always-load-on-open="true" validation="required"/>
+                                <FormKit type="time" label="موعد بدء التمرين" @input="validateTrainingTime(index)" outer-class="col-12 md:col-6" name="time" value="21:00" validation="required" />
+                            </div>
+                            <div class="formkit-message" v-if="istrainingTimeHasError && trainingTimeError.index == index">
+                                <h4 class="my-3" v-for="schedule in trainingTimeError.schedule">يرجي اختيار موعد بين {{ new Date(`2000-01-01 ${schedule.start_time}`).toLocaleTimeString('en-US', { hour12: true }) }}
+                                     و  {{  new Date(`2000-01-01 ${schedule.end_time}`).toLocaleTimeString('en-US', { hour12: true }) }}</h4>
+                            </div>
                             </FormKit>
+                            <div v-if="savedSchedule.length > 0" class="fadein animation-duration-500 my-2 animation-iteration-1 text-center p-3 borderRound"
+                            style="color: #256029; background-color: #c8e6c9d3;">
+                                <h4>مواعيد العمل المسجلة لهذا اليوم : </h4>
+                                <h5 v-for="schedule in savedSchedule">
+                                   {{ schedule.day }} من {{ new Date(`2000-01-01 ${schedule.start_time}`).toLocaleTimeString('en-US', { hour12: true }) }} إلي {{ new Date(`2000-01-01 ${schedule.end_time}`).toLocaleTimeString('en-US', { hour12: true }) }}
+                                </h5>
+                            </div>
                         </div>
 
                         <div class="col-12" :class="{'md:col-6' : isSaleFieldVisible}">
