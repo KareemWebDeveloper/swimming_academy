@@ -15,12 +15,15 @@ const stayAtTheSamePage = ref(false)
 const dbError = ref()
 const isLoading = ref(false)
 const productDetails = ref()
+const Sections : any = ref([])
+const sectionsFetched = ref(false)
+const productDetailsFetched = ref(false)
 const isDialogVisible = ref(false)
 
 const createProduct = (req : any) => {
     isLoading.value = true
     console.log(req);
-    axios.put(`https://akademia.website/api/updateProduct/${ProductId}` , req).then((result) => {
+    axios.put(`http://127.0.0.1:8000/api/updateProduct/${ProductId}` , req).then((result) => {
         // createdProduct.value = result.data.product
         isLoading.value = false
         isErrorReturned.value = false
@@ -56,9 +59,21 @@ const createProduct = (req : any) => {
     });
 }
 
+const getProductSections = () => {
+    axios.get('http://127.0.0.1:8000/api/productSections').then((result) => {
+         result.data.sections.forEach((section : any) => {
+            Sections.value.push({label : section.section_name , value : section.id})
+         });
+         sectionsFetched.value = true
+    }).catch((err) => {
+        console.log(err.response.data);
+    });
+}
+
 const getProductDetails = () => {
-    axios.get(`https://akademia.website/api/product/${ProductId}`).then((result) => {
+    axios.get(`http://127.0.0.1:8000/api/product/${ProductId}`).then((result) => {
         productDetails.value = result.data.product
+        productDetailsFetched.value = true
     }).catch((err) => {
         console.log(err.response.data);
         getProductDetails()
@@ -86,10 +101,12 @@ onBeforeMount(() => {
                 empPermissions.value = employee.permissions
                 UserType.value = 'employee'
                 getProductDetails()
+                getProductSections()
             })
         }  
         else{
             getProductDetails()
+            getProductSections()
         }
     })
 })
@@ -102,7 +119,7 @@ onBeforeMount(() => {
             <success-msg v-if="createdSuccessfully" class="fadeinright animation-duration-1000 animation-iteration-1 "></success-msg>
             <h5 v-if="isErrorReturned" class="px-3 py-2 textColor text-center borderRound error">{{ dbError }}</h5>
         </div>
-        <div>
+        <div v-if="sectionsFetched && productDetailsFetched">
             <FormKit type="form" v-model="productDetails" :actions="false" @submit="createProduct">
                 <div class="flex grid w-full">
                 <div class="mt-3 col-12">
@@ -110,6 +127,12 @@ onBeforeMount(() => {
                         <label for="name" class="px-3 py-1 text-white text-sm">اسم المنتج</label>
                     </div>
                     <FormKit prefix-icon="text" id="name" type="text" label="اسم المنتج" placeholder="أدخل اسم المنتج" name="product_name" validation="required|length:2" />
+                </div>
+                <div class="mt-3 col-12">
+                    <div class="flex align-items-center">
+                        <label for="product" class="px-3 py-1 text-white text-sm">القسم</label>
+                    </div>
+                    <FormKit type="dropdown" id="product" name="product_section_id" label="المنتجات" placeholder="اختر القسم لهذا المنتج" :options="Sections" />
                 </div>
                     <div class="mt-3 col-12 md:col-6">
                         <div class="flex align-items-center">

@@ -11,6 +11,8 @@ import Tag from 'primevue/tag';
 const { push , currentRoute } = useRouter();
 import successMsg from '../../components/successMsg.vue';
 import TreeSelect from 'primevue/treeselect';
+import DataTable from 'primevue/datatable';
+import Column from 'primevue/column';
 
 const breadCrumbs : any = ref([]);
 breadCrumbs.value = [
@@ -35,9 +37,25 @@ const isFreezeCancellingLoading = ref(false)
 const isDialogVisible = ref(false)
 const isInstallmentLoading = ref(false)
 const isPenultimateSubscriptionVisible = ref(false)
+const isAttendanceDialogVisible = ref(false)
 const maxFreezeDate = ref()
 const daysLeftForFreezeStart = ref()
 const PenultimateSubscription = ref()
+const customerAttendances = ref()
+
+const options = {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    hour12: true,
+    timeZone: 'Africa/Cairo',
+    locale: 'ar'
+};
+
+const dateTimeFormatter = new Intl.DateTimeFormat('ar', options);
 
 watch((customerDetails) , (newValue, oldValue) => {    
     if(!oldValue){
@@ -85,7 +103,7 @@ const freezeSubscription = (req : any) => {
     
     req.expiration_date = expirationDate.toISOString().substr(0, 19).replace('T', ' ');
     console.log(req);
-    axios.put(`https://akademia.website/api/freezeSubscription/${SubscriptionId}` , req).then((result) => {
+    axios.put(`http://127.0.0.1:8000/api/freezeSubscription/${SubscriptionId}` , req).then((result) => {
         console.log(result.data);
         isFreezeLoading.value = false
         updatedSuccessfully.value = true
@@ -126,7 +144,7 @@ const cancelFreeze = () => {
         expiration_date : expirationDate.toISOString().substr(0, 19).replace('T', ' ') ,
         avail_freeze_days : availFreezeDays
     }
-    axios.put(`https://akademia.website/api/freezeCancellation/${SubscriptionId}` , req).then((result) => {
+    axios.put(`http://127.0.0.1:8000/api/freezeCancellation/${SubscriptionId}` , req).then((result) => {
         console.log(result.data);
         isFreezeCancellingLoading.value = false
         updatedSuccessfully.value = true
@@ -146,7 +164,7 @@ const editInstallment = (installmentId : number , index : number) => {
     console.log(installmentData);
     console.log(installmentData.due_date);
     
-    axios.put(`https://akademia.website/api/updateInstallment/${installmentId}` , installmentData).then((result) => {
+    axios.put(`http://127.0.0.1:8000/api/updateInstallment/${installmentId}` , installmentData).then((result) => {
         console.log(result.data);
         isInstallmentLoading.value = false
         // updatedSuccessfully.value = true
@@ -159,7 +177,7 @@ const editInstallment = (installmentId : number , index : number) => {
 }
 
 const payInstallment = (installmentId : number) => {
-    axios.put(`https://akademia.website/api/payInstallment/${installmentId}`).then((result) => {
+    axios.put(`http://127.0.0.1:8000/api/payInstallment/${installmentId}`).then((result) => {
         console.log(result.data.installment);
         getCustomerDetailes()
     }).catch((err) => {
@@ -168,24 +186,42 @@ const payInstallment = (installmentId : number) => {
 }
 
 const deleteInstallment = (installmentId : number) => {
-    axios.delete(`https://akademia.website/api/deleteInstallment/${installmentId}`).then((result) => {
+    axios.delete(`http://127.0.0.1:8000/api/deleteInstallment/${installmentId}`).then((result) => {
         console.log(result.data);
         getCustomerDetailes()
     }).catch((err) => {
         console.log(err);
     });
 }
+
+const deleteAttendance = (attendanceId : number) => {
+    axios.delete(`http://127.0.0.1:8000/api/attendanceDelete/${attendanceId}`).then((result) => {
+        console.log(result.data);
+        getCustomerDetailes()
+    }).catch((err) => {
+        console.log(err);
+    });
+}
+
 const getCustomerPenultimateSubscription = () => {
-    axios.get(`https://akademia.website/api/customerPenultimateSubscription/${customerDetails.value.customer_id}`).then((result) => {
+    axios.get(`http://127.0.0.1:8000/api/customerPenultimateSubscription/${customerDetails.value.customer_id}`).then((result) => {
         console.log(result.data);
         PenultimateSubscription.value = result.data.penultimateSubscription
     }).catch((err) => {
         console.log(err);
     });
 }
+const getCustomerAttendances = () => {
+    axios.get(`http://127.0.0.1:8000/api/customerAttendances/${customerDetails.value.id}`).then((result) => {
+        console.log(result.data);
+        customerAttendances.value = result.data.attendances
+    }).catch((err) => {
+        console.log(err);
+    });
+}
 
 const getCustomerDetailes = () => {
-    axios.get(`https://akademia.website/api/customerSubcription/${SubscriptionId}`).then((result) => {
+    axios.get(`http://127.0.0.1:8000/api/customerSubcription/${SubscriptionId}`).then((result) => {
         console.log(result.data);
         customerDetails.value = result.data.subscription 
         subLevel.value = result.data.sublevel 
@@ -208,12 +244,13 @@ const getCustomerDetailes = () => {
         }
         isCustomerFetched.value = true
         getCustomerPenultimateSubscription()
+        getCustomerAttendances()
     }).catch((err) => {
         console.log(err);
     });
 }
 const getLevelsTree = () => {
-    axios.get(`https://akademia.website/api/levelsTree`).then((result) => {
+    axios.get(`http://127.0.0.1:8000/api/levelsTree`).then((result) => {
         console.log(result.data);
         levelsNodes.value = result.data.levelsTree
     }).catch((err) => {
@@ -235,7 +272,7 @@ const updateCustomerLevel = () => {
         req.level_id = parseInt(LevelKey) as any
     }
     console.log(req , 'req');
-    axios.put(`https://akademia.website/api/customerLevelUpdate/${customerDetails.value.customer_id}` , req).then((result) => {
+    axios.put(`http://127.0.0.1:8000/api/customerLevelUpdate/${customerDetails.value.customer_id}` , req).then((result) => {
         console.log(result.data);
         isDialogVisible.value = false
     }).catch((err) => {
@@ -313,7 +350,53 @@ onBeforeMount(() => {
             <Button label="تم" class="px-4 py-1" @click="updateCustomerLevel" autofocus />
         </template>
     </Dialog>
-    <!-- Update Options  -->
+    
+    <Dialog v-model:visible="isAttendanceDialogVisible" @after-hide="handleDialogClosed" modal header="تقرير حضور المشترك" :style="{ width: '65vw' }" :breakpoints="{ '960px': '75vw', '641px': '100vw' }">
+        <div class="attendanceTables">
+            <DataTable v-if="customerAttendances" v-model:filters="filters" ref="dt"  stripedRows :value="customerAttendances" paginator :rows="10" 
+            :rowsPerPageOptions="[10, 20, 50]" filterDisplay="menu"
+            dataKey="id" removableSort :globalFilterFields="[]" tableStyle="min-width: 50rem">
+            <template #header>
+            </template>
+            <Column field="session_duration"  header="مدة التمرين" style="min-width: 8rem;"></Column>
+            <Column field="training_start_time" sortable header="موعد بدء التمرين" style="min-width: 13rem;">
+                <template #body="slotProps" >
+                    <p>{{ new Date(`2000-01-01 ${slotProps.data.training_start_time}`).toLocaleTimeString('en-US', { hour12: true }) }}</p>
+                </template>
+            </Column>
+            <Column field="created_at" sortable  header="تاريخ الحضور"  style="min-width: 10rem;">
+                <template #body="slotProps" >
+                    <p>{{ dateTimeFormatter.format(new Date(slotProps.data.created_at)) }}</p>
+                </template>
+            </Column>
+            <Column field="is_attended"  header="الحالة">
+                <template #body="slotProps" >
+                    <p v-if="slotProps.data.is_attended">حضور</p>
+                    <p v-else>غياب</p>
+                </template>
+            </Column>
+            <Column  header="تعديل" style="min-width: 11rem;">
+                <template #body="slotProps">
+                    <div class="flex align-items-center">
+                        <span @click="deleteAttendance(slotProps.data.id)" class="material-symbols-outlined cursor-pointer hoverIcon textColor mx-2 text-3xl p-2 borderRound">
+                            delete_forever
+                        </span>
+                    </div>
+                </template>
+            </Column>
+                
+            <template #empty> <InlineMessage severity="info">لا يوجد حضور</InlineMessage></template>
+            <template #paginatorend>
+                <Button type="button" icon="pi pi-download" @click="exportCSV($event)" text />
+            </template>
+            </DataTable>
+        </div>
+
+        <!-- {{ customerNewLevel }} -->
+        <template #footer>
+            <Button label="تم" class="px-4 py-1" @click="isAttendanceDialogVisible = false" autofocus />
+        </template>
+    </Dialog>
     
     <Dialog v-model:visible="isPenultimateSubscriptionVisible" modal header="تفاصيل اخر اشتراك" :style="{ width: '55vw' }" :breakpoints="{ '960px': '75vw', '641px': '100vw' }">
 
@@ -547,7 +630,7 @@ onBeforeMount(() => {
                         category
                     </span>
                 </div>
-                <p style="color: white;">{{ customerDetails.category.category_name }}</p>
+                <p style="color: white;">{{ customerDetails.category_name }}</p>
             </div>
             <div class="flex my-3 lg:my-4 align-items-center mx-5 justify-content-center flex-column">
                 <div class="flex align-items-center my-2">
@@ -755,7 +838,10 @@ onBeforeMount(() => {
         <div class="m-auto my-3 w-full flex justify-content-center flex-column">
             <Button type="button" :disabled="false"
             class="mb-3 px-5 w-6 lg:mb-0 m-auto" @click="subscriptionUpgrade" label="تجديد الاشتراك" />
-            <!-- <h4  class="text-center" style="color: rgba(255, 0, 0, 0.867);">ليس له اشتراكات سابقة</h4> -->
+        </div>
+        <div v-if="customerAttendances" class="m-auto my-3 w-full flex justify-content-center flex-column">
+            <Button type="button" :disabled="false"
+            class="mb-3 px-5 w-6 lg:mb-0 m-auto" @click="isAttendanceDialogVisible = true" label="تقرير الحضور" />
         </div>
 
         <!-- training scheduels  -->
@@ -806,6 +892,10 @@ onBeforeMount(() => {
 <style>
 .p-treeselect-panel .p-treeselect-items-wrapper .p-tree {
     direction: ltr;
+}
+.attendanceTables .p-datatable .p-datatable-thead > tr > th {
+    background: var(--background);
+    color: white;
 }
 .bg-card{
     background-color: rgba(255, 255, 255, 0.029);

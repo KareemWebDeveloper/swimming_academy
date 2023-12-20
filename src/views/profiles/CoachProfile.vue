@@ -51,7 +51,7 @@ const options = {
 const dateTimeFormatter = new Intl.DateTimeFormat('ar', options);
 
 const coachAuthorize = () => {
-    axios.post('https://akademia.website/api/coachAuthorize').then((result) => {
+    axios.post('http://127.0.0.1:8000/api/coachAuthorize').then((result) => {
         coach.value = result.data.coach
         subscriptions.value = result.data.subscriptions
         salaries.value = result.data.salaries
@@ -190,6 +190,27 @@ onBeforeMount(() => {
 
         <div v-if="activeView == 'installments'" style="direction: rtl;">
             <h2 class="text-center textColor">المرتبات</h2>
+            <div v-for="salary in salaries">
+                <div class="bg-card my-3 borderRound p-3 flex flex-wrap justify-content-between">
+                    <div class="flex flex-column justify-content-center align-items-center">
+                        <h4 class="primaryColor">الراتب</h4>
+                        <h4 class="text-green-500">{{ parseFloat(salary.amount).toFixed(2) }} ج.م</h4>
+                    </div>
+                    <div class="flex flex-column justify-content-center align-items-center">
+                        <h4 class="primaryColor">عدد ساعات العمل</h4>
+                        <h4 class="text-green-500">{{ salary.hours_worked }} ساعات</h4>
+                    </div>
+                    <h5 v-if="salary.discount" class="w-full text-white text-center mt-3">تم صرف الراتب في : {{ new Date(salary.created_at).toLocaleDateString() }}</h5>
+                    <div class="flex w-full flex-column justify-content-center align-items-center">
+                        <h5 v-if="salary.discount" class="text-red-500 mt-3">خصم : -{{ parseFloat(salary.discount).toFixed(2) }} ج.م</h5>
+                        <h5 v-if="salary.bonus" class="text-green-500 mt-2">بونص : +{{ parseFloat(salary.bonus).toFixed(2) }} ج.م</h5>
+                        <div v-if="salary.notes" class="bg-card text-white my-2 text-xs p-2 borderRound">
+                            <p>{{ salary.notes }}</p>
+                        </div>
+                    </div>
+                    <!-- {{ salary }} -->
+                </div>
+            </div>
         </div>
 
         <!-- Coach sessions schedules -->

@@ -93,7 +93,7 @@ const dateTimeFormatter = new Intl.DateTimeFormat('ar', options);
 
 const getCoachAttendances = (coachId : number) => {
     isDialogLoading.value = true
-    axios.get(`https://akademia.website/api/coach/attendances/${coachId}`).then((result) => {
+    axios.get(`http://127.0.0.1:8000/api/coach/attendances/${coachId}`).then((result) => {
         activeCoachAttendances.value = result.data.attendances
         isDialogVisible.value = true
         isDialogLoading.value = false
@@ -104,13 +104,15 @@ const getCoachAttendances = (coachId : number) => {
 
 const getExpectedSalaries = () => {
     isFetched.value = false
-    axios.get('https://akademia.website/api/expectedSalaries').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/expectedSalaries').then((result) => {
         ExpectedSalaries.value = []
         result.data.coaches.forEach((coach : any ) => {
             ExpectedSalaries.value.push({
                 id : coach.id,
                 name : coach.name,
                 job : 'مدرب',
+                discount : coach.salary_discount ? parseFloat(coach.salary_discount).toFixed(2) : 'غير محدد',
+                advance_payment : coach.advance_payment ? `${parseFloat(coach.advance_payment).toFixed(2)} ج.م` : 'غير محدد',
                 last_paid_date : coach.last_paid_date ? new Date(coach.last_paid_date) : 'لم يصرف له مرتب',
                 hours_worked : coach.hours_worked,
                 expected_salary : parseFloat(coach.salary_per_hour) * parseFloat(coach.hours_worked),
@@ -121,6 +123,8 @@ const getExpectedSalaries = () => {
                 id : employee.id,
                 name : employee.name,
                 job : 'موظف',
+                discount : employee.salary_discount ? parseFloat(employee.salary_discount).toFixed(2) : 'غير محدد',
+                advance_payment : employee.advance_payment ? `${parseFloat(employee.advance_payment).toFixed(2)} ج.م` : 'غير محدد',
                 hours_worked : '-',
                 last_paid_date : employee.last_paid_date ? new Date(employee.last_paid_date) : 'لم يصرف له مرتب',
                 expected_salary : parseFloat(employee.salary),
@@ -143,7 +147,7 @@ const branchesOptions : any = ref([])
 const academies : any = ref([])
 
 const getBranches = () => {
-    axios.get('https://akademia.website/api/branches').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/branches').then((result) => {
         console.log(result.data);
         result.data.branches.forEach((branch : any) => {
             branches.value.push({label : branch.branch_name , value : branch.id})
@@ -156,7 +160,7 @@ const getBranches = () => {
     });
 }
 const payEmployeeSalary = (id : number) => {
-        axios.post(`https://akademia.website/api/payEmployeeSalary/${id}`).then((result) => {
+        axios.post(`http://127.0.0.1:8000/api/payEmployeeSalary/${id}`).then((result) => {
             console.log(result.data);
             window.scrollTo({
                 top: 0,
@@ -174,7 +178,7 @@ const payEmployeeSalary = (id : number) => {
 
 const payCoachSalary = (req : any) => {
         isPayingSalary.value = true
-        axios.post(`https://akademia.website/api/payCoachSalary/${activeCoachInfo.value.id}` , req).then((result) => {
+        axios.post(`http://127.0.0.1:8000/api/payCoachSalary/${activeCoachInfo.value.id}` , req).then((result) => {
             isPayingSalary.value = false
             console.log(result.data);
             window.scrollTo({
@@ -350,7 +354,7 @@ const exportCSV = () => {
                 <div class="flex align-items-center">
                     <label for="discount" class="px-3 py-1 text-white text-sm">خصم ( اختياري )</label>
                 </div>
-                <FormKit prefix-icon="dollar" id="discount" type="number" number="float" label="الخصم" placeholder="يرجي ادخال مبلغ الخصم" name="discount" validation="min:0" />
+                <FormKit prefix-icon="dollar" :value="activeCoachInfo.discount" id="discount" type="number" number="float" label="الخصم" placeholder="يرجي ادخال مبلغ الخصم" name="discount" validation="min:0" />
             </div>
             <div class="mt-3">
                 <div class="flex align-items-center">
@@ -412,10 +416,22 @@ const exportCSV = () => {
             </template>
             <Column field="id" sortable header="الكود">
             </Column>
-            <Column field="name" sortable header="الاسم" style="width: 20%;">
+            <Column field="name" sortable header="الاسم" style="min-width: 13rem;">
                 <template #body="slotProps" >
                     <p v-if="slotProps.data.job == 'مدرب'">كابتن / {{ slotProps.data.name }}</p>
                     <p v-else>{{ slotProps.data.name }}</p>
+                </template>
+            </Column>
+            <Column field="discount" sortable header="الخصم المسجل" style="min-width: 13rem;">
+                <template #body="slotProps" >
+                    <p v-if="slotProps.data.discount != 'غير محدد'" class="text-red-500 font-bold">-{{ slotProps.data.discount }} ج.م</p>
+                    <p v-else>{{ slotProps.data.discount }}</p>
+                </template>
+            </Column>
+            <Column field="advance_payment" sortable header="السلف المسجلة" style="min-width: 13rem;">
+                <template #body="slotProps" >
+                    <p v-if="slotProps.data.advance_payment != 'غير محدد'" class="text-red-500 font-bold">{{ slotProps.data.advance_payment }}</p>
+                    <p v-else>{{ slotProps.data.advance_payment }}</p>
                 </template>
             </Column>
                 <Column field="job" header="الوظيفة" style="width: 17%;">
@@ -430,7 +446,7 @@ const exportCSV = () => {
                         <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="الغاء" outlined />
                     </template>
                 </Column>
-            <Column field="last_paid_date" filterField="last_paid_date" dataType="date" sortable  header="تاريخ آخر قبض" style="width: 24%;">
+            <Column field="last_paid_date" filterField="last_paid_date" dataType="date" sortable  header="تاريخ آخر قبض" style="min-width: 13rem;">
                 <template #body="slotProps" >
                     <p v-if="slotProps.data.last_paid_date == 'لم يصرف له مرتب'">{{ slotProps.data.last_paid_date }}</p>
                     <p v-else>{{ dateTimeFormatter.format(new Date(slotProps.data.last_paid_date)) }}</p>
@@ -445,10 +461,10 @@ const exportCSV = () => {
                     <Button type="button" @click="filterCallback(); calculateTotalExpectedSalaries()" class="mb-3 lg:mb-0 mx-2" label="الغاء" outlined />
                 </template> -->
             </Column>
-            <Column field="expected_salary" sortable header="المرتب">
+            <Column field="expected_salary" sortable header="المرتب" style="min-width: 12rem;">
                 <template #body="slotProps" >
                     <p v-if="slotProps.data.job == 'مدرب'">{{ slotProps.data.expected_salary }} ج.م / {{ slotProps.data.hours_worked }} ساعات</p>
-                    <p v-else>{{ slotProps.data.expected_salary }} ج.م</p>
+                    <p v-else><span v-if="slotProps.data.discount != 'غير محدد'" class="text-red-500 text-sm"> {{ slotProps.data.discount }} -</span> {{ slotProps.data.expected_salary }} ج.م</p>
                 </template>
             </Column>
             <Column  header="صرف">

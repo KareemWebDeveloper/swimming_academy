@@ -58,9 +58,10 @@ const getCustomerSubscriptions = () => {
     console.log(customerId.value);
     isSubscriptionFetched.value= false
     isSubscriptionLoading.value= true
-    axios.get(`https://akademia.website/api/customerActiveSubscriptions/${customerId.value}`).then((result) => {
+    axios.get(`http://127.0.0.1:8000/api/customerActiveSubscriptions/${customerId.value}`).then((result) => {
         console.log(result);
         isSubscriptionFetched.value= true
+        isErrorReturned.value = false
         isSubscriptionLoading.value= false
         customerDetails.value = result.data.customer
         customerActiveSubscriptions.value = result.data.activeSubscriptions
@@ -74,7 +75,7 @@ const getCustomerSubscriptions = () => {
 }
 
 const getAnnualProfits = () => {
-    axios.get('https://akademia.website/api/annualProfitsChart').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/annualProfitsChart').then((result) => {
         console.log(Object.keys(result.data.annualProfits));
         console.log(Object.values(result.data.annualProfits));
         let revenues : any = []
@@ -111,7 +112,7 @@ const getAnnualProfits = () => {
     });
 }
 const getInsights = () => {
-    axios.get('https://akademia.website/api/insights').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/insights').then((result) => {
         console.log(result.data);
         insights.value = result.data
         const documentStyle = getComputedStyle(document.body);
@@ -214,6 +215,9 @@ const exportCSV = () => {
             <Button label="تسجيل اشتراك" class="py-3 px-4 mx-2" @click="openNewTab('customer_create')" />
             <Button label="تفاصيل الاشتراك بالكود" class="py-3 px-4 mx-2" @click="isDialogVisible = true" />
             <Button label="تسجيل حضور" class="py-3 px-4 mx-2" @click="openNewTab('attendance_list')" />
+        </div>
+        <div class="flex justify-content-center my-5">
+            <Button label="تقرير الحضور اليومي" class="py-3 px-4 mx-2" @click="openNewTab('daily_attendances')" />
         </div>
 
         <div class="flex flex-wrap my-5 justify-content-center">

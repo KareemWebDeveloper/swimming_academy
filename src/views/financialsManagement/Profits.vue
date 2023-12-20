@@ -72,7 +72,7 @@ const dateTimeFormatter = new Intl.DateTimeFormat('ar', options);
 const getExpenses = (req : any) => {
     req.start_date = new Date(req.start_date).toLocaleDateString()
     req.end_date = new Date(req.end_date).toLocaleDateString()
-    axios.post(`https://akademia.website/api/expensesInInterval/${req.branch_id}`,req).then((result) => {
+    axios.post(`http://127.0.0.1:8000/api/expensesInInterval/${req.branch_id}`,req).then((result) => {
         console.log(result.data);
         result.data.variableExpenses.forEach((expense : any) => {
             totalExpenses.value += expense.expense_cost
@@ -117,7 +117,7 @@ const getExpenses = (req : any) => {
 }
 
 const getRevenues = (req : any) => {
-    axios.post(`https://akademia.website/api/revenuesInInterval/${req.branch_id}` , req).then((result) => {
+    axios.post(`http://127.0.0.1:8000/api/revenuesInInterval/${req.branch_id}` , req).then((result) => {
         console.log(result.data);
         result.data.subscriptions.forEach((subscription : any) => {
             if(subscription.sale){
@@ -159,7 +159,7 @@ const academies : any = ref([])
 const branchNames : any = []
 
 const getBranches = () => {
-    axios.get('https://akademia.website/api/branches').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/branches').then((result) => {
         console.log(result.data);
         result.data.branches.forEach((branch : any) => {
             branches.value.push({label : branch.branch_name , value : branch.id})

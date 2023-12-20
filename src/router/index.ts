@@ -128,6 +128,16 @@ const router = createRouter({
       component: () => import('../views/products/productUpdate.vue')
     },
     {
+      path: '/productTypes',
+      name: 'products_sections',
+      component: () => import('../views/products/productTypesList.vue')
+    },
+    {
+      path: '/productType/create',
+      name: 'products_section_create',
+      component: () => import('../views/products/productTypeCreate.vue')
+    },
+    {
       path: '/levels',
       name: 'levels_list',
       component: () => import('../views/Levels/LevelsList.vue')
@@ -151,6 +161,16 @@ const router = createRouter({
       path: '/attendance',
       name: 'attendance_list',
       component: () => import('../views/attendance/AttendanceList.vue')
+    },
+    {
+      path: '/management',
+      name: 'management_list',
+      component: () => import('../views/management/managementList.vue')
+    },
+    {
+      path: '/daily/attendances',
+      name: 'daily_attendances',
+      component: () => import('../views/attendance/DailyAttendances.vue')
     },
     {
       path: '/customer/profile',

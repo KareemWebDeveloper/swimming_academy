@@ -63,7 +63,7 @@ const createCustomer = (req : any) => {
         return
     }
     console.log(customerCreateReq);
-    axios.post('https://akademia.website/api/createCustomer' , customerCreateReq).then((result) => {
+    axios.post('http://127.0.0.1:8000/api/createCustomer' , customerCreateReq).then((result) => {
         createdCustomer.value = result.data.customer
         localStorage.setItem('waitingForSubscription' , JSON.stringify(result.data.customer))
         console.log(localStorage.getItem('waitingForSubscription'));
@@ -100,7 +100,7 @@ const openSubscriptionForm = (req : any) => {
     req.customer_name = req.fname + ' ' + req.sname + ' ' + req.thirdName
     req.birthdate = new Date(req.birthdate);
     req.birthdate = req.birthdate.toISOString().substr(0, 19).replace('T', ' ');
-    axios.post('https://akademia.website/api/validateCustomer' , req).then((result) => {
+    axios.post('http://127.0.0.1:8000/api/validateCustomer' , req).then((result) => {
         if(result.data.validation){
             isLoading.value = false
             isErrorReturned.value = false
@@ -132,7 +132,7 @@ const openSubscriptionForm = (req : any) => {
 }
 
 const getBranches = () => {
-    axios.get('https://akademia.website/api/branches').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/branches').then((result) => {
         console.log(result.data);
         allBranches.value = result.data.branches
         result.data.branches.forEach((branch : any) => {
@@ -155,7 +155,7 @@ const getBranches = () => {
 
 const getAcademies = () => {
     return new Promise<any[]>((resolve) => {
-    axios.get(`https://akademia.website/api/academiesOfBranch/${subscriptionFields.value.branch_id}`).then((result) => {
+    axios.get(`http://127.0.0.1:8000/api/academiesOfBranch/${subscriptionFields.value.branch_id}`).then((result) => {
         console.log(result.data);
         result.data.academies.forEach((academy : any) => {
             allAcademies.value.push({label : academy.academy_name , value : academy.id})
@@ -169,7 +169,7 @@ const getAcademies = () => {
 
 const coachesOptions = () => {
     return new Promise<any[]>((resolve) => {
-        axios.get(`https://akademia.website/api/coachesOfBranch/${subscriptionFields.value.branch_id}`).then((result) => {
+        axios.get(`http://127.0.0.1:8000/api/coachesOfBranch/${subscriptionFields.value.branch_id}`).then((result) => {
         console.log(result.data);
         coaches.value = []
         result.data.coaches.forEach((coach : any) => {
@@ -181,7 +181,7 @@ const coachesOptions = () => {
 }
 const categoriesOptions = () => {
     return new Promise<any[]>((resolve) => {
-        axios.get(`https://akademia.website/api/categoriesOfBranch/${subscriptionFields.value.branch_id}`).then((result) => {
+        axios.get(`http://127.0.0.1:8000/api/categoriesOfBranch/${subscriptionFields.value.branch_id}`).then((result) => {
         console.log(result.data);
         categories.value = []
         result.data.categories.forEach((category : any) => {
@@ -193,7 +193,7 @@ const categoriesOptions = () => {
 }
 const workingDaysOptions = () => {
     return new Promise<any[]>((resolve) => {
-        axios.get(`https://akademia.website/api/branch/workingDays/${subscriptionFields.value.branch_id}`).then((result) => {
+        axios.get(`http://127.0.0.1:8000/api/branch/workingDays/${subscriptionFields.value.branch_id}`).then((result) => {
         console.log(result.data);
         workingSchedule.value = result.data.workingDays
         workingDays.value = []
@@ -230,7 +230,7 @@ const createSubscription = (customerId : number) => {
         req.installments = installments.value.installments
     }
     console.log(req);
-    axios.post('https://akademia.website/api/createSubscription' , req).then((result) => {
+    axios.post('http://127.0.0.1:8000/api/createSubscription' , req).then((result) => {
         createdSubscription.value = result.data.subscription
         createdSubscription.value.customer_name = result.data.customer.customer_name
         isSubscriptionLoading.value = false
@@ -360,7 +360,7 @@ watch(subscriptionFields, (newValue, oldValue) => {
 });
 
 const getCustomers = () => {
-    axios.get('https://akademia.website/api/customers').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/customers').then((result) => {
         console.log(result.data);
         result.data.customers.forEach((customer : any) => {
             customers.value.push({label : `${customer.customer_name} - ${customer.customer_phone}` , value : customer.id})

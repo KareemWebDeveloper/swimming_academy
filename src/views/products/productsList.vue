@@ -69,6 +69,7 @@ const filters = ref(
     {
         global: { value: null, matchMode: FilterMatchMode.CONTAINS },
         product_name: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }] },
+        product_section: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }] },
         id: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.EQUALS }] },
     }
 );
@@ -94,12 +95,18 @@ const options = {
 const dateTimeFormatter = new Intl.DateTimeFormat('ar', options);
 
 const getProducts = () => {
-    axios.get('https://akademia.website/api/products').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/products').then((result) => {
         console.log(result.data);
         products.value = result.data.products
         isFetched.value = true
         products.value.forEach((product : any) => {
             product.created_at = new Date(product.created_at)
+            if(product.product_section && product.product_section.section_name){
+                product.product_section = product.product_section.section_name
+            }
+            else{
+                product.product_section = 'غير محدد'
+            }
             product.amount = 0
         });
         posProducts.value = [result.data.products, []]
@@ -120,7 +127,7 @@ const createSellingOrder = (req : any) => {
         total_price : totalPrice.value
     }
     console.log(request);
-    axios.post('https://akademia.website/api/createSellingOrder', request ).then((result) => {
+    axios.post('http://127.0.0.1:8000/api/createSellingOrder', request ).then((result) => {
         console.log(result.data.order);
         createdOrder.value = result.data.order
         isDialogVisible.value = true
@@ -140,7 +147,7 @@ const bulkDelete = () => {
     let req : any = {
         product_ids : product_ids
     }
-    axios.post('https://akademia.website/api/productsBulkDelete', req ).then((result) => {
+    axios.post('http://127.0.0.1:8000/api/productsBulkDelete', req ).then((result) => {
         console.log(result);
         deletedSuccessfully.value = true
         getProducts()
@@ -181,7 +188,7 @@ onBeforeMount(() => {
 })
 const getBranches = () => {
     return new Promise<any[]>((resolve) => {
-    axios.get('https://akademia.website/api/branches').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/branches').then((result) => {
         console.log(result.data);
         const branches : any = []
         result.data.branches.forEach((branch : any) => {
@@ -194,7 +201,7 @@ const getBranches = () => {
 })
 }
 const getCustomers = () => {
-    axios.get('https://akademia.website/api/customers').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/customers').then((result) => {
         console.log(result.data);
         result.data.customers.forEach((customer : any) => {
             Customers.value.push({label : customer.customer_name , value : customer.id})
@@ -282,7 +289,7 @@ const exportCSV = () => {
     <div v-if="!isPosView">
         <DataTable v-model:filters="filters" ref="dt"  stripedRows :value="products"  v-model:selection="selectedProducts" :loading="!isFetched"
         stateStorage="session" stateKey="products-state-session" paginator :rows="10" :rowsPerPageOptions="[10, 20, 50]" filterDisplay="menu"
-         dataKey="id" removableSort export-filename="المنتجات" :globalFilterFields="['id', 'product_name']" tableStyle="min-width: 50rem">
+         dataKey="id" removableSort export-filename="المنتجات" :globalFilterFields="['id', 'product_name' , 'product_section']" tableStyle="min-width: 50rem">
         <template #header>
             <div class="flex flex-column lg:flex-row justify-content-between align-items-center">
                 <div class="flex align-items-center">
@@ -299,7 +306,9 @@ const exportCSV = () => {
         <!-- <Column field="id" header="Code"></Column> -->
         <Column selectionMode="multiple" headerStyle="width: 3rem"></Column>
         <Column field="id" sortable  header="الكود"></Column>
-        <Column field="product_name" sortable  header="المنتج"></Column>
+        <Column field="product_name" sortable  header="المنتج" style="min-width: 11rem;"></Column>
+        <Column field="product_section" sortable  header="القسم">
+        </Column>
         <Column field="product_count" sortable  header="الكمية">
             <template #body="slotProps" >
                 <!-- <p>{{ slotProps.data.product_count }} قطعة</p> -->
@@ -307,7 +316,7 @@ const exportCSV = () => {
 
             </template>
         </Column>
-        <Column field="product_price" sortable  header="سعر المنتج">
+        <Column field="product_price" sortable  header="سعر المنتج" style="min-width: 10rem;">
             <template #body="slotProps" >
                 <p>{{ slotProps.data.product_price.toFixed(2) }} ج.م</p>
             </template>

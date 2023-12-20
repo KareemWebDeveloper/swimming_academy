@@ -14,12 +14,20 @@ const visible = ref(true)
 type userType = 'admin' | 'employee' 
 const type : Ref<userType> = ref('admin')
 const showEmployeeTypes = ref(false)
+const showManagementCategories = ref(false)
+const showProductsTypes = ref(false)
 const showBracnhesCategories = ref(false)
 const showFinancialsCategories = ref(false)
 const showCustomersCategories = ref(false)
 
 const logOut = () => {
   localStorage.removeItem('SwimmingToken');
+  if(type.value == 'employee'){
+    push({name : 'login' , query : {userType : 'employee'}})
+  }
+  else{
+    push({name : 'login'})
+  }
   location.reload()
 }
 onBeforeMount(() => {
@@ -98,29 +106,35 @@ const closeSideBar = () => {
               </span>            
               <router-link v-if="isExpanded" to="/customers"><h5 class="textColor">المشتركين</h5></router-link>
             </div>
-            <div class="flex align-items-center my-3 div-hover" @click="push('/customer/create')" :class="{'justify-content-center' : !isExpanded , 'activeDivBg' : currentRoute.path.includes('/customer/create') }" >
+            <div v-if="isEmpAuthorizedFor('تجديد و تسجيل اشتراكات')" class="flex align-items-center my-3 div-hover" @click="push('/customer/create')" :class="{'justify-content-center' : !isExpanded , 'activeDivBg' : currentRoute.path.includes('/customer/create') }" >
               <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
                 demography
               </span>            
               <router-link v-if="isExpanded" to="/customer/create"><h5 class="textColor">تسجيل اشتراك</h5></router-link>
             </div>
-            <div class="flex align-items-center my-3 div-hover" @click="push({path :'/customer/create' , query : {isPrivate : 'true'}})" :class="{'justify-content-center' : !isExpanded , 'activeDivBg' : currentRoute.path.includes('/customer/create') }" >
+            <div v-if="isEmpAuthorizedFor('تسجيل و تعديل التمرينات الفردية')" class="flex align-items-center my-3 div-hover" @click="push({path :'/customer/create' , query : {isPrivate : 'true'}})" :class="{'justify-content-center' : !isExpanded , 'activeDivBg' : currentRoute.path.includes('/customer/create') }" >
               <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
                 demography
               </span>            
               <router-link v-if="isExpanded" to=""><h5 class="textColor">تسجيل برايفت</h5></router-link>
             </div>
-            <div class="flex align-items-center my-3 div-hover" @click="push({path : '/revenues' , query : {branchId : 0} })" :class="{'justify-content-center' : !isExpanded , 'activeDivBg' : currentRoute.path.includes('/revenues') }" >
+            <div v-if="isEmpAuthorizedFor('مدفوعات اللاعبين')" class="flex align-items-center my-3 div-hover" @click="push({path : '/revenues' , query : {branchId : 0} })" :class="{'justify-content-center' : !isExpanded , 'activeDivBg' : currentRoute.path.includes('/revenues') }" >
               <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
                 price_check
               </span>            
               <router-link v-if="isExpanded" to=""><h5 class="textColor">مدفوعات اللاعبين</h5></router-link>
             </div>
-            <div class="flex align-items-center my-3 div-hover" @click="push({path : '/revenues' , query : {branchId : 0 , filter : 'installments'} })" :class="{'justify-content-center' : !isExpanded , 'activeDivBg' : currentRoute.path.includes('/revenue') }" >
+            <div v-if="isEmpAuthorizedFor('مدفوعات اللاعبين')" class="flex align-items-center my-3 div-hover" @click="push({path : '/revenues' , query : {branchId : 0 , filter : 'installments'} })" :class="{'justify-content-center' : !isExpanded , 'activeDivBg' : currentRoute.path.includes('/revenue') }" >
               <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
                 payments
               </span>            
               <router-link v-if="isExpanded" to=""><h5 class="textColor">جميع الأقساط</h5></router-link>
+            </div>
+            <div v-if="isEmpAuthorizedFor('الأقساط المطلوبة')" class="flex align-items-center my-3 div-hover" @click="push({path : '/customers' , query : {showInstallments : 'true' } })" :class="{'justify-content-center' : !isExpanded }" >
+              <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
+                payments
+              </span>            
+              <router-link v-if="isExpanded" to=""><h5 class="textColor">الأقساط المطلوبة</h5></router-link>
             </div>
             <div v-if="isEmpAuthorizedFor('المستويات')" class="flex align-items-center my-3 div-hover"  @click="push('/levels')" :class="{'justify-content-center' : !isExpanded }" >
               <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
@@ -178,11 +192,17 @@ const closeSideBar = () => {
                   <router-link v-if="isExpanded" to="/employees"><h5 class="textColor">الموظفين</h5></router-link>
                 </div>
             </div>
-          <div class="flex align-items-center my-5 div-hover" @click="push('/attendance')" :class="{'justify-content-center' : !isExpanded }" >
+          <div v-if="isEmpAuthorizedFor('تسجيل الحضور')" class="flex align-items-center my-5 div-hover" @click="push('/attendance')" :class="{'justify-content-center' : !isExpanded }" >
             <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
               format_list_numbered_rtl
             </span>            
             <router-link v-if="isExpanded" to="/attendance"><h5 class="textColor">تسجيل حضور</h5></router-link>
+          </div>
+          <div  v-if="isEmpAuthorizedFor('تقرير الحضور اليومي')" class="flex align-items-center my-5 div-hover" @click="push('/daily/attendances')" :class="{'justify-content-center' : !isExpanded }" >
+            <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
+              today
+            </span>            
+            <router-link v-if="isExpanded" to="/daily/attendances"><h5 class="textColor">الحضور اليومي</h5></router-link>
           </div>
           <div v-if="isEmpAuthorizedFor('عرض التمرينات الفردية')" class="flex align-items-center my-5 div-hover" @click="push('/privateSubscriptions')" :class="{'justify-content-center' : !isExpanded }" >
             <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
@@ -190,6 +210,23 @@ const closeSideBar = () => {
             </span>            
             <router-link v-if="isExpanded" to="/privateSubscriptions"><h5 class="textColor">تمرينات فردية</h5></router-link>
           </div>
+
+          <div v-if="isEmpAuthorizedFor('السلف و الخصومات')" class="flex align-items-center mt-5 mb-3 div-hover" @click="showManagementCategories = !showManagementCategories" :class="{'justify-content-center' : !isExpanded }" >
+            <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
+              manage_accounts
+            </span>            
+            <h4 v-if="isExpanded"><h5 class="textColor">الإدارة</h5></h4>
+          </div>
+          <!-- Sub Categories for Management  -->
+          <div v-if="showManagementCategories" class="px-4 py-1 fadein animation-duration-400 animation-iteration-1 borderRound" style="background: rgba(255, 255, 255, 0.066);">
+            <div  class="flex align-items-center my-3 div-hover" @click="closeSideBar(); push('/management')" :class="{'justify-content-center' : !isExpanded }" >
+              <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
+                badge
+              </span>            
+              <router-link v-if="isExpanded" to="/management"><h6 class="textColor">السلف و الخصومات</h6></router-link>
+            </div>
+        </div>
+
           <div v-if="isEmpAuthorizedFor('الحسابات المالية')" class="flex align-items-center mt-5 mb-2 div-hover" @click="showFinancialsCategories = !showFinancialsCategories" :class="{'justify-content-center' : !isExpanded }" >
             <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
               payments
@@ -233,11 +270,44 @@ const closeSideBar = () => {
             </div>
           </div>
 
-          <div class="flex align-items-center my-5 div-hover" @click="push('/products')" :class="{'justify-content-center' : !isExpanded }" >
+          <div class="flex align-items-center mt-5 mb-2 div-hover" @click="showProductsTypes = !showProductsTypes" :class="{'justify-content-center' : !isExpanded }" >
             <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
               database
             </span>            
-            <router-link v-if="isExpanded" to="/products"><h5 class="textColor">المنتجات</h5></router-link>
+            <h3 v-if="isExpanded"><h5 class="textColor">المنتجات</h5></h3>
+          </div>
+          <!-- Sub Categories for Products   -->
+          <div v-if="showProductsTypes" class="px-4 py-1 fadein animation-duration-400 animation-iteration-1 borderRound" style="background: rgba(255, 255, 255, 0.066);">
+            <div  v-if="isEmpAuthorizedFor('عرض أقسام المنتجات')" class="flex align-items-center my-3 div-hover" @click="push('/productTypes')" :class="{'justify-content-center' : !isExpanded }" >
+              <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
+                category
+              </span>            
+              <router-link v-if="isExpanded" to="/productTypes"><h5 class="textColor">الأقسام</h5></router-link>
+            </div>
+            <div v-if="isEmpAuthorizedFor('تسجيل أقسام المنتجات')" class="flex align-items-center my-3 div-hover" @click="push('/productType/create')" :class="{'justify-content-center' : !isExpanded }" >
+              <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
+                edit_note
+              </span>            
+              <router-link v-if="isExpanded" to="/productType/create"><h5 class="textColor">تسجيل قسم</h5></router-link>
+            </div>
+            <div v-if="isEmpAuthorizedFor('تسجيل المنتجات')" class="flex align-items-center my-3 div-hover" @click="push('/products/create')" :class="{'justify-content-center' : !isExpanded }" >
+              <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
+                edit_note
+              </span>            
+              <router-link v-if="isExpanded" to="/products/create"><h5 class="textColor">تسجيل منتج</h5></router-link>
+            </div>
+            <div class="flex align-items-center my-3 div-hover" @click="push('/products')" :class="{'justify-content-center' : !isExpanded }" >
+              <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
+                database
+              </span>            
+              <router-link v-if="isExpanded" to="/products"><h5 class="textColor">المنتجات</h5></router-link>
+            </div>
+            <div v-if="isEmpAuthorizedFor('المرتجعات')" class="flex align-items-center my-3 div-hover" @click="push('/orders')" :class="{'justify-content-center' : !isExpanded }" >
+              <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
+                currency_exchange
+              </span>            
+              <router-link v-if="isExpanded" to="/orders"><h5 class="textColor">المرتجعات</h5></router-link>
+            </div>
           </div>
       </div>
     </div>
@@ -275,29 +345,35 @@ const closeSideBar = () => {
               </span>            
               <router-link v-if="isExpanded" to="/customers"><h5 class="textColor">المشتركين</h5></router-link>
             </div>
-            <div class="flex align-items-center my-3 div-hover" @click="closeSideBar(); push('/customer/create')" :class="{'justify-content-center' : !isExpanded , 'activeDivBg' : currentRoute.path.includes('/customer/create') }" >
+            <div v-if="isEmpAuthorizedFor('تجديد و تسجيل اشتراكات')" class="flex align-items-center my-3 div-hover" @click="closeSideBar(); push('/customer/create')" :class="{'justify-content-center' : !isExpanded , 'activeDivBg' : currentRoute.path.includes('/customer/create') }" >
               <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
                 demography
               </span>            
               <router-link v-if="isExpanded" to="/customer/create"><h5 class="textColor">تسجيل اشتراك</h5></router-link>
             </div>
-            <div class="flex align-items-center my-3 div-hover" @click="closeSideBar(); push({path :'/customer/create' , query : {isPrivate : 'true'}})" :class="{'justify-content-center' : !isExpanded , 'activeDivBg' : currentRoute.path.includes('/customer/create') }" >
+            <div v-if="isEmpAuthorizedFor('تسجيل و تعديل التمرينات الفردية')" class="flex align-items-center my-3 div-hover" @click="closeSideBar(); push({path :'/customer/create' , query : {isPrivate : 'true'}})" :class="{'justify-content-center' : !isExpanded , 'activeDivBg' : currentRoute.path.includes('/customer/create') }" >
               <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
                 demography
               </span>            
               <router-link v-if="isExpanded" to=""><h5 class="textColor">تسجيل برايفت</h5></router-link>
             </div>
-            <div class="flex align-items-center my-3 div-hover" @click="closeSideBar(); push({path : '/revenues' , query : {branchId : 0} })" :class="{'justify-content-center' : !isExpanded , 'activeDivBg' : currentRoute.path.includes('/revenue') }" >
+            <div  v-if="isEmpAuthorizedFor('مدفوعات اللاعبين')" class="flex align-items-center my-3 div-hover" @click="closeSideBar(); push({path : '/revenues' , query : {branchId : 0} })" :class="{'justify-content-center' : !isExpanded , 'activeDivBg' : currentRoute.path.includes('/revenue') }" >
               <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
                 price_check
               </span>            
               <router-link v-if="isExpanded" to=""><h5 class="textColor">مدفوعات اللاعبين</h5></router-link>
             </div>
-            <div class="flex align-items-center my-3 div-hover" @click="closeSideBar(); push({path : '/revenues' , query : {branchId : 0 , filter : 'installments'} })" :class="{'justify-content-center' : !isExpanded , 'activeDivBg' : currentRoute.path.includes('/revenue') }" >
+            <div v-if="isEmpAuthorizedFor('مدفوعات اللاعبين')" class="flex align-items-center my-3 div-hover" @click="closeSideBar(); push({path : '/revenues' , query : {branchId : 0 , filter : 'installments'} })" :class="{'justify-content-center' : !isExpanded , 'activeDivBg' : currentRoute.path.includes('/revenue') }" >
               <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
                 payments
               </span>            
               <router-link v-if="isExpanded" to=""><h5 class="textColor">جميع الأقساط</h5></router-link>
+            </div>
+            <div v-if="isEmpAuthorizedFor('الأقساط المطلوبة')" class="flex align-items-center my-3 div-hover" @click="closeSideBar(); push({path : '/customers' , query : {showInstallments : 'true' } })" :class="{'justify-content-center' : !isExpanded }" >
+              <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
+                payments
+              </span>            
+              <router-link v-if="isExpanded" to=""><h5 class="textColor">الأقساط المطلوبة</h5></router-link>
             </div>
             <div v-if="isEmpAuthorizedFor('المستويات')" class="flex align-items-center my-3 div-hover"  @click="closeSideBar(); push('/levels')" :class="{'justify-content-center' : !isExpanded }" >
               <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
@@ -342,24 +418,30 @@ const closeSideBar = () => {
           </div>
           <!-- Sub Categories for Employees   -->
             <div v-if="showEmployeeTypes" class="px-4 py-1 fadein animation-duration-400 animation-iteration-1 borderRound" style="background: rgba(255, 255, 255, 0.066);">
-                <div v-if="isEmpAuthorizedFor('عرض المدربين')" class="flex align-items-center my-3 div-hover" @click="push('/coaches')" :class="{'justify-content-center' : !isExpanded }" >
+                <div v-if="isEmpAuthorizedFor('عرض المدربين')" class="flex align-items-center my-3 div-hover" @click="closeSideBar(); push('/coaches');" :class="{'justify-content-center' : !isExpanded }" >
                   <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
                     badge
                   </span>            
                   <router-link v-if="isExpanded" to="/coaches"><h5 class="textColor">المدربين</h5></router-link>
                 </div>
-                <div v-if="isEmpAuthorizedFor('عرض الموظفين')" class="flex align-items-center my-3 div-hover" @click="push('/employees')" :class="{'justify-content-center' : !isExpanded }" >
+                <div v-if="isEmpAuthorizedFor('عرض الموظفين')" class="flex align-items-center my-3 div-hover" @click="closeSideBar(); push('/employees');" :class="{'justify-content-center' : !isExpanded }" >
                   <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
                     badge
                   </span>            
                   <router-link v-if="isExpanded" to="/employees"><h5 class="textColor">الموظفين</h5></router-link>
                 </div>
             </div>
-          <div class="flex align-items-center my-5 div-hover" @click="closeSideBar(); push('/attendance')" :class="{'justify-content-center' : !isExpanded }" >
+          <div  v-if="isEmpAuthorizedFor('تسجيل الحضور')" class="flex align-items-center my-5 div-hover" @click="closeSideBar(); push('/attendance')" :class="{'justify-content-center' : !isExpanded }" >
             <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
               format_list_numbered_rtl
             </span>            
-            <router-link v-if="isExpanded" to="/attendance"><h5 class="textColor">حضور و انصراف</h5></router-link>
+            <router-link v-if="isExpanded" to="/attendance"><h5 class="textColor">تسجيل حضور</h5></router-link>
+          </div>
+          <div v-if="isEmpAuthorizedFor('تقرير الحضور اليومي')" class="flex align-items-center my-5 div-hover" @click="closeSideBar(); push('/daily/attendances')" :class="{'justify-content-center' : !isExpanded }" >
+            <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
+              today
+            </span>           
+            <router-link v-if="isExpanded" to="/daily/attendances"><h5 class="textColor">الحضور اليومي</h5></router-link>
           </div>
           <div v-if="isEmpAuthorizedFor('عرض التمرينات الفردية')" class="flex align-items-center my-5 div-hover" @click="closeSideBar(); push('/privateSubscriptions')" :class="{'justify-content-center' : !isExpanded }" >
             <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
@@ -367,6 +449,23 @@ const closeSideBar = () => {
             </span>            
             <router-link v-if="isExpanded" to="/privateSubscriptions"><h5 class="textColor">تمرينات فردية</h5></router-link>
           </div>
+          
+          <div  v-if="isEmpAuthorizedFor('السلف و الخصومات')" class="flex align-items-center mt-5 mb-3 div-hover" @click="showManagementCategories = !showManagementCategories" :class="{'justify-content-center' : !isExpanded }" >
+            <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
+              manage_accounts
+            </span>            
+            <h4 v-if="isExpanded"><h5 class="textColor">الإدارة</h5></h4>
+          </div>
+          <!-- Sub Categories for Management  -->
+          <div v-if="showManagementCategories" class="px-4 py-1 fadein animation-duration-400 animation-iteration-1 borderRound" style="background: rgba(255, 255, 255, 0.066);">
+            <div  class="flex align-items-center my-3 div-hover" @click="closeSideBar(); push('/management')" :class="{'justify-content-center' : !isExpanded }" >
+              <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
+                badge
+              </span>            
+              <router-link v-if="isExpanded" to="/management"><h6 class="textColor">السلف و الخصومات</h6></router-link>
+            </div>
+        </div>
+
           <div v-if="isEmpAuthorizedFor('الحسابات المالية')" class="flex align-items-center mt-5 mb-3 div-hover" @click="showFinancialsCategories = !showFinancialsCategories" :class="{'justify-content-center' : !isExpanded }" >
             <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
               payments
@@ -409,12 +508,45 @@ const closeSideBar = () => {
             </div>
           </div>
 
-          <div class="flex align-items-center my-5 div-hover" @click="closeSideBar(); push('/products')" :class="{'justify-content-center' : !isExpanded }" >
+          <div class="flex align-items-center mt-5 mb-2 div-hover" @click="showProductsTypes = !showProductsTypes" :class="{'justify-content-center' : !isExpanded }" >
             <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
               database
             </span>            
-            <router-link v-if="isExpanded" to="/products"><h5 class="textColor">المنتجات</h5></router-link>
+            <h4 v-if="isExpanded"><h5 class="textColor">المنتجات</h5></h4>
           </div>
+            <!-- Sub Categories for Products   -->
+            <div v-if="showProductsTypes" class="px-4 py-1 fadein animation-duration-400 animation-iteration-1 borderRound" style="background: rgba(255, 255, 255, 0.066);">
+              <div v-if="isEmpAuthorizedFor('عرض أقسام المنتجات')" class="flex align-items-center my-3 div-hover" @click="closeSideBar(); push('/productTypes')" :class="{'justify-content-center' : !isExpanded }" >
+                <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
+                  category
+                </span>            
+                <router-link v-if="isExpanded" to="/productTypes"><h5 class="textColor">الأقسام</h5></router-link>
+              </div>
+              <div v-if="isEmpAuthorizedFor('تسجيل أقسام المنتجات')" class="flex align-items-center my-3 div-hover" @click="closeSideBar(); push('/productType/create')" :class="{'justify-content-center' : !isExpanded }" >
+                <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
+                  edit_note
+                </span>            
+                <router-link v-if="isExpanded" to="/productType/create"><h5 class="textColor">تسجيل قسم</h5></router-link>
+              </div>
+              <div v-if="isEmpAuthorizedFor('تسجيل المنتجات')" class="flex align-items-center my-3 div-hover" @click="closeSideBar(); push('/products/create')" :class="{'justify-content-center' : !isExpanded }" >
+                <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
+                  edit_note
+                </span>            
+                <router-link v-if="isExpanded" to="/products/create"><h5 class="textColor">تسجيل منتج</h5></router-link>
+              </div>
+              <div class="flex align-items-center my-3 div-hover" @click="closeSideBar(); push('/products')" :class="{'justify-content-center' : !isExpanded }" >
+                <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
+                  database
+                </span>            
+                <router-link v-if="isExpanded" to="/products"><h5 class="textColor">المنتجات</h5></router-link>
+              </div>
+              <div v-if="isEmpAuthorizedFor('المرتجعات')" class="flex align-items-center my-3 div-hover" @click="closeSideBar(); push('/orders')" :class="{'justify-content-center' : !isExpanded }" >
+                <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
+                  currency_exchange
+                </span>            
+                <router-link v-if="isExpanded" to="/orders"><h5 class="textColor">المرتجعات</h5></router-link>
+              </div>
+            </div>
       </div>
     </div>
 </Sidebar>

@@ -32,6 +32,9 @@ const isFailedDeletionDialogVisible : any = ref(false);
 const isCoachFetched : any = ref(false);
 const isBulkDeleteLoading : any = ref(false);
 const activeCoach : any = ref();
+const unpaidInstallments : any = ref();
+const unPaidInstallmentsFetched = ref(false);
+const isUnpaidInstallmentsDialogVisible = ref(false);
 const selectedCustomers : any = ref([]);
 const deletedSuccessfully = ref(false)
 
@@ -81,6 +84,13 @@ const filters = ref(
         state: { value: null, matchMode: FilterMatchMode.CONTAINS},
     }
 );
+const unpaidInstallmentsFilters = ref(
+    {
+        global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        'customer.customer_name': { value: '', matchMode: FilterMatchMode.CONTAINS },
+        'customer.id': { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.EQUALS }] },
+    }
+);
 
 const options = {
     weekday: 'long',
@@ -97,7 +107,7 @@ const options = {
 const dateTimeFormatter = new Intl.DateTimeFormat('ar', options);
 
 const getCustomers = () => {
-    axios.get('https://akademia.website/api/customers').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/customers').then((result) => {
         console.log(result.data);
         customers.value = result.data.customers
         isCustomersFetched.value = true
@@ -119,7 +129,7 @@ const getCustomers = () => {
 }
 
 const getBranches = () => {
-    axios.get('https://akademia.website/api/branches').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/branches').then((result) => {
         console.log(result.data);
         result.data.branches.forEach((branch : any) => {
             branches.value.push(branch.branch_name)
@@ -133,7 +143,7 @@ const getBranches = () => {
 const getCoachDetails = (coachId : number) => {
     isCoachFetched.value = false
     // isDialogVisible.value = true
-    axios.get(`https://akademia.website/api/coach/${coachId}`).then((result) => {
+    axios.get(`http://127.0.0.1:8000/api/coach/${coachId}`).then((result) => {
         activeCoach.value = result.data.coach
         activeCoach.value.numberOfSubscriptions = result.data.activeSubscriptions.length
         selectedBranches.value = {branchIds : []}
@@ -149,18 +159,20 @@ const getCoachDetails = (coachId : number) => {
 }
 
 const payInstallment = (installmentId : number) => {
-    axios.put(`https://akademia.website/api/payInstallment/${installmentId}`).then((result) => {
+    axios.put(`http://127.0.0.1:8000/api/payInstallment/${installmentId}`).then((result) => {
         console.log(result.data.installment);
         failedDeletions.value = failedDeletions.value.filter((installment : any) => installment.id !== installmentId);
+        unpaidInstallments.value = unpaidInstallments.value.filter((installment : any) => installment.id !== installmentId);
     }).catch((err) => {
         console.log(err);
     });
 }
 
 const deleteInstallment = (installmentId : number) => {
-    axios.delete(`https://akademia.website/api/deleteInstallment/${installmentId}`).then((result) => {
+    axios.delete(`http://127.0.0.1:8000/api/deleteInstallment/${installmentId}`).then((result) => {
         console.log(result.data);
         failedDeletions.value = failedDeletions.value.filter((installment : any) => installment.id !== installmentId);
+        unpaidInstallments.value = unpaidInstallments.value.filter((installment : any) => installment.id !== installmentId);
     }).catch((err) => {
         console.log(err);
     });
@@ -189,7 +201,7 @@ const bulkDelete = () => {
     let req : any = {
         customer_ids : customers_ids
     }
-    axios.post('https://akademia.website/api/customerBulkDelete', req).then((result) => {
+    axios.post('http://127.0.0.1:8000/api/customerBulkDelete', req).then((result) => {
         console.log(result);
         isBulkDeleteLoading.value = false
         deletedSuccessfully.value = true
@@ -219,8 +231,18 @@ const bulkDelete = () => {
     });
 }
 
+const showUnpaidInstallments = () => {
+    isUnpaidInstallmentsDialogVisible.value = true
+    axios.get('http://127.0.0.1:8000/api/unpaidInstallments').then((result) => {
+        unpaidInstallments.value = result.data.installments
+        unPaidInstallmentsFetched.value = true
+    }).catch((err) => {
+        console.log(err);
+    });
+}
+
 const getCategories = () => {
-    axios.get('https://akademia.website/api/categories').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/categories').then((result) => {
         console.log(result.data);
         result.data.categories.forEach((category : any) => {
             categories.value.push(category.category_name)
@@ -267,12 +289,18 @@ onBeforeMount(() => {
                 }
                 empPermissions.value = employee.permissions
                 UserType.value = 'employee'
+                if(currentRoute.value.query.showInstallments == 'true'){
+                    showUnpaidInstallments()
+                }
                 getCustomers()
                 getBranches()
                 getCategories()
             })
         } 
         else{
+            if(currentRoute.value.query.showInstallments == 'true'){
+                    showUnpaidInstallments()
+            }
             getCustomers()
             getBranches()
             getCategories()
@@ -349,7 +377,61 @@ const exportCSV = () => {
             </div>
         </template>
     </Dialog>
+    
+    <Dialog v-model:visible="isUnpaidInstallmentsDialogVisible" maximizable modal header="الأقساط المطلوبة" :style="{ width: '60vw' }" :breakpoints="{ '960px': '75vw', '641px': '100vw' }">
+        <div class="failedDeletions">
+            <DataTable v-model:filters="unpaidInstallmentsFilters" ref="dt"  stripedRows :value="unpaidInstallments" paginator :rows="10" 
+            :rowsPerPageOptions="[10, 20, 50]" filterDisplay="menu" :loading="!unPaidInstallmentsFetched"
+                dataKey="id" removableSort :globalFilterFields="['customer.id', 'customer.customer_name']" tableStyle="min-width: 50rem">
+            <template #header>
+                <div class="flex flex-column lg:flex-row justify-content-between align-items-center">
+                    <h3 class="hidden md:my-2 lg:my-0 md:flex" style="color: black;">المديونيات</h3>
+                    <span class="p-input-icon-left">
+                        <i class="pi pi-search" />
+                        <InputText v-model="unpaidInstallmentsFilters['global'].value" placeholder="بحث شامل" />
+                    </span>
+                </div>
+            </template>
+            <Column field="customer.id" sortable  header="كود اللاعب"></Column>
+            <Column field="customer.customer_name" sortable  header="اسم اللاعب" style="min-width: 10rem;"></Column>
+            <Column field="installment_number"  header="رقم القسط"></Column>
+            <Column field="amount" sortable  header="المبلغ المستحق" style="min-width: 13rem;">
+                <template #body="slotProps" >
+                    <p>{{ slotProps.data.amount }} ج.م</p>
+                </template>
+            </Column>
+            <Column field="due_date" sortable header="موعد الاستحقاق">
+                <template #body="slotProps" >
+                    <p>{{ slotProps.data.due_date }}</p>
+                </template>
+            </Column>
+            <Column  header="تعديل" style="min-width: 11rem;">
+                <template #body="slotProps">
+                    <div class="flex align-items-center">
+                        <span class="cursor-pointer hoverIcon textColor text-sm p-2 borderRound" 
+                        @click="payInstallment(slotProps.data.id)">
+                            تم الدفع
+                        </span>
+                        <span @click="deleteInstallment(slotProps.data.id)" class="material-symbols-outlined cursor-pointer hoverIcon textColor mx-2 text-3xl p-2 borderRound">
+                            delete_forever
+                        </span>
+                    </div>
+                </template>
+            </Column>
+                
+            <template #empty> <InlineMessage severity="info">لا يوجد مديونيات</InlineMessage></template>
+            <template #paginatorend>
+                <Button type="button" icon="pi pi-download" @click="exportCSV($event)" text />
+            </template>
+            </DataTable>
+        </div>
 
+        <template #footer>
+            <div class="flex justify-content-between">
+                <Button type="button" class="mb-3 lg:mb-0 mx-2" @click="isUnpaidInstallmentsDialogVisible = false" label="تم" />
+            </div>
+        </template>
+    </Dialog>
     <!-- Bulk Delete Confirmation Dialog -->
     <Dialog v-model:visible="isConfirmBulkDeleteVisible" modal header="رسالة تأكيد" :style="{ width: '60vw' }" :breakpoints="{ '960px': '75vw', '641px': '100vw' }">
         <!-- <loading v-if="!isCoachFetched"></loading> -->

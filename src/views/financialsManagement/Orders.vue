@@ -27,9 +27,7 @@ const isTargetBranchReportLoading : any = ref(false);
 const isBranchesFetched : any = ref(false);
 const isAcademiesFetched : any = ref(false);
 const chooseTargetBranch : any = ref(true);
-const deletedSuccessfully = ref(false)
-const targetRevenue = ref()
-const ReportName = ref()
+const orderDeletedSuccessfully = ref(false)
 const Orders : any = ref([])
 const TotalOrders : any = ref(0)
 
@@ -44,6 +42,38 @@ const home = ref({
     to: '/',
 },
 );
+
+const confirmDeletion = (event : any , orderId : number , index : number) => {
+    confirm.require({
+        target: event.currentTarget,
+        message: 'هل متأكد أنك تريد حذف هذا الطلب ؟',
+        icon: 'pi pi-exclamation-triangle',
+        acceptLabel : 'نعم',
+        rejectLabel : 'لا',
+        accept: () => {
+            deleteOrder(orderId , index)
+        },  
+        reject: () => {
+        }
+    });
+};
+
+const deleteOrder = (orderId : number , index : number) => {
+    axios.delete(`http://127.0.0.1:8000/api/deleteOrder/${orderId}`).then((result) => {
+        console.log(result.data);
+        orderDeletedSuccessfully.value = true
+        window.scrollTo({
+            behavior : 'smooth',
+            top : 0
+        })
+        setTimeout(() => {
+            orderDeletedSuccessfully.value = false     
+            location.reload()   
+        }, 1000);
+    }).catch((err) => {
+        console.log(err);
+    });
+}
 
 const filters = ref(
     {
@@ -72,9 +102,10 @@ const options = {
 const dateTimeFormatter = new Intl.DateTimeFormat('ar', options);
 
 const getOrders = () => {
-    axios.get('https://akademia.website/api/orders').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/orders').then((result) => {
         result.data.orders.forEach((order : any ) => {
             Orders.value.push({
+                id : order.id,
                 branch : order.branch_id ? order.branch.branch_name : 'مجموع الفروع',
                 product : order.product.product_name,
                 created_at : new Date(order.created_at),
@@ -96,7 +127,7 @@ const branches : any = ref(['مجموع الفروع'])
 const branchNames : any = []
 
 const getBranches = () => {
-    axios.get('https://akademia.website/api/branches').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/branches').then((result) => {
         console.log(result.data);
         result.data.branches.forEach((branch : any) => {
             branches.value.push(branch.branch_name)
@@ -189,7 +220,7 @@ onBeforeMount(() => {
                 }
                 empPermissions.value = employee.permissions
                 UserType.value = 'employee'
-                if(!isEmpAuthorizedFor(empPermissions.value , 'الحسابات المالية' , UserType.value)){
+                if(!isEmpAuthorizedFor(empPermissions.value , 'المرتجعات' , UserType.value)){
                     localStorage.removeItem('SwimmingToken')
                     location.reload()
                     push({path : '/login', query : currentRoute.value.query})
@@ -222,7 +253,7 @@ const exportCSV = () => {
         <!-- data Table -->
 
     <div>
-        <successMsg v-if="deletedSuccessfully" class="fadeinright animation-duration-500 animation-iteration-1 my-4">تم الحذف بنجاح</successMsg>
+        <successMsg v-if="orderDeletedSuccessfully" class="fadeinright animation-duration-500 animation-iteration-1 my-4">تم الحذف بنجاح</successMsg>
             <DataTable v-model:filters="filters" :loading="!isFetched" ref="dt" export-filename="تقرير المبيعات و المشتريات" stripedRows :value="Orders"
              filterDisplay="menu" paginator :rows="10" :rowsPerPageOptions="[10, 20, 50 , 100]"
              dataKey="id" removableSort :globalFilterFields="['branch' , 'product' , 'type']" tableStyle="min-width: 50rem">
@@ -294,6 +325,14 @@ const exportCSV = () => {
             <Column field="total_price" sortable header="السعر">
                 <template #body="slotProps" >
                     <p>{{ slotProps.data.total_price.toFixed(2) }} ج.م</p>
+                </template>
+            </Column>
+            <Column field="" header="تسجيل مرتجع">
+                <template #body="slotProps" >
+                    <span v-if="isEmpAuthorizedFor(empPermissions , 'المرتجعات' , UserType)" class="material-symbols-outlined cursor-pointer hoverIcon textColor text-3xl p-2 borderRound" 
+                    @click="confirmDeletion($event , slotProps.data.id , slotProps.index)">
+                        currency_exchange
+                    </span>
                 </template>
             </Column>
                 

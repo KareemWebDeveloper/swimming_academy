@@ -9,7 +9,6 @@ import { useRouter } from 'vue-router';
 import { employeeAuthorize } from '@/global-functions/isEmployeeAuthorized';
 import { isEmpAuthorizedFor } from '@/global-functions/isEmployeeAuthorizedFor';
 const { push , currentRoute } = useRouter();
-const categories = ref([{ label: 'React', value: 'react' }, { label: 'Vue', value: 'vue' }, { label: 'Angular', value: 'angular' }, { label: 'Svelte', value: 'svelte' }])
 const loading = ref(false)
 const categoryData = ref()
 const stayAtTheSamePage = ref(false)
@@ -20,7 +19,7 @@ const dbError = ref()
 const createCategory = (req : any) => {
     console.log(req);
     loading.value = true
-    axios.post('http://127.0.0.1:8000/api/createCategory' , req).then((result) => {
+    axios.post('http://127.0.0.1:8000/api/createProductSection' , req).then((result) => {
         createdSuccessfully.value = true
         isErrorReturned.value = false
         loading.value = false
@@ -32,13 +31,13 @@ const createCategory = (req : any) => {
         }
         else{
             setTimeout(() => {
-                push('/categories')
+                push('/productTypes')
             }, 2500);
         }
     }).catch((err) => {
         isErrorReturned.value = true
-        if(err.response.data.message.includes('The category name has already been taken.')){
-            dbError.value = 'هذا النوع موجود بالفعل'
+        if(err.response.data.message.includes('The section name has already been taken')){
+            dbError.value = 'هذا القسم موجود بالفعل'
             loading.value = false
         }
         else{
@@ -64,7 +63,7 @@ onBeforeMount(() => {
                 }
                 empPermissions.value = employee.permissions
                 UserType.value = 'employee'
-                if(!isEmpAuthorizedFor(empPermissions.value , 'انشاء و تعديل أنواع التمارين' , UserType.value)){
+                if(!isEmpAuthorizedFor(empPermissions.value , '' , UserType.value)){
                     localStorage.removeItem('SwimmingToken')
                     console.log('not authorized');
                     location.reload()
@@ -78,7 +77,7 @@ onBeforeMount(() => {
 </script>
 <template>
     <div class="w-12 md:w-10 m-auto p-2 md:p-5 branches">
-        <h1 class="p-4 text-center textColor">انشاء نوع تمرين جديد</h1>
+        <h1 class="p-4 text-center textColor">انشاء قسم جديد للمنتجات</h1>
         <div class="w-8 m-auto">
             <successMsg v-if="createdSuccessfully" class="fadeinright animation-duration-1000 animation-iteration-1 "></successMsg>
             <h5 v-if="isErrorReturned" class="px-3 py-2 textColor text-center borderRound error">{{ dbError }}</h5>
@@ -87,9 +86,9 @@ onBeforeMount(() => {
             <FormKit v-model="categoryData" type="form" :actions="false" @submit="createCategory">
                 <div class="mt-3">
                     <div class="flex align-items-center">
-                        <label for="categoryName" class="px-3 py-1 text-white text-sm">نوع التمرينة</label>
+                        <label for="categoryName" class="px-3 py-1 text-white text-sm">القسم</label>
                     </div>
-                    <FormKit prefix-icon="text" id="categoryName" type="text" label="نوع التمرين" placeholder="أدخل نوع تمرين جديد" name="category_name" validation="required|length:3" />
+                    <FormKit prefix-icon="text" id="categoryName" type="text" label="القسم" placeholder="أدخل نوع أو قسم جديد" name="section_name" validation="required|length:3" />
                 </div>
                 <div class="flex justify-content-center align-items-center">
                     <InputSwitch v-model="stayAtTheSamePage" />
