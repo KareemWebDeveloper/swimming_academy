@@ -32,7 +32,7 @@ const activeView : Ref<views> = ref('home')
 const checkpoints : any = ref([]);
 
 const customerAuthorize = () => {
-    axios.post('http://127.0.0.1:8000/api/customerAuthorize').then((result) => {
+    axios.post('https://akademia.website/api/customerAuthorize').then((result) => {
         customer.value = result.data.customer
         subscriptions.value = result.data.subscriptions
         sublevel.value = result.data.sublevel

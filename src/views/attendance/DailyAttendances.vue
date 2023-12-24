@@ -117,7 +117,7 @@ const getAttendances = (req : any) => {
     req.target_date = new Date(req.target_date).setHours(13)
     req.target_date = new Date(req.target_date).toISOString().split('T')[0]
     console.log(req.target_date);  
-    axios.post('http://127.0.0.1:8000/api/attendances' , req).then((result : any) => {
+    axios.post('https://akademia.website/api/attendances' , req).then((result : any) => {
         console.log(result.data);
         customerAttendances.value = result.data.customers
         coachAttendances.value = result.data.coaches
@@ -129,7 +129,7 @@ const getAttendances = (req : any) => {
 }
 
 const getAcademies = () => {
-    axios.get('http://127.0.0.1:8000/api/academies').then((result) => {
+    axios.get('https://akademia.website/api/academies').then((result) => {
         console.log(result.data);
         result.data.academies.forEach((academy : any) => {
             allAcademies.value.push(academy.academy_name)
@@ -145,7 +145,7 @@ const showUserProfile = (subscriptionId : any) =>{
 }
 
 const deleteAttendance = (attendanceId : number , index : number , type : 'customer' | 'coach') => {
-    axios.delete(`http://127.0.0.1:8000/api/attendanceDelete/${attendanceId}`).then((result) => {
+    axios.delete(`https://akademia.website/api/attendanceDelete/${attendanceId}`).then((result) => {
         console.log(result.data);
         if(type == 'customer'){
             customerAttendances.value.splice(index , 1)
@@ -158,7 +158,7 @@ const deleteAttendance = (attendanceId : number , index : number , type : 'custo
     });
 }
 const getCategories = () => {
-    axios.get('http://127.0.0.1:8000/api/categories').then((result) => {
+    axios.get('https://akademia.website/api/categories').then((result) => {
         console.log(result.data);
         result.data.categories.forEach((category : any) => {
             categories.value.push(category.category_name)

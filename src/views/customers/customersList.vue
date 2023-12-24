@@ -107,7 +107,7 @@ const options = {
 const dateTimeFormatter = new Intl.DateTimeFormat('ar', options);
 
 const getCustomers = () => {
-    axios.get('http://127.0.0.1:8000/api/customers').then((result) => {
+    axios.get('https://akademia.website/api/customers').then((result) => {
         console.log(result.data);
         customers.value = result.data.customers
         isCustomersFetched.value = true
@@ -129,7 +129,7 @@ const getCustomers = () => {
 }
 
 const getBranches = () => {
-    axios.get('http://127.0.0.1:8000/api/branches').then((result) => {
+    axios.get('https://akademia.website/api/branches').then((result) => {
         console.log(result.data);
         result.data.branches.forEach((branch : any) => {
             branches.value.push(branch.branch_name)
@@ -143,7 +143,7 @@ const getBranches = () => {
 const getCoachDetails = (coachId : number) => {
     isCoachFetched.value = false
     // isDialogVisible.value = true
-    axios.get(`http://127.0.0.1:8000/api/coach/${coachId}`).then((result) => {
+    axios.get(`https://akademia.website/api/coach/${coachId}`).then((result) => {
         activeCoach.value = result.data.coach
         activeCoach.value.numberOfSubscriptions = result.data.activeSubscriptions.length
         selectedBranches.value = {branchIds : []}
@@ -159,7 +159,7 @@ const getCoachDetails = (coachId : number) => {
 }
 
 const payInstallment = (installmentId : number) => {
-    axios.put(`http://127.0.0.1:8000/api/payInstallment/${installmentId}`).then((result) => {
+    axios.put(`https://akademia.website/api/payInstallment/${installmentId}`).then((result) => {
         console.log(result.data.installment);
         failedDeletions.value = failedDeletions.value.filter((installment : any) => installment.id !== installmentId);
         unpaidInstallments.value = unpaidInstallments.value.filter((installment : any) => installment.id !== installmentId);
@@ -169,7 +169,7 @@ const payInstallment = (installmentId : number) => {
 }
 
 const deleteInstallment = (installmentId : number) => {
-    axios.delete(`http://127.0.0.1:8000/api/deleteInstallment/${installmentId}`).then((result) => {
+    axios.delete(`https://akademia.website/api/deleteInstallment/${installmentId}`).then((result) => {
         console.log(result.data);
         failedDeletions.value = failedDeletions.value.filter((installment : any) => installment.id !== installmentId);
         unpaidInstallments.value = unpaidInstallments.value.filter((installment : any) => installment.id !== installmentId);
@@ -201,7 +201,7 @@ const bulkDelete = () => {
     let req : any = {
         customer_ids : customers_ids
     }
-    axios.post('http://127.0.0.1:8000/api/customerBulkDelete', req).then((result) => {
+    axios.post('https://akademia.website/api/customerBulkDelete', req).then((result) => {
         console.log(result);
         isBulkDeleteLoading.value = false
         deletedSuccessfully.value = true
@@ -233,7 +233,7 @@ const bulkDelete = () => {
 
 const showUnpaidInstallments = () => {
     isUnpaidInstallmentsDialogVisible.value = true
-    axios.get('http://127.0.0.1:8000/api/unpaidInstallments').then((result) => {
+    axios.get('https://akademia.website/api/unpaidInstallments').then((result) => {
         unpaidInstallments.value = result.data.installments
         unPaidInstallmentsFetched.value = true
     }).catch((err) => {
@@ -242,7 +242,7 @@ const showUnpaidInstallments = () => {
 }
 
 const getCategories = () => {
-    axios.get('http://127.0.0.1:8000/api/categories').then((result) => {
+    axios.get('https://akademia.website/api/categories').then((result) => {
         console.log(result.data);
         result.data.categories.forEach((category : any) => {
             categories.value.push(category.category_name)

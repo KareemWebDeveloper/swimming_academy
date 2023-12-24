@@ -53,7 +53,7 @@ const updateCustomer = (req : any) => {
     console.log(req);
     req.birthdate = new Date(req.birthdate);
     req.birthdate = req.birthdate.toISOString().substr(0, 19).replace('T', ' ');
-    axios.put(`http://127.0.0.1:8000/api/updateCustomer/${CustomerId}` , req).then((result) => {
+    axios.put(`https://akademia.website/api/updateCustomer/${CustomerId}` , req).then((result) => {
         createdCustomer.value = result.data.customer
         isLoading.value = false
         isErrorReturned.value = false
@@ -86,7 +86,7 @@ const updateCustomer = (req : any) => {
     });
 }
 const getBranches = () => {
-    axios.get('http://127.0.0.1:8000/api/branches').then((result) => {
+    axios.get('https://akademia.website/api/branches').then((result) => {
         console.log(result.data);
         allBranches.value = result.data.branches
         result.data.branches.forEach((branch : any) => {
@@ -100,7 +100,7 @@ const getBranches = () => {
 
 const coachesOptions = () => {
     return new Promise<any[]>((resolve) => {
-        axios.get(`http://127.0.0.1:8000/api/coachesOfBranch/${lastSubscription.value.branch_id}`).then((result) => {
+        axios.get(`https://akademia.website/api/coachesOfBranch/${lastSubscription.value.branch_id}`).then((result) => {
         console.log(result.data);
         coaches.value = []
         result.data.coaches.forEach((coach : any) => {
@@ -112,7 +112,7 @@ const coachesOptions = () => {
 }
 const categoriesOptions = () => {
     return new Promise<any[]>((resolve) => {
-        axios.get(`http://127.0.0.1:8000/api/categoriesOfBranch/${lastSubscription.value.branch_id}`).then((result) => {
+        axios.get(`https://akademia.website/api/categoriesOfBranch/${lastSubscription.value.branch_id}`).then((result) => {
         console.log(result.data);
         categories.value = []
         result.data.categories.forEach((category : any) => {
@@ -124,7 +124,7 @@ const categoriesOptions = () => {
 }
 
 const getCustomerDetailes = () => {
-    axios.get(`http://127.0.0.1:8000/api/customer/${CustomerId}`).then((result) => {
+    axios.get(`https://akademia.website/api/customer/${CustomerId}`).then((result) => {
         console.log(result.data);
         customerInfo.value = result.data.customer
         lastSubscription.value = result.data.lastSubscription
@@ -135,7 +135,7 @@ const getCustomerDetailes = () => {
     });
 }
 const getCustomerWithPrivateSubscription = () => {
-    axios.get(`http://127.0.0.1:8000/api/customer/private/${CustomerId}`).then((result) => {
+    axios.get(`https://akademia.website/api/customer/private/${CustomerId}`).then((result) => {
         console.log(result.data);
         customerInfo.value = result.data.customer
         lastSubscription.value = result.data.lastSubscription
@@ -160,7 +160,7 @@ const updateSubscription = () => {
     lastSubscription.value.is_private = isPrivate.value
     lastSubscription.value.schedulesIds = schedulesIds
     console.log(lastSubscription.value);
-    axios.put(`http://127.0.0.1:8000/api/updateSubscription/${lastSubscription.value.id}` , lastSubscription.value).then((result) => {
+    axios.put(`https://akademia.website/api/updateSubscription/${lastSubscription.value.id}` , lastSubscription.value).then((result) => {
         createdSubscription.value = result.data.subscription
         isSubscriptionLoading.value = false
         isErrorReturned.value = false
@@ -242,7 +242,7 @@ const showSavedSchedule = (req : any) => {
 
 const workingDaysOptions = () => {
     return new Promise<any[]>((resolve) => {
-        axios.get(`http://127.0.0.1:8000/api/branch/workingDays/${lastSubscription.value.branch_id}`).then((result) => {
+        axios.get(`https://akademia.website/api/branch/workingDays/${lastSubscription.value.branch_id}`).then((result) => {
         console.log(result.data);
         workingSchedule.value = result.data.workingDays
         workingDays.value = []
@@ -255,7 +255,7 @@ const workingDaysOptions = () => {
 }
 
 const getAcademies = () => {
-    axios.get('http://127.0.0.1:8000/api/academies').then((result) => {
+    axios.get('https://akademia.website/api/academies').then((result) => {
         console.log(result.data);
         // allAcademies.value = result.data.academies
         result.data.academies.forEach((academy : any) => {

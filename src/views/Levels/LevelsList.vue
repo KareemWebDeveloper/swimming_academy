@@ -96,7 +96,7 @@ const options = {
 const dateTimeFormatter = new Intl.DateTimeFormat('ar', options);
 
 const getLevels = () => {
-    axios.get('http://127.0.0.1:8000/api/levels').then((result) => {
+    axios.get('https://akademia.website/api/levels').then((result) => {
         console.log(result.data);
         levels.value = result.data.levels
         isLevelsFetched.value = true
@@ -112,7 +112,7 @@ const getLevels = () => {
 const getLevelDetails = (levelId : number) => {
     isLevelFetched.value = false
     isDialogVisible.value = true
-    axios.get(`http://127.0.0.1:8000/api/level/${levelId}`).then((result) => {
+    axios.get(`https://akademia.website/api/level/${levelId}`).then((result) => {
         activeLevel.value = result.data.level
         isLevelFetched.value = true
         console.log(activeLevel.value);
@@ -130,7 +130,7 @@ const bulkDelete = () => {
     let req : any = {
         levels_ids : levels_ids
     }
-    axios.post('http://127.0.0.1:8000/api/levelsBulkDelete', req).then((result) => {
+    axios.post('https://akademia.website/api/levelsBulkDelete', req).then((result) => {
         console.log(result);
         deletedSuccessfully.value = true
         selectedCoaches.value = []

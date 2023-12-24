@@ -4,7 +4,7 @@ export async function userAuthorize(): Promise<boolean> {
   if (token) {
     axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
     try {
-      await axios.post("http://127.0.0.1:8000/api/userAuthorize");
+      await axios.post("https://akademia.website/api/userAuthorize");
       return true;
     } catch (err) {
       return false;
