@@ -16,6 +16,8 @@ onMounted(() => {
   const urlParams = new URLSearchParams(window.location.search);
   const userType = urlParams.get('userType');
       if(!token){
+        console.log('problem here in the app (no token )');
+        
         push({ path : '/login' , query : userType ? {userType : userType} : undefined})
       }
       if(currentRoute.value.path == '/login' || currentRoute.value.path.includes('/profile')){
@@ -27,6 +29,7 @@ onMounted(() => {
 
       userAuthorize().then((isAuthorized) => {
         if(isAuthorized == false){
+            console.log('problem here in the app (not authorized)');
             push({ path : '/login' , query : userType ? {userType : userType} : undefined})
         }  
         else{

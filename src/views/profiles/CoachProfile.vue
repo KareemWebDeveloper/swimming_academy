@@ -190,6 +190,9 @@ onBeforeMount(() => {
 
         <div v-if="activeView == 'installments'" style="direction: rtl;">
             <h2 class="text-center textColor">المرتبات</h2>
+            <div v-if="salaries.length == 0" class="flex justify-content-center align-items-center h-30rem">
+                <p class="text-center text-white">لم يصرف مرتب حتي الآن</p>
+            </div>
             <div v-for="salary in salaries">
                 <div class="bg-card my-3 borderRound p-3 flex flex-wrap justify-content-between">
                     <div class="flex flex-column justify-content-center align-items-center">

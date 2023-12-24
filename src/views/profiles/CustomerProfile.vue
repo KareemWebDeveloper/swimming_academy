@@ -37,11 +37,17 @@ const customerAuthorize = () => {
         subscriptions.value = result.data.subscriptions
         sublevel.value = result.data.sublevel
         installments.value = result.data.installments
-        sublevel.value[0].checkpoints.forEach((checkpoint : any) => {
-            checkpoints.value.push({status : checkpoint.checkpoint_name}) 
-        });
+        console.log(sublevel.value);
+        if(sublevel.value && sublevel.value.length > 0 && sublevel.value[0].checkpoints){
+            sublevel.value[0].checkpoints.forEach((checkpoint : any) => {
+                checkpoints.value.push({status : checkpoint.checkpoint_name}) 
+            });
+        }
         isCustomerFetched.value = true
     }).catch((err) => {
+        console.log(err);
+        
+        console.log('problem here in the customer profile (not authorized)');
         push({path : '/login' , query : currentRoute.value.query})
     });
 }
@@ -92,10 +98,10 @@ onBeforeMount(() => {
                                 star
                             </span>
                         </div>
-                        <p v-if="customer.level.level_name" class="textColor text-xl text-center">{{ customer.level.level_name }}</p>
+                        <p v-if="customer.level && customer.level.level_name" class="textColor text-xl text-center">{{ customer.level.level_name }}</p>
                         <p v-else class="textColor text-xl text-center">غير محدد</p>
                     </div>
-                    <div v-if="sublevel[0].sublevel_name" class="flex my-3 lg:my-1 align-items-center mx-4 justify-content-center flex-column">
+                    <div v-if="sublevel && sublevel.length > 0 && sublevel[0].sublevel_name" class="flex my-3 lg:my-1 align-items-center mx-4 justify-content-center flex-column">
                         <div class="flex align-items-center my-2">
                             <h3 class="primaryColor">المستوي الفرعي</h3>
                             <span class="material-symbols-outlined primaryColor mx-1 text-2xl">
@@ -105,7 +111,7 @@ onBeforeMount(() => {
                         <p class="textColor text-center">{{ sublevel[0].sublevel_name }}</p>
                     </div>
                     <div class="zoomin animation-duration-2000 animation-iteration-1">
-                        <div class="card flex flex-wrap gap-6 mt-2">
+                        <div v-if="checkpoints" class="card flex flex-wrap gap-6 mt-2">
                             <Timeline :value="checkpoints" align="alternate" class="w-full md:w-20rem">
                                 <template #content="slotProps">
                                     <p style="background: rgba(0, 128, 0, 0.932); font-size: 13px; width: 105%;"  class="textColor text-center p-2 borderRound m-auto">{{ slotProps.item.status }}</p>
@@ -119,6 +125,9 @@ onBeforeMount(() => {
         <!-- Customer Installments -->
         <div class="w-full md:w-9 mx-auto" v-if="activeView == 'installments'" style="direction: rtl;">
             <h2 class="text-center textColor">الأقساط المستحقة</h2>
+            <div v-if="installments.length == 0" class="flex justify-content-center align-items-center h-30rem">
+                <p class="text-white text-center">لا يوجد أقساط مستحقة</p>
+            </div>
             <div v-for="installment in installments" class="bg-card borderRound p-3 my-4 zoomin animation-duration-1000 animation-ease-in-out animation-iteration-1">
                 <h4 class="textColor text-center py-2 bg-orange-600 px-2" v-if="new Date() < new Date(installment.due_date)">
                     موعد الاستحقاق بعد : {{ Math.ceil((new Date(installment.due_date).getTime() - new Date().getTime()) / (1000 * 3600 * 24)) }} يوم
