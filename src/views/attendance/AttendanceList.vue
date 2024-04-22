@@ -29,6 +29,8 @@ const isSubmitAttendanceDataLoading : any = ref(false);
 const attendanceListView : any = ref(false);
 const selectedCustomers : any = ref([]);
 const selectedCoaches : any = ref([]);
+const workingSchedule : any = ref([]);
+const workingDays : any = ref([]);
 const attendedSuccessfully = ref(false)
 const isAttendingLoading = ref(false);
 const missingSubscriptionError = ref(false)
@@ -61,10 +63,31 @@ const home = ref({
 );
 
 function getCurrentTime() {
-  const now = new Date();
-  const hours = now.getHours().toString().padStart(2, '0');
-  const minutes = now.getMinutes().toString().padStart(2, '0');
-    currentTime.value = `${hours}:${minutes}`;
+    const now = new Date();
+    let hours = now.getHours();
+    let minutes = now.getMinutes();
+
+    // Check if the minutes are greater than or equal to 45
+    if (minutes > 45) {
+        // Increment hours and set minutes to 0
+        hours = (hours + 1) % 24;
+        minutes = 0;
+    } else if (minutes > 30) {
+        // Set minutes to 45
+        minutes = 45;
+    } else if (minutes > 15) {
+        // Set minutes to 30
+        minutes = 30;
+    } else {
+        // Set minutes to 15
+        minutes = 15;
+    }
+    // Format hours and minutes
+    const formattedHours = hours < 10 ? `0${hours}` : hours;
+    const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
+
+    // Return the formatted time
+    currentTime.value = `${formattedHours}:${formattedMinutes}`;
 }
 
 const confirmSubmittingCustomers = (event : any , name : string) => {
@@ -160,7 +183,7 @@ const attendCustomers = () => {
         session_duration : session_duration.value,
         customers : customersArrayRequest,
     }
-    axios.post('https://akademia.website/api/bulkAttendance', attendeesReq).then((result) => {
+    axios.post('http://127.0.0.1:8000/api/bulkAttendance', attendeesReq).then((result) => {
         console.log(result);
         attendedSuccessfully.value = true
         selectedCustomers.value = []
@@ -189,7 +212,7 @@ const attendCoaches = () => {
             session_duration : session_duration.value,
             coach_ids : CoachIds,
         }
-        axios.post('https://akademia.website/api/bulkAttendance', request).then((result) => {
+        axios.post('http://127.0.0.1:8000/api/bulkAttendance', request).then((result) => {
             console.log(result);
             attendedSuccessfully.value = true
             selectedCustomers.value = []
@@ -226,14 +249,15 @@ const submitAttendanceData = (req : any) => {
     training_start_time.value = req.training_start_time
     activeBranch.value = req.branch_id
     session_duration.value = req.session_duration
+    localStorage.setItem('last_attendance_branch' , req.branch_id)
     getAttendees()
 }
 
 const getAttendees = () => {
-    axios.get(`https://akademia.website/api/coaches/active/${activeBranch.value}`).then((result : any) => {
+    axios.get(`http://127.0.0.1:8000/api/coaches/active/${activeBranch.value}`).then((result : any) => {
         console.log(result.data.coaches);
         activeCoaches.value = result.data.coaches
-        axios.get(`https://akademia.website/api/customers/active/${activeBranch.value}`).then((result : any) => {
+        axios.get(`http://127.0.0.1:8000/api/customers/active/${activeBranch.value}`).then((result : any) => {
             console.log(result.data.customers);
             activeCustomers.value = result.data.customers
             generateCustomerSubscriptionsOptions()
@@ -246,19 +270,43 @@ const getAttendees = () => {
         console.log(err);
     });
 }
+const workingDaysOptions = (branchId : any) => {
+    const options : any = {
+        weekday: 'long',
+        timeZone: 'Africa/Cairo',
+        locale: 'ar'
+    };
+    const formatter = new Intl.DateTimeFormat('ar', options);
+    const weekday = formatter.format(new Date())
+    axios.get(`http://127.0.0.1:8000/api/branch/workingDays/${branchId}`).then((result) => {
+    workingSchedule.value = result.data.workingDays
+    workingSchedule.value.forEach((element : any) => {
+        console.log(typeof weekday);
+        console.log(element.day.includes(weekDay));
+    });
+    const todaySchedules = workingSchedule.value.filter((day : any) => day.day == weekDay)
+    console.log(todaySchedules);
+})
+}
 const getBranches = () => {
-    axios.get('https://akademia.website/api/branches').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/branches').then((result) => {
         console.log(result.data);
         result.data.branches.forEach((branch : any) => {
             branches.value.push({label : branch.branch_name , value : branch.id})
         });
+        if(localStorage.getItem('last_attendance_branch')){
+            console.log(localStorage.getItem('last_attendance_branch'));
+            activeBranch.value = parseInt(localStorage.getItem('last_attendance_branch') as string)
+            attendanceData.branch_id = activeBranch.value
+            workingDaysOptions(activeBranch.value)
+        }
         isBranchesFetched.value = true
     }).catch((err) => {
         console.log(err);
     });
 }
 const getCategories = () => {
-    axios.get('https://akademia.website/api/categories').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/categories').then((result) => {
         console.log(result.data);
         result.data.categories.forEach((category : any) => {
             categories.value.push({label : category.category_name , value : category.id})
@@ -272,6 +320,16 @@ const generateCustomerSubscriptionsOptions = () => {
     let dividedCustomersSubscription : any = []
     activeCustomers.value.forEach((customer : any) => {
         customer.subscriptions.forEach((subscription : any) => {
+            let category_name = null
+            if(subscription.is_private){
+                category_name = `${subscription.category_name} - برايفت`
+            }
+            if(subscription.is_semi_private){
+                category_name = `${subscription.category_name} - سيمي برايفت`
+            }
+            else{
+                category_name = subscription.category_name
+            }
             let newCustomerRow = {
                 id : customer.id,
                 customer_name : customer.customer_name,
@@ -279,7 +337,7 @@ const generateCustomerSubscriptionsOptions = () => {
                 subscription_id : subscription.id,
                 expiration_date : subscription.expiration_date,
                 number_of_sessions : subscription.number_of_sessions,
-                category_name : subscription.is_private? `${subscription.category_name} - برايفت` : subscription.category_name,
+                category_name : category_name,
                 coach_name : subscription.coach.name,
             }
             dividedCustomersSubscription.push(newCustomerRow)
@@ -379,7 +437,7 @@ onBeforeMount(() => {
                 <div class="flex align-items-center">
                     <label for="branch" class="px-3 py-1 text-white text-sm">الفرع</label>
                 </div>
-                <FormKit type="dropdown" id="branch" validation="required" name="branch_id" label="الفرع" placeholder="اختر الفرع الذي تريد تسجيل الحضور فيه" :options="branches" />
+                <FormKit type="dropdown" @input="workingDaysOptions(attendanceData.branch_id)" :value="activeBranch" id="branch" validation="required" name="branch_id" label="الفرع" placeholder="اختر الفرع الذي تريد تسجيل الحضور فيه" :options="branches" />
             </div>
             <div class="mt-3">
                 <div class="flex align-items-center">
@@ -391,7 +449,7 @@ onBeforeMount(() => {
                 <div class="flex align-items-center">
                     <label for="duration" class="px-3 py-1 text-white text-sm">مدة التمرين ( بالساعة )</label>
                 </div>
-                <FormKit type="text" number="float" id="duration" label="مدة التمرين" outer-class="col-12" placeholder="يرجي ادخال عدد ساعات التمرين" name="session_duration" validation="required" />
+                <FormKit type="text" number="float" id="duration" label="مدة التمرين" :value="1" outer-class="col-12" placeholder="يرجي ادخال عدد ساعات التمرين" name="session_duration" validation="required" />
             </div>
             <Button type="submit" class="submitBtn" label="التالي" :loading="isSubmitAttendanceDataLoading" />
         </FormKit>
@@ -400,9 +458,15 @@ onBeforeMount(() => {
     <ConfirmPopup></ConfirmPopup>
         <!-- data Table -->
         <div v-if="attendanceListView">
-            <div class="flex justify-content-center my-5 pt-5 m-auto">
+            <div class="flex justify-content-between my-5 pt-5 m-auto">
                 <Button type="button" v-if="optionValue == 'customers'" label="تسجيل حضور المدربين" @click="optionValue = 'coaches'" />
                 <Button type="button" v-if="optionValue == 'coaches'" label="تسجيل حضور المشتركين" @click="optionValue = 'customers'" />
+                <div @click="attendanceListView = false" class="cursor-pointer flex align-items-center text-white">
+                    <h4>الرجوع</h4>
+                    <span class="material-symbols-outlined mx-2">
+                        arrow_back
+                    </span>
+                </div>
             </div>
         <successMsg v-if="attendedSuccessfully" class="fadeinright animation-duration-500 animation-iteration-1 my-4">تم التسجيل بنجاح</successMsg>
 

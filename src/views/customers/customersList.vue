@@ -21,7 +21,6 @@ import Dialog from 'primevue/dialog';
 import Tag from 'primevue/tag';
 import Dropdown from 'primevue/dropdown';
 import Calendar from 'primevue/calendar';
-import { log } from 'console';
 
 const confirm = useConfirm();
 
@@ -30,6 +29,8 @@ const isBranchesFetched : any = ref(false);
 const isConfirmBulkDeleteVisible : any = ref(false);
 const isFailedDeletionDialogVisible : any = ref(false);
 const isCoachFetched : any = ref(false);
+const allAcademies : any = ref([]);
+const isAcademiesFetched : any = ref(false);
 const isBulkDeleteLoading : any = ref(false);
 const activeCoach : any = ref();
 const unpaidInstallments : any = ref();
@@ -37,6 +38,9 @@ const unPaidInstallmentsFetched = ref(false);
 const isUnpaidInstallmentsDialogVisible = ref(false);
 const selectedCustomers : any = ref([]);
 const deletedSuccessfully = ref(false)
+const isUrlCopied = ref(false)
+const urlAlert : any = ref(null)
+
 
 // breadCrumbs
 const breadCrumbs : any = ref([]);
@@ -65,7 +69,7 @@ const confirmDeletion = (event : any , payment : string) => {
     });
 };
 const statuses = ref(['active' ,'inactive','frozen'])
-const paymentsOptions = ref(['cash','installments','vodafone','instapay'])
+const paymentsOptions = ref(['cash','installments','vodafone','instapay' ,'visa'])
 const customers = ref()
 const branches : any = ref([])
 const categories : any = ref([])
@@ -76,12 +80,20 @@ const filters = ref(
     {
         global: { value: null, matchMode: FilterMatchMode.CONTAINS },
         customer_name: { value: '', matchMode: FilterMatchMode.CONTAINS },
+        created_by: { value: '', matchMode: FilterMatchMode.CONTAINS },
         category_name: { value: '', matchMode: FilterMatchMode.EQUALS },
+        number_of_sessions: { value: '', matchMode: FilterMatchMode.EQUALS },
+        avail_freeze_days: { value: '', matchMode: FilterMatchMode.EQUALS },
+        invitations: { value: '', matchMode: FilterMatchMode.EQUALS },
+        academy_name: { value: '', matchMode: FilterMatchMode.EQUALS },
+        branch_name: { value: '', matchMode: FilterMatchMode.EQUALS },
+        coach_name: { value: '', matchMode: FilterMatchMode.CONTAINS },
         expiration_date: { value: null, matchMode: FilterMatchMode.DATE_IS },
         subscription_type: { value: null, matchMode: FilterMatchMode.EQUALS },
+        schedules: { value: null, matchMode: FilterMatchMode.CONTAINS },
         customer_phone: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }] },
         id: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.EQUALS }] },
-        state: { value: null, matchMode: FilterMatchMode.CONTAINS},
+        state: { value: '', matchMode: FilterMatchMode.EQUALS },
     }
 );
 const unpaidInstallmentsFilters = ref(
@@ -107,21 +119,34 @@ const options = {
 const dateTimeFormatter = new Intl.DateTimeFormat('ar', options);
 
 const getCustomers = () => {
-    axios.get('https://akademia.website/api/customers').then((result) => {
-        console.log(result.data);
+    axios.get('http://127.0.0.1:8000/api/customers').then((result) => {
         customers.value = result.data.customers
         isCustomersFetched.value = true
         customers.value.forEach((customer : any) => {
             customer.created_at = new Date(customer.created_at)
             customer.state = customer.subscriptions[0].state
             customer.created_by = customer.subscriptions[0].created_by
+            customer.number_of_sessions = customer.subscriptions[0].number_of_sessions
+            customer.avail_freeze_days = customer.subscriptions[0].avail_freeze_days
+            customer.invitations = customer.subscriptions[0].invitations
             customer.expiration_date = new Date(customer.subscriptions[0].expiration_date)
             customer.category_name = customer.subscriptions[0].category_name
+            customer.academy_name = customer.subscriptions[0].academy_name
+            customer.branch_name = customer.subscriptions[0].branch.branch_name
+            customer.coach_name = customer.subscriptions[0].coach.name
             customer.subscription_id = customer.subscriptions[0].id
             customer.subscription_type = customer.subscriptions[0].subscription_type
             const differenceInMS = new Date(customer.subscriptions[0].expiration_date).getTime() - new Date().getTime()
-            console.log(differenceInMS / (1000 * 3600 * 24));
             customer.daysLeft = Math.ceil(differenceInMS / (1000 * 3600 * 24))
+            customer.schedules = ''
+            customer.subscriptions[0].training_schedules.forEach((schedule : any , index : number) => {
+                if(index == customer.subscriptions[0].training_schedules.length - 1){
+                    customer.schedules += `${schedule.day} - ${new Date(`2000-01-01 ${schedule.time}`).toLocaleTimeString('en-US', { hour12: true })}`
+                }
+                else{
+                    customer.schedules += `${schedule.day} - ${new Date(`2000-01-01 ${schedule.time}`).toLocaleTimeString('en-US', { hour12: true })} | `
+                }
+            });
         });
     }).catch((err) => {
         console.log(err);
@@ -129,8 +154,7 @@ const getCustomers = () => {
 }
 
 const getBranches = () => {
-    axios.get('https://akademia.website/api/branches').then((result) => {
-        console.log(result.data);
+    axios.get('http://127.0.0.1:8000/api/branches').then((result) => {
         result.data.branches.forEach((branch : any) => {
             branches.value.push(branch.branch_name)
         });
@@ -140,10 +164,22 @@ const getBranches = () => {
     });
 }
 
+const getAcademies = () => {
+    axios.get('http://127.0.0.1:8000/api/academies').then((result) => {
+        result.data.academies.forEach((academy : any) => {
+            allAcademies.value.push(academy.academy_name)
+        });
+        isAcademiesFetched.value = true
+    }).catch((err) => {
+        console.log(err);
+    });
+}
+
+
 const getCoachDetails = (coachId : number) => {
     isCoachFetched.value = false
     // isDialogVisible.value = true
-    axios.get(`https://akademia.website/api/coach/${coachId}`).then((result) => {
+    axios.get(`http://127.0.0.1:8000/api/coach/${coachId}`).then((result) => {
         activeCoach.value = result.data.coach
         activeCoach.value.numberOfSubscriptions = result.data.activeSubscriptions.length
         selectedBranches.value = {branchIds : []}
@@ -151,16 +187,14 @@ const getCoachDetails = (coachId : number) => {
             selectedBranches.value.branchIds.push(branch.id)
         });
         isCoachFetched.value = true
-        console.log(activeCoach.value);
-        console.log(branches.value);
+
     }).catch((err) => {
         console.log(err);
     });
 }
 
 const payInstallment = (installmentId : number) => {
-    axios.put(`https://akademia.website/api/payInstallment/${installmentId}`).then((result) => {
-        console.log(result.data.installment);
+    axios.put(`http://127.0.0.1:8000/api/payInstallment/${installmentId}`).then((result) => {
         failedDeletions.value = failedDeletions.value.filter((installment : any) => installment.id !== installmentId);
         unpaidInstallments.value = unpaidInstallments.value.filter((installment : any) => installment.id !== installmentId);
     }).catch((err) => {
@@ -169,8 +203,7 @@ const payInstallment = (installmentId : number) => {
 }
 
 const deleteInstallment = (installmentId : number) => {
-    axios.delete(`https://akademia.website/api/deleteInstallment/${installmentId}`).then((result) => {
-        console.log(result.data);
+    axios.delete(`http://127.0.0.1:8000/api/deleteInstallment/${installmentId}`).then((result) => {
         failedDeletions.value = failedDeletions.value.filter((installment : any) => installment.id !== installmentId);
         unpaidInstallments.value = unpaidInstallments.value.filter((installment : any) => installment.id !== installmentId);
     }).catch((err) => {
@@ -192,7 +225,6 @@ const confirmBulkDelete = () => {
 
 const bulkDelete = () => {
     isBulkDeleteLoading.value = true
-    console.log(selectedCustomers.value);
     failedDeletions.value = []
     let customers_ids : any = [];
     selectedCustomers.value.forEach((coach:any) => {
@@ -201,8 +233,7 @@ const bulkDelete = () => {
     let req : any = {
         customer_ids : customers_ids
     }
-    axios.post('https://akademia.website/api/customerBulkDelete', req).then((result) => {
-        console.log(result);
+    axios.post('http://127.0.0.1:8000/api/customerBulkDelete', req).then((result) => {
         isBulkDeleteLoading.value = false
         deletedSuccessfully.value = true
         selectedCustomers.value = []
@@ -233,7 +264,7 @@ const bulkDelete = () => {
 
 const showUnpaidInstallments = () => {
     isUnpaidInstallmentsDialogVisible.value = true
-    axios.get('https://akademia.website/api/unpaidInstallments').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/unpaidInstallments').then((result) => {
         unpaidInstallments.value = result.data.installments
         unPaidInstallmentsFetched.value = true
     }).catch((err) => {
@@ -242,7 +273,7 @@ const showUnpaidInstallments = () => {
 }
 
 const getCategories = () => {
-    axios.get('https://akademia.website/api/categories').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/categories').then((result) => {
         console.log(result.data);
         result.data.categories.forEach((category : any) => {
             categories.value.push(category.category_name)
@@ -294,6 +325,7 @@ onBeforeMount(() => {
                 }
                 getCustomers()
                 getBranches()
+                getAcademies()
                 getCategories()
             })
         } 
@@ -303,10 +335,35 @@ onBeforeMount(() => {
             }
             getCustomers()
             getBranches()
+            getAcademies()
             getCategories()
         }
     })
 })
+
+const copyCustomerSubmissionFormUrl = () => {
+    var dummy = document.createElement('input');
+    // Get the current URL using window.location.href
+    const url = window.location.href;
+    // Extract the domain using URL object and slice to get the part before the first slash
+    const domain = new URL(url).origin;
+    dummy.value = `${domain}/customers/submission/form`;
+    document.body.appendChild(dummy);
+    // Select the input
+    dummy.select();
+    document.execCommand('copy');
+    document.body.removeChild(dummy);
+    // Alert the user
+    isUrlCopied.value = true
+    setTimeout(() => {
+        // console.log(urlAlert.value.classList);
+        urlAlert.value.classList.remove('fadein')
+        urlAlert.value.classList.add('fadeout')
+        setTimeout(() => {
+            isUrlCopied.value = false
+        }, 450);
+    }, 3000);
+}
 
 const dt = ref();
 const exportCSV = () => {
@@ -315,7 +372,8 @@ const exportCSV = () => {
 </script>
 
 <template>
-    
+
+    <div v-if="isUrlCopied" ref="urlAlert" class="urlMsg text-sm z-5 fadein animation-duration-500 animation-iteration-1">تم نسخ الرابط بنجاح</div>
     <!-- Failed Deletions Dialog -->
     <Dialog v-model:visible="isFailedDeletionDialogVisible" @after-hide="failedDeletions = []" modal header="تنبيه" :style="{ width: '60vw' }" :breakpoints="{ '960px': '75vw', '641px': '100vw' }">
         <!-- <loading v-if="!isCoachFetched"></loading> -->
@@ -415,6 +473,10 @@ const exportCSV = () => {
                         <span @click="deleteInstallment(slotProps.data.id)" class="material-symbols-outlined cursor-pointer hoverIcon textColor mx-2 text-3xl p-2 borderRound">
                             delete_forever
                         </span>
+                        <span class="material-symbols-outlined cursor-pointer hoverIcon textColor text-3xl p-2 borderRound" 
+                        @click="push(`/customer/${slotProps.data.subscription_id}`)">
+                            visibility
+                        </span>
                     </div>
                 </template>
             </Column>
@@ -461,6 +523,9 @@ const exportCSV = () => {
         <!-- data Table -->
         <successMsg v-if="deletedSuccessfully" class="fadeinright animation-duration-500 animation-iteration-1 my-4">تم الحذف بنجاح</successMsg>
     <div class="customersList">
+        <div class="flex justify-content-center my-3" >
+            <Button label="نسخ رابط التسجيل للعملاء" @click="copyCustomerSubmissionFormUrl" class="text-sm" icon-class="mx-2" icon="pi pi-link"></Button>
+        </div>
         <DataTable class="customersList" v-model:filters="filters" filter-locale="ar" export-filename="المشتركين" ref="dt"  stripedRows :value="customers"  v-model:selection="selectedCustomers" :loading="!isCustomersFetched"
          paginator :rows="10" :rowsPerPageOptions="[10, 15 , 20, 50]" filterDisplay="menu"
          dataKey="id" removableSort :globalFilterFields="['id' , 'customer_name' , 'customer_phone']" tableStyle="min-width: 50rem">
@@ -506,6 +571,15 @@ const exportCSV = () => {
                 <p v-if="slotProps.data.created_by">{{ slotProps.data.created_by }}</p>
                 <p v-else>غير محدد</p>
             </template>
+            <template #filter="{ filterModel , filterCallback }">
+                <InputText v-model="filterModel.value" @input="filterCallback()" type="text" class="p-column-filter" placeholder="أدخل اسم المسجل" />
+            </template>
+            <template #filterapply="{ filterCallback }">
+                <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="تفعيل" />
+            </template>
+            <template #filterclear="{ filterCallback }">
+                <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="الغاء" outlined />
+            </template>
         </Column>
         <Column field="customer_phone"  header="الهاتف"></Column>
         <Column field="state"  header="الحالة" >
@@ -532,6 +606,7 @@ const exportCSV = () => {
                 <p v-if="slotProps.data.subscription_type == 'vodafone'">فودافون كاش</p>
                 <p v-if="slotProps.data.subscription_type == 'instapay'">انستا باي</p>
                 <p v-if="slotProps.data.subscription_type == 'installments'">تقسيط</p>
+                <p v-if="slotProps.data.subscription_type == 'visa'">فيزا</p>
             </template>
             <template #filter="{ filterModel, filterCallback }">
                 <Dropdown v-model="filterModel.value" @change="filterCallback()" :options="paymentsOptions" placeholder="اختر طريقة دفع" class="p-column-filter" style="min-width: 12rem" :showClear="true">
@@ -540,6 +615,7 @@ const exportCSV = () => {
                         <p v-if="slotProps.option == 'vodafone'">فودافون كاش</p>
                         <p v-if="slotProps.option == 'instapay'">انستا باي</p>
                         <p v-if="slotProps.option == 'installments'">تقسيط</p>
+                        <p v-if="slotProps.option == 'visa'">فيزا</p>
                     </template>
                 </Dropdown>
             </template>
@@ -562,6 +638,52 @@ const exportCSV = () => {
                 <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="الغاء" outlined />
             </template>
         </Column>
+        <Column field="academy_name"  header="الأكاديمية" style="min-width: 11rem">
+            <template #filter="{ filterModel, filterCallback }">
+                <Dropdown v-model="filterModel.value" @change="filterCallback()" :options="allAcademies" placeholder="اختر الأكاديمية" class="p-column-filter" style="min-width: 12rem" :showClear="true">
+                </Dropdown>
+            </template>
+            <template #filterapply="{ filterCallback }">
+                <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="تفعيل" />
+            </template>
+            <template #filterclear="{ filterCallback }">
+                <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="الغاء" outlined />
+            </template>
+        </Column>
+        <Column field="schedules"  header="المواعيد" style="min-width: 15rem">
+            <template #filter="{ filterModel, filterCallback }">
+                <InputText v-model="filterModel.value" @input="filterCallback()" type="text" class="p-column-filter" placeholder="أدخل الموعد" />
+            </template>
+            <template #filterapply="{ filterCallback }">
+                <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="تفعيل" />
+            </template>
+            <template #filterclear="{ filterCallback }">
+                <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="الغاء" outlined />
+            </template>
+        </Column>
+        <Column field="branch_name"  header="الفرع" style="min-width: 11rem">
+            <template #filter="{ filterModel, filterCallback }">
+                <Dropdown v-model="filterModel.value" @change="filterCallback()" :options="branches" placeholder="الفروع" class="p-column-filter" style="min-width: 12rem" :showClear="true">
+                </Dropdown>
+            </template>
+            <template #filterapply="{ filterCallback }">
+                <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="تفعيل" />
+            </template>
+            <template #filterclear="{ filterCallback }">
+                <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="الغاء" outlined />
+            </template>
+        </Column>
+        <Column field="coach_name" sortable  header="اسم المدرب" >
+            <template #filter="{ filterModel , filterCallback }">
+                <InputText v-model="filterModel.value" @input="filterCallback()" type="text" class="p-column-filter" placeholder="أدخل اسم المدرب" />
+            </template>
+            <template #filterapply="{ filterCallback }">
+                <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="تفعيل" />
+            </template>
+            <template #filterclear="{ filterCallback }">
+                <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="الغاء" outlined />
+            </template>
+        </Column>
         <Column field="expiration_date" sortable  header="تاريخ انتهاء الاشتراك" style="min-width: 17rem">
             <template #body="slotProps" >
                 <p>{{ dateTimeFormatter.format(slotProps.data.expiration_date) }}</p>
@@ -576,10 +698,25 @@ const exportCSV = () => {
                 <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="الغاء" outlined />
             </template>
         </Column>
+        <Column field="number_of_sessions" sortable  header="الحصص المتبقية" style="min-width: 13rem">
+            <template #body="slotProps">
+                <p>{{ slotProps.data.number_of_sessions }} حصة</p>
+            </template>
+        </Column>
         <Column field="daysLeft" sortable  header="الأيام المتبقية" style="min-width: 12rem">
             <template #body="slotProps">
                 <p v-if="slotProps.data.daysLeft >= 0">{{ slotProps.data.daysLeft }} يوم</p>
                 <p v-else>اشتراك منتهي</p>
+            </template>
+        </Column>
+        <Column field="invitations" sortable  header="الدعوات المتاحة" style="min-width: 13rem">
+            <template #body="slotProps">
+                <p>{{ slotProps.data.invitations }} دعوة</p>
+            </template>
+        </Column>
+        <Column field="avail_freeze_days" sortable  header="أيام الفريز المتاحة" style="min-width: 13rem">
+            <template #body="slotProps">
+                <p>{{ slotProps.data.avail_freeze_days }} يوم</p>
             </template>
         </Column>
         <Column  header="تعديل">
@@ -610,6 +747,16 @@ const exportCSV = () => {
     </div>
 </template>
 <style>
+.urlMsg{
+    position: fixed;
+    top: 6vh;
+    left: 50%;
+    background-color: #0e9d6e;
+    padding: 1vh 3vh;
+    color: white;
+    border-radius: 15vh;
+    transform: translate(-50%, -50%);
+}
 .failedDeletions .p-datatable .p-datatable-thead > tr > th {
     background: var(--background);
 }

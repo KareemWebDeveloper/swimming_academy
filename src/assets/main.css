@@ -33,10 +33,16 @@ a{
   --primary-text-color : #FFFFFF;
   --bg-card : rgba(255, 255, 255, 0.07);
   --color1 : #343651;
+  --fk-font-family-input : 'Lemonada' !important;
+  --fk-font-size-input : 0.9em !important;
   --error-color : #EF5350;
   --color2 : #071239f0;
   --background : linear-gradient(to bottom, var(--color1), var(--color2)) !important;
   /* Add more CSS variables */
+}
+
+.formkit-input{
+  line-height: 1.4rem !important;
 }
 
 body { 

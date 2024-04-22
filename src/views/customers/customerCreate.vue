@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import axios from 'axios';
-import { ref, onBeforeMount , watch } from 'vue';
+import { ref, onBeforeMount , watch, computed } from 'vue';
 import type {Ref} from 'vue'
 import Button from 'primevue/button';
 import { useRouter } from 'vue-router';
@@ -11,7 +11,7 @@ import InputSwitch from 'primevue/inputswitch';
 import Dialog from 'primevue/dialog';
 const { push , currentRoute } = useRouter();
 
-type payment = 'cash' | 'installments' | 'vodafone' | 'instapay' | undefined
+type payment = 'cash' | 'installments' | 'vodafone' | 'instapay' | 'visa' | undefined
 
 const branches : any = ref([])
 const allAcademies : any = ref([])
@@ -22,6 +22,7 @@ const subscriptionFields : any = ref()
 const coaches : any = ref([])
 const categories : any = ref([])
 const createdSuccessfully = ref(false)
+const isReservationOnly = ref(false)
 const createdSubscription = ref()
 const showSavedPrice = ref(false)
 const subscriptionSavedPrice = ref()
@@ -35,6 +36,7 @@ const showInstallmentsError = ref(false)
 const installments = ref()
 const isBranchesFetched = ref(false)
 const isCustomersFetched = ref(false)
+const reservedCustomerId = ref()
 const dbError = ref()
 const isLoading = ref(false)
 const createdCustomer = ref()
@@ -45,6 +47,7 @@ const isDialogVisible = ref(false)
 const isCustomerRegistered = ref(false)
 const istrainingTimeHasError = ref(false)
 const isPrivateSubscription = ref(false)
+const isSemiPrivateSubscription = ref(false)
 const trainingTimeError = ref()
 const remainingFromInstallments = ref()
 const customerFields = ref()
@@ -62,8 +65,19 @@ const createCustomer = (req : any) => {
         });
         return
     }
+    if(reservedCustomerId.value){
+        createSubscription(reservedCustomerId.value)
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+        return
+    }
     console.log(customerCreateReq);
-    axios.post('https://akademia.website/api/createCustomer' , customerCreateReq).then((result) => {
+    if(isReservationOnly.value){
+        customerCreateReq = req
+    }
+    axios.post('http://127.0.0.1:8000/api/createCustomer' , customerCreateReq).then((result) => {
         createdCustomer.value = result.data.customer
         localStorage.setItem('waitingForSubscription' , JSON.stringify(result.data.customer))
         console.log(localStorage.getItem('waitingForSubscription'));
@@ -74,6 +88,9 @@ const createCustomer = (req : any) => {
             top: 0,
             behavior: 'smooth'
         });
+        if(isReservationOnly.value){
+            push('/customers/reservedOnly')
+        }
         createSubscription(result.data.customer.id)
     }).catch((err) => {
         window.scrollTo({
@@ -97,10 +114,30 @@ const createCustomer = (req : any) => {
 
 const openSubscriptionForm = (req : any) => {
     isLoading.value = true
-    req.customer_name = req.fname + ' ' + req.sname + ' ' + req.thirdName
-    req.birthdate = new Date(req.birthdate);
-    req.birthdate = req.birthdate.toISOString().substr(0, 19).replace('T', ' ');
-    axios.post('https://akademia.website/api/validateCustomer' , req).then((result) => {
+    if(!isSemiPrivateSubscription.value){
+        req.customer_name = req.fname + ' ' + req.sname + ' ' + req.thirdName
+        req.birthdate = new Date(req.birthdate);
+        req.birthdate = req.birthdate.toISOString().substr(0, 19).replace('T', ' ');
+    }
+    else{
+        req.customer_name = ''
+        delete req.birthdate
+        req.subscripers_names.forEach((subscriper : any , index : number) => {
+            if(subscriper.fname && subscriper.lname){
+                if(index == req.subscripers_names.length - 1){
+                    req.customer_name += subscriper.fname + ' ' + subscriper.lname
+                }
+                else{
+                    req.customer_name += subscriper.fname + ' ' + subscriper.lname + ' / '
+                }
+            }
+        });
+    }
+    if(isReservationOnly.value){
+        createCustomer(req)
+        return
+    }
+    axios.post('http://127.0.0.1:8000/api/validateCustomer' , req).then((result) => {
         if(result.data.validation){
             isLoading.value = false
             isErrorReturned.value = false
@@ -132,7 +169,7 @@ const openSubscriptionForm = (req : any) => {
 }
 
 const getBranches = () => {
-    axios.get('https://akademia.website/api/branches').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/branches').then((result) => {
         console.log(result.data);
         allBranches.value = result.data.branches
         result.data.branches.forEach((branch : any) => {
@@ -155,7 +192,7 @@ const getBranches = () => {
 
 const getAcademies = () => {
     return new Promise<any[]>((resolve) => {
-    axios.get(`https://akademia.website/api/academiesOfBranch/${subscriptionFields.value.branch_id}`).then((result) => {
+    axios.get(`http://127.0.0.1:8000/api/academiesOfBranch/${subscriptionFields.value.branch_id}`).then((result) => {
         console.log(result.data);
         result.data.academies.forEach((academy : any) => {
             allAcademies.value.push({label : academy.academy_name , value : academy.id})
@@ -169,7 +206,7 @@ const getAcademies = () => {
 
 const coachesOptions = () => {
     return new Promise<any[]>((resolve) => {
-        axios.get(`https://akademia.website/api/coachesOfBranch/${subscriptionFields.value.branch_id}`).then((result) => {
+        axios.get(`http://127.0.0.1:8000/api/coachesOfBranch/${subscriptionFields.value.branch_id}`).then((result) => {
         console.log(result.data);
         coaches.value = []
         result.data.coaches.forEach((coach : any) => {
@@ -181,7 +218,7 @@ const coachesOptions = () => {
 }
 const categoriesOptions = () => {
     return new Promise<any[]>((resolve) => {
-        axios.get(`https://akademia.website/api/categoriesOfBranch/${subscriptionFields.value.branch_id}`).then((result) => {
+        axios.get(`http://127.0.0.1:8000/api/categoriesOfBranch/${subscriptionFields.value.branch_id}`).then((result) => {
         console.log(result.data);
         categories.value = []
         result.data.categories.forEach((category : any) => {
@@ -193,7 +230,7 @@ const categoriesOptions = () => {
 }
 const workingDaysOptions = () => {
     return new Promise<any[]>((resolve) => {
-        axios.get(`https://akademia.website/api/branch/workingDays/${subscriptionFields.value.branch_id}`).then((result) => {
+        axios.get(`http://127.0.0.1:8000/api/branch/workingDays/${subscriptionFields.value.branch_id}`).then((result) => {
         console.log(result.data);
         workingSchedule.value = result.data.workingDays
         workingDays.value = []
@@ -223,6 +260,9 @@ const createSubscription = (customerId : number) => {
     if(isPrivateSubscription.value == true){
         req.is_private = true
     }
+    if(isSemiPrivateSubscription.value == true){
+        req.is_semi_private = true
+    }
     if(paymentType.value == 'installments'){
         installments.value.installments.forEach((installment : any) => {
             installment.due_date =  new Date(installment.due_date); 
@@ -231,7 +271,7 @@ const createSubscription = (customerId : number) => {
         req.installments = installments.value.installments
     }
     console.log(req);
-    axios.post('https://akademia.website/api/createSubscription' , req).then((result) => {
+    axios.post('http://127.0.0.1:8000/api/createSubscription' , req).then((result) => {
         createdSubscription.value = result.data.subscription
         createdSubscription.value.customer_name = result.data.customer.customer_name
         isSubscriptionLoading.value = false
@@ -330,7 +370,7 @@ watch((installments) , () => {
 
 watch(subscriptionFields, (newValue, oldValue) => {    
     console.log(newValue , 'NEW Value');
-    console.log(oldValue , 'Old Value');
+    // console.log(oldValue , 'Old Value');
     if(subscriptionFields.value.branch_id && subscriptionFields.value.number_of_sessions && subscriptionFields.value.category_id){
         const sessions = subscriptionFields.value.number_of_sessions
         const filteredBranch = allBranches.value.filter((branch : any) => branch.id == subscriptionFields.value.branch_id) 
@@ -358,13 +398,34 @@ watch(subscriptionFields, (newValue, oldValue) => {
     else{
         showSavedPrice.value = false
     }
+    if(newValue.subscription_date){
+
+    }
 });
 
+const fillBranchAndAcademy = (req : any) => {
+    console.log(req , 'fillBranchAndAcademy');
+    let chosenCustomer = customers.value.filter((customer : any) => parseInt(req) == parseInt(customer.customerId))[0]
+    console.log(chosenCustomer);
+    if(chosenCustomer.branchId){
+        setTimeout(() => {
+            subscriptionFields.value.branch_id = chosenCustomer.branchId
+            setTimeout(() => {
+                subscriptionFields.value.academy_id = chosenCustomer.academyId
+            }, 200);
+        }, 350);
+    }
+
+}
+
 const getCustomers = () => {
-    axios.get('https://akademia.website/api/customers').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/customersInputList').then((result) => {
         console.log(result.data);
         result.data.customers.forEach((customer : any) => {
-            customers.value.push({label : `${customer.customer_name} - ${customer.customer_phone}` , value : customer.id})
+            customers.value.push({label : `${customer.customer_name} - ${customer.customer_phone}` ,
+            value : customer.id , branchId : customer.subscriptions[0] ? customer.subscriptions[0].branch_id : null ,
+             academyId : customer.subscriptions[0] ? customer.subscriptions[0].academy_id : null , customerId : customer.id
+            })
         });
         isCustomersFetched.value = true
     }).catch((err) => {
@@ -389,8 +450,20 @@ const handleDialogClosed = () => {
         }, 1000);
     }
 }
-const currentDate = new Date();
-const defaultExpirationDate = currentDate.setDate(currentDate.getDate() + 30);
+
+const defaultExpirationDate = computed(() => {
+    if(subscriptionFields.value.subscription_date){
+        let defaultDate = new Date(subscriptionFields.value.subscription_date)
+        defaultDate.setDate(defaultDate.getDate() + 30);
+        subscriptionFields.value.expiration_date = defaultDate
+        return defaultDate
+    }
+    else{
+        let currentDate = new Date()
+        currentDate.setDate(currentDate.getDate() + 30);
+        return currentDate
+    }
+});
 
 const empPermissions = ref()
 type userType = 'admin' | 'employee' 
@@ -409,6 +482,14 @@ onBeforeMount(() => {
                 if(currentRoute.value.query.isPrivate == 'true'){
                     isPrivateSubscription.value = true
                 }
+                if(currentRoute.value.query.isSemiPrivate == 'true'){
+                    isSemiPrivateSubscription.value = true
+                }
+                if(currentRoute.value.query.isReservedCustomer){
+                    isCustomerRegistered.value = true
+                    createCustomerSubscription.value = true
+                    reservedCustomerId.value = parseInt(currentRoute.value.query.isReservedCustomer as string)
+                }
                 getCustomers()
                 getBranches()
             })
@@ -416,6 +497,14 @@ onBeforeMount(() => {
         else{
             if(currentRoute.value.query.isPrivate == 'true'){
                 isPrivateSubscription.value = true
+            }
+            if(currentRoute.value.query.isSemiPrivate == 'true'){
+                    isSemiPrivateSubscription.value = true
+            }
+            if(currentRoute.value.query.isReservedCustomer){
+                    isCustomerRegistered.value = true
+                    createCustomerSubscription.value = true
+                    reservedCustomerId.value = parseInt(currentRoute.value.query.isReservedCustomer as string)
             }
             getCustomers()
             getBranches()
@@ -461,43 +550,65 @@ onBeforeMount(() => {
     </Dialog>
     <div class="w-12 md:w-10 m-auto p-2 md:p-5 customers">
         <h1 v-if="currentRoute.query.upgrade" class="p-4 text-center textColor">تجديد الاشتراك</h1>
+        <h1 v-else-if="currentRoute.query.isReservedCustomer" class="p-4 text-center textColor">تسجيل اشتراك لعميل</h1>
         <h1 v-else class="p-4 text-center textColor">تسجيل اشتراك لعضو جديد</h1>
         <div class="w-8 m-auto">
             <success-msg v-if="createdSuccessfully" class="fadeinright animation-duration-1000 animation-iteration-1 "></success-msg>
             <h5 v-if="isErrorReturned" class="px-3 py-2 textColor text-center borderRound error">{{ dbError }}</h5>
         </div>
-        <div class="flex justify-content-center align-items-center my-3">
-            <InputSwitch v-model="isCustomerRegistered" />
-            <h4 class="text-sm mx-2 textColor">العضو مسجل بالفعل</h4>
+        <div v-if="!currentRoute.query.isReservedCustomer" class="flex md:flex-row flex-column justify-content-center align-items-center my-3">
+            <div v-if="!isReservationOnly" class="flex justify-content-center align-items-center my-3">
+                <InputSwitch v-model="isCustomerRegistered" />
+                <h4 class="text-sm mx-2 textColor">العضو مسجل بالفعل</h4>
+            </div>
+            <div v-if="!isCustomerRegistered" class="flex pr-3 mx-3 justify-content-center align-items-center my-3" :class="{'borderRight' : !isReservationOnly}">
+                <InputSwitch v-model="isReservationOnly" />
+                <h4 class="text-sm mx-2 textColor">حجز فقط</h4>
+            </div>
         </div>
         <div v-if="!createCustomerSubscription && !isCustomerRegistered">
 
             <!-- Customer Create Form -->
             <FormKit type="form" :actions="false" @submit="openSubscriptionForm">
                 <div class="flex grid w-full">
-                <div class="mt-3 md:col-6 col-12">
-                    <div class="flex align-items-center">
-                        <label for="name" class="px-3 py-1 text-white text-sm">الاسم الأول</label>
+                    <div v-if="isSemiPrivateSubscription" class="w-full m-auto repeater">
+                        <FormKit id="repeater" name="subscripers_names" type="repeater" add-label="اضافة مشترك"
+                         label="أسماء المشتركين" #default="{ index }">
+                         <div class="flex grid w-full align-items-center">
+                            <div class="md:col-6 col-12">
+                                <FormKit prefix-icon="avatarMan" id="name" type="text" label="الاسم الأول للمشترك" placeholder="أدخل الاسم الأول " name="fname" validation="required|length:2" />
+                            </div>
+                            <div class="md:col-6 col-12">
+                                <FormKit prefix-icon="avatarMan" id="name" type="text" label="اسم العائلة" placeholder="أدخل اسم العائلة " name="lname" validation="required|length:2" />
+                            </div>
+                        </div>
+                        </FormKit>
                     </div>
-                    <FormKit prefix-icon="avatarMan" id="name" type="text" label="الاسم الأول للمشترك" placeholder="أدخل اسم المشترك الأول" name="fname" validation="required|length:2" />
-                </div>
-                <div class="mt-3 md:col-6 col-12">
-                    <div class="flex align-items-center">
-                        <label for="name" class="px-3 py-1 text-white text-sm">الاسم الثاني</label>
+                    <div v-else class="flex grid w-full col-12">
+                        <div class="mt-3 md:col-6 col-12">
+                            <div class="flex align-items-center">
+                                <label for="name" class="px-3 py-1 text-white text-sm">الاسم الأول</label>
+                            </div>
+                            <FormKit prefix-icon="avatarMan" id="name" type="text" label="الاسم الأول للمشترك" placeholder="أدخل اسم المشترك الأول" name="fname" validation="required|length:2" />
+                        </div>
+                        <div class="mt-3 md:col-6 col-12">
+                            <div class="flex align-items-center">
+                                <label for="name" class="px-3 py-1 text-white text-sm">الاسم الثاني</label>
+                            </div>
+                            <FormKit prefix-icon="avatarMan" id="name" type="text" label="اسم الثاني للمشترك" placeholder="أدخل اسم المشترك الثاني" name="sname" validation="required|length:2" />
+                        </div>
+                        <div class="mt-3 col-12">
+                            <div class="flex align-items-center">
+                                <label for="name" class="px-3 py-1 text-white text-sm">اللقب</label>
+                            </div>
+                            <FormKit prefix-icon="avatarMan" id="name" type="text" label="لقب المشترك" placeholder="أدخل لقب المشترك" name="thirdName" validation="required|length:2" />
+                        </div>
                     </div>
-                    <FormKit prefix-icon="avatarMan" id="name" type="text" label="اسم الثاني للمشترك" placeholder="أدخل اسم المشترك الثاني" name="sname" validation="required|length:2" />
-                </div>
-                <div class="mt-3 col-12">
-                    <div class="flex align-items-center">
-                        <label for="name" class="px-3 py-1 text-white text-sm">اللقب</label>
-                    </div>
-                    <FormKit prefix-icon="avatarMan" id="name" type="text" label="لقب المشترك" placeholder="أدخل لقب المشترك" name="thirdName" validation="required|length:2" />
-                </div>
                     <div class="mt-3 col-12 md:col-6">
                         <div class="flex align-items-center">
                             <label for="mail" class="px-3 py-1 text-white text-sm">البريد الالكتروني</label>
                         </div>
-                        <FormKit prefix-icon="email" id="mail" type="email" label="البريد الالكتروني" placeholder="أدخل البريد الالكتروني" name="customer_email" validation="email" />
+                        <FormKit prefix-icon="email" id="mail" type="email" label="البريد الالكتروني" placeholder="أدخل البريد الالكتروني" name="customer_email" validation="required|email" />
                     </div>
                     <div class="mt-3 col-12 md:col-6">
                         <div class="flex align-items-center">
@@ -505,7 +616,7 @@ onBeforeMount(() => {
                         </div>
                         <FormKit prefix-icon="telephone" id="phone" type="text" label="رقم الهاتف" placeholder="أدخل رقم هاتف المشترك" name="customer_phone" validation="required|length:10" />
                     </div>
-                    <div class="col-12 md:col-6">
+                    <div v-if="!isSemiPrivateSubscription" class="col-12 md:col-6">
                         <div class="flex align-items-center">
                             <label for="birthdate" class="px-3 py-1 text-white text-sm">تاريخ الميلاد</label>
                         </div>
@@ -514,10 +625,11 @@ onBeforeMount(() => {
                         name="birthdate"
                         label="تاريخ الميلاد"
                         id="birthdate"
+                        validation="required"
                         :format="{ date: 'short' }"
                       />
                     </div>
-                    <div class="col-12 md:col-6">
+                    <div v-if="!isSemiPrivateSubscription" class="col-12 md:col-6">
                         <div class="flex align-items-center">
                             <label for="job" class="px-3 py-1 text-white text-sm">الوظيفة</label>
                         </div>
@@ -525,11 +637,12 @@ onBeforeMount(() => {
                     </div>
                     <div class="col-12">
                         <div class="flex align-items-center">
-                            <label for="address" class="px-3 py-1 text-white text-sm">عنوان المشترك</label>
+                            <label v-if="!isSemiPrivateSubscription" for="address" class="px-3 py-1 text-white text-sm">عنوان المشترك</label>
+                            <label v-else for="address" class="px-3 py-1 text-white text-sm">عنوان أحد المشتركين</label>
                         </div>
-                        <FormKit prefix-icon="text" id="address" type="textarea" label="العنوان" placeholder="أدخل عنوان للمشترك " name="customer_address" validation="required|length:3" />
+                        <FormKit prefix-icon="text" id="address" type="textarea" label="العنوان" placeholder="أدخل عنوان " name="customer_address" validation="required|length:3" />
                     </div>
-                    <div class="col-12">
+                    <div v-if="!isSemiPrivateSubscription" class="col-12">
                         <div class="flex align-items-center">
                             <label for="gender" class="px-3 py-1 text-white text-sm">الجنس</label>
                         </div>
@@ -554,7 +667,7 @@ onBeforeMount(() => {
                         </div>
                         <FormKit
                         type="autocomplete" name="customer_id"  placeholder="اختر المشترك الذي تريد تسجيله" label="المشترك"
-                        :options="customers" validation="required"
+                        :options="customers" validation="required" @input="fillBranchAndAcademy"
                         />
                     </div>
                     <div class="mt-3 col-12">
@@ -609,7 +722,7 @@ onBeforeMount(() => {
                             <div class="flex align-items-center">
                                 <label for="avail_freeze_days" class="px-3 py-1 text-white text-sm">الأيام المتاحة للتجميد</label>
                             </div>
-                            <FormKit prefix-icon="number" :value="14" number="integer" id="avail_freeze_days" type="number" label="أيام التجميد" placeholder="أدخل الأيام المتاحة لتجميد الاشتراك" name="avail_freeze_days" validation="min:0" />
+                            <FormKit prefix-icon="number" :value="7" number="integer" id="avail_freeze_days" type="number" label="أيام التجميد" placeholder="أدخل الأيام المتاحة لتجميد الاشتراك" name="avail_freeze_days" validation="min:0" />
                         </div>
                         <div class="mt-3 col-12 md:col-6">
                             <div class="flex align-items-center">
@@ -684,6 +797,9 @@ onBeforeMount(() => {
                             <div class="col-12 md:col-6 m-auto flex justify-content-center">
                                 <Button type="button" class="w-9" label="انستا باي" :class="{ 'activeButton' : paymentType == 'instapay'}" @click="paymentType = 'instapay'" />
                             </div>
+                            <div class="col-12 md:col-6 m-auto flex justify-content-center">
+                                <Button type="button" class="w-9" label="فيزا" :class="{ 'activeButton' : paymentType == 'visa'}" @click="paymentType = 'visa'" />
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -733,6 +849,9 @@ onBeforeMount(() => {
 <style>
 .formkit-panel-wrapper{
     direction: ltr !important;
+}
+.borderRight{
+    border-right: solid 3px white;
 }
 .dialogForm .formkit-form {
     width: 95% !important;
@@ -902,6 +1021,9 @@ label{
     }    
 }
 @media screen and (max-width : 570px){
+    .borderRight{
+        border: none !important;
+    }
     .dialogForm .formkit-form {
         width: 100% !important;
     }

@@ -30,7 +30,7 @@ const allProducts : any = ref()
 const createProduct = (req : any) => {
     isLoading.value = true
     console.log(req);
-    axios.post('https://akademia.website/api/createProduct' , req).then((result) => {
+    axios.post('http://127.0.0.1:8000/api/createProduct' , req).then((result) => {
         createdProduct.value = result.data.product
         isLoading.value = false
         isErrorReturned.value = false
@@ -62,7 +62,7 @@ const createProduct = (req : any) => {
 const createBuyingOrder = (req : any) => {
     isLoading.value = true
     console.log(req);
-    axios.post('https://akademia.website/api/createBuyingOrder' , req).then((result) => {
+    axios.post('http://127.0.0.1:8000/api/createBuyingOrder' , req).then((result) => {
         createdProduct.value = result.data.product
         isLoading.value = false
         isErrorReturned.value = false
@@ -107,7 +107,7 @@ const calculateTotalPrcie = (type : 'new' | 'exists') => {
     }
 }
 const getProducts = () => {
-    axios.get('https://akademia.website/api/products').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/products').then((result) => {
         allProducts.value = result.data.products
         result.data.products.forEach((product : any) => {
             productsOptions.value.push({label : `${product.product_name} - ${product.product_count} قطع متاحة` , value : product.id})
@@ -120,7 +120,7 @@ const getProducts = () => {
 }
 
 const getProductSections = () => {
-    axios.get('https://akademia.website/api/productSections').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/productSections').then((result) => {
          result.data.sections.forEach((section : any) => {
             Sections.value.push({label : section.section_name , value : section.id})
          });

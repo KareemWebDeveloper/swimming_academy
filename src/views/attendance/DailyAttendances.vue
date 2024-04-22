@@ -22,22 +22,18 @@ import Dropdown from 'primevue/dropdown';
 import { FormKit } from '@formkit/vue';
 import SelectButton from 'primevue/selectbutton';
 import { isEmpAuthorizedFor } from '@/global-functions/isEmployeeAuthorizedFor';
+import Calendar from 'primevue/calendar';
 
 const confirm = useConfirm();
 
 const isSubmitAttendanceDataLoading : any = ref(false);
 const attendanceListView : any = ref(false);
-const selectedCustomers : any = ref([]);
-const selectedCoaches : any = ref([]);
 const attendedSuccessfully = ref(false)
-const isAttendingLoading = ref(false);
-const missingSubscriptionError = ref(false)
 const attendanceData : any = ref()
 const activeCoaches : any = ref()
 const activeCustomers : any = ref()
 const isBranchesFetched : any = ref(false)
 const branches : any = ref([])
-const currentTime : any = ref()
 const customerAttendances : any = ref()
 const coachAttendances : any = ref()
 const categories : any = ref([])
@@ -58,12 +54,6 @@ const home = ref({
 },
 );
 
-function getCurrentTime() {
-  const now = new Date();
-  const hours = now.getHours().toString().padStart(2, '0');
-  const minutes = now.getMinutes().toString().padStart(2, '0');
-    currentTime.value = `${hours}:${minutes}`;
-}
 
 const confirmSubmittingCustomers = (event : any , name : string) => {
     confirm.require({
@@ -87,8 +77,10 @@ const filters = ref(
         'subscription.coach.name': { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.CONTAINS }] },
         'branch.branch_name': { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.CONTAINS }] },
         'subscription.academy_name': { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.CONTAINS }] },
+        'subscription.expiration_date': { value: null, matchMode: FilterMatchMode.DATE_IS },
         'subscription.category_name': { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.CONTAINS }] },
         'customer.id': { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.EQUALS }] },
+        'created_by': { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.CONTAINS }] },
     }
 );
 const coachesFilters = ref(
@@ -97,6 +89,7 @@ const coachesFilters = ref(
         'coach.name': { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }] },
         'category.category_name': { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.CONTAINS }] },
         'coach.id': { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.EQUALS }] },
+        'created_by': { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.CONTAINS }] },
     }
 );
 const options = {
@@ -114,11 +107,16 @@ const dateTimeFormatter = new Intl.DateTimeFormat('ar', options);
 
 const getAttendances = (req : any) => {
     isSubmitAttendanceDataLoading.value = true
-    req.target_date = new Date(req.target_date).setHours(13)
+    
+    req.target_date = new Date(req.target_date).setHours(2)
     req.target_date = new Date(req.target_date).toISOString().split('T')[0]
-    console.log(req.target_date);  
-    axios.post('https://akademia.website/api/attendances' , req).then((result : any) => {
+    console.log(req.target_date);
+    
+    axios.post('http://127.0.0.1:8000/api/attendances' , req).then((result : any) => {
         console.log(result.data);
+        result.data.customers.forEach((customer : any) => {
+            customer.subscription.expiration_date = new Date(customer.subscription.expiration_date)
+        });
         customerAttendances.value = result.data.customers
         coachAttendances.value = result.data.coaches
         isSubmitAttendanceDataLoading.value = false
@@ -129,7 +127,7 @@ const getAttendances = (req : any) => {
 }
 
 const getAcademies = () => {
-    axios.get('https://akademia.website/api/academies').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/academies').then((result) => {
         console.log(result.data);
         result.data.academies.forEach((academy : any) => {
             allAcademies.value.push(academy.academy_name)
@@ -145,7 +143,7 @@ const showUserProfile = (subscriptionId : any) =>{
 }
 
 const deleteAttendance = (attendanceId : number , index : number , type : 'customer' | 'coach') => {
-    axios.delete(`https://akademia.website/api/attendanceDelete/${attendanceId}`).then((result) => {
+    axios.delete(`http://127.0.0.1:8000/api/attendanceDelete/${attendanceId}`).then((result) => {
         console.log(result.data);
         if(type == 'customer'){
             customerAttendances.value.splice(index , 1)
@@ -158,7 +156,7 @@ const deleteAttendance = (attendanceId : number , index : number , type : 'custo
     });
 }
 const getCategories = () => {
-    axios.get('https://akademia.website/api/categories').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/categories').then((result) => {
         console.log(result.data);
         result.data.categories.forEach((category : any) => {
             categories.value.push(category.category_name)
@@ -168,6 +166,17 @@ const getCategories = () => {
         console.log(err);
     });
 }
+const getBranches = () => {
+    axios.get('http://127.0.0.1:8000/api/branches').then((result) => {
+        result.data.branches.forEach((branch : any) => {
+            branches.value.push(branch.branch_name)
+        });
+        isBranchesFetched.value = true
+    }).catch((err) => {
+        console.log(err);
+    });
+}
+
 const dt = ref();
 
 const empPermissions = ref()
@@ -191,10 +200,12 @@ onBeforeMount(() => {
                 }
                 getAcademies()
                 getCategories()
+                getBranches()
             })
         }
         else{
             getAcademies()
+            getBranches()
             getCategories()
         }
     })
@@ -232,9 +243,15 @@ onBeforeMount(() => {
     <ConfirmPopup></ConfirmPopup>
         <!-- data Table -->
         <div v-if="attendanceListView && isAcademiesFetched && isCategoriesFetched">
-            <div class="flex justify-content-center my-5 pt-5 m-auto">
+            <div class="flex justify-content-between my-5 pt-5 m-auto">
                 <Button type="button" v-if="optionValue == 'customers'" label="تقرير حضور المدربين" @click="optionValue = 'coaches'" />
                 <Button type="button" v-if="optionValue == 'coaches'" label="تقرير حضور المشتركين" @click="optionValue = 'customers'" />
+                <div @click="attendanceListView = false" class="bg-card px-3 borderRound cursor-pointer flex align-items-center text-white">
+                    <h5 class="mx-2">الرجوع</h5>
+                    <span class="material-symbols-outlined">
+                        arrow_back
+                    </span>
+                </div>
             </div>
         <successMsg v-if="attendedSuccessfully" class="fadeinright animation-duration-500 animation-iteration-1 my-4">تم التسجيل بنجاح</successMsg>
 
@@ -255,6 +272,22 @@ onBeforeMount(() => {
             </template>
             <Column field="customer.id" sortable  header="الكود"></Column>
             <Column field="customer.customer_name" sortable  header="اسم المشترك" style="min-width: 11rem;"></Column>
+            <Column field="created_by"  header="المسجل" style="min-width: 8rem">
+                <template #body="slotProps" >
+                    <p v-if="slotProps.data.created_by">{{ slotProps.data.created_by }}</p>
+                    <p v-else>غير محدد</p>
+                </template>
+                <template #filter="{ filterModel , filterCallback }">
+                    <InputText v-model="filterModel.value" @input="filterCallback()" type="text" class="p-column-filter" placeholder="أدخل اسم المسجل" />
+                </template>
+                <template #filterapply="{ filterCallback }">
+                    <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="تفعيل" />
+                </template>
+                <template #filterclear="{ filterCallback }">
+                    <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="الغاء" outlined />
+                </template>
+            </Column>
+
             <Column field="subscription.coach.name" sortable  header="المدرب" style="min-width: 13rem;">
                 <template #body="slotProps">
                     <p>كابتن / {{ slotProps.data.subscription.coach.name }}</p>
@@ -284,12 +317,37 @@ onBeforeMount(() => {
                     <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="الغاء" outlined />
                 </template>
             </Column>
+            <Column field="subscription.expiration_date" sortable  header="تاريخ انتهاء الاشتراك" style="min-width: 17rem">
+                <template #body="slotProps" >
+                    <p>{{ dateTimeFormatter.format( new Date(slotProps.data.subscription.expiration_date) ) }}</p>
+                </template>
+                <template #filter="{ filterModel, filterCallback }">
+                        <Calendar v-model="filterModel.value" @input="filterCallback()" placeholder="اختر تاريخ انتهاء الاشتراك" showIcon showButtonBar inputId="expiration_date"></Calendar> 
+                </template>
+                <template #filterapply="{ filterCallback }">
+                    <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="تفعيل" />
+                </template>
+                <template #filterclear="{ filterCallback }">
+                    <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="الغاء" outlined />
+                </template>
+            </Column>
             <Column field="created_at" sortable  header="موعد الحضور" style="min-width: 13rem;">
                 <template #body="slotProps">
                     <p>{{ dateTimeFormatter.format(new Date(slotProps.data.created_at)) }}</p>
                 </template>
             </Column>
-            <Column field="branch.branch_name"  header="الفرع" style="min-width: 8rem;"></Column>
+            <Column field="branch.branch_name"  header="الفرع" style="min-width: 11rem;">
+                <template #filter="{ filterModel, filterCallback }">
+                    <Dropdown v-model="filterModel.value" @change="filterCallback()" :options="branches" placeholder="الفروع" class="p-column-filter" style="min-width: 12rem" :showClear="true">
+                    </Dropdown>
+                </template>
+                <template #filterapply="{ filterCallback }">
+                    <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="تفعيل" />
+                </template>
+                <template #filterclear="{ filterCallback }">
+                    <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="الغاء" outlined />
+                </template>
+            </Column>
             <Column  header="تعديل" style="min-width: 8rem;">
                 <template #body="slotProps">
                     <div class="flex align-items-center">
@@ -325,6 +383,21 @@ onBeforeMount(() => {
             <Column field="coach.name" sortable  header="اسم المدرب"  style="min-width: 13rem;">
                 <template #body="slotProps">
                     <p>كابتن / {{ slotProps.data.coach.name }} </p>
+                </template>
+            </Column>
+            <Column field="created_by"  header="المسجل" style="min-width: 8rem">
+                <template #body="slotProps" >
+                    <p v-if="slotProps.data.created_by">{{ slotProps.data.created_by }}</p>
+                    <p v-else>غير محدد</p>
+                </template>
+                <template #filter="{ filterModel , filterCallback }">
+                    <InputText v-model="filterModel.value" @input="filterCallback()" type="text" class="p-column-filter" placeholder="أدخل اسم المسجل" />
+                </template>
+                <template #filterapply="{ filterCallback }">
+                    <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="تفعيل" />
+                </template>
+                <template #filterclear="{ filterCallback }">
+                    <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="الغاء" outlined />
                 </template>
             </Column>
             <Column field="category.category_name" sortable  header="نوع التمرين" style="min-width: 13rem;">

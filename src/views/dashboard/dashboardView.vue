@@ -58,7 +58,7 @@ const getCustomerSubscriptions = () => {
     console.log(customerId.value);
     isSubscriptionFetched.value= false
     isSubscriptionLoading.value= true
-    axios.get(`https://akademia.website/api/customerActiveSubscriptions/${customerId.value}`).then((result) => {
+    axios.get(`http://127.0.0.1:8000/api/customerActiveSubscriptions/${customerId.value}`).then((result) => {
         console.log(result);
         isSubscriptionFetched.value= true
         isErrorReturned.value = false
@@ -75,7 +75,7 @@ const getCustomerSubscriptions = () => {
 }
 
 const getAnnualProfits = () => {
-    axios.get('https://akademia.website/api/annualProfitsChart').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/annualProfitsChart').then((result) => {
         console.log(Object.keys(result.data.annualProfits));
         console.log(Object.values(result.data.annualProfits));
         let revenues : any = []
@@ -112,7 +112,7 @@ const getAnnualProfits = () => {
     });
 }
 const getInsights = () => {
-    axios.get('https://akademia.website/api/insights').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/insights').then((result) => {
         console.log(result.data);
         insights.value = result.data
         const documentStyle = getComputedStyle(document.body);

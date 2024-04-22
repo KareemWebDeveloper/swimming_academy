@@ -82,7 +82,7 @@ const options = {
 const dateTimeFormatter = new Intl.DateTimeFormat('ar', options);
 
 const getSections = () => {
-    axios.get('https://akademia.website/api/productSections').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/productSections').then((result) => {
         console.log(result.data);
         productSections.value = result.data.sections
         productSections.value.forEach((section : any) => {
@@ -97,7 +97,7 @@ const getSections = () => {
 
 const updateSection = (req : any) => {
     updateLoading.value = true
-    axios.put(`https://akademia.website/api/updateProductSection/${activeSection.value.id}`, req).then((result) => {
+    axios.put(`http://127.0.0.1:8000/api/updateProductSection/${activeSection.value.id}`, req).then((result) => {
         console.log(result.data);
         updateLoading.value = false
         updatedSuccessfully.value = true
@@ -129,7 +129,7 @@ const bulkDelete = () => {
     let req : any = {
         section_ids : section_ids
     }
-    axios.post('https://akademia.website/api/productSectionBulkDelete', req ).then((result) => {
+    axios.post('http://127.0.0.1:8000/api/productSectionBulkDelete', req ).then((result) => {
         console.log(result);
         deletedSuccessfully.value = true
         selectedSections.value = []

@@ -62,7 +62,7 @@ const confirmDeletion = (event : any , payment : string) => {
     });
 };
 const statuses = ref(['active' ,'inactive','frozen'])
-const paymentsOptions = ref(['cash','installments'])
+const paymentsOptions = ref(['cash','installments','vodafone','instapay' , 'visa'])
 const privateSubscriptions = ref()
 const branches : any = ref([])
 const categories : any = ref([])
@@ -74,7 +74,10 @@ const filters = ref(
         global: { value: null, matchMode: FilterMatchMode.CONTAINS },
         'customer.customer_name': { value: '', matchMode: FilterMatchMode.CONTAINS },
         category_name: { value: '', matchMode: FilterMatchMode.EQUALS },
+        academy_name: { value: '', matchMode: FilterMatchMode.CONTAINS },
+        is_semi_private: { value: '', matchMode: FilterMatchMode.CONTAINS },
         'coach.name': { value: '', matchMode: FilterMatchMode.CONTAINS },
+        'branch.branch_name': { value: '', matchMode: FilterMatchMode.CONTAINS },
         expiration_date: { value: null, matchMode: FilterMatchMode.DATE_IS },
         subscription_type: { value: null, matchMode: FilterMatchMode.EQUALS },
         'customer.customer_phone': { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }] },
@@ -98,7 +101,7 @@ const options = {
 const dateTimeFormatter = new Intl.DateTimeFormat('ar', options);
 
 const getPrivateSubscriptions = () => {
-    axios.get('https://akademia.website/api/privateSubscriptions').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/privateSubscriptions').then((result) => {
         console.log(result.data);
         privateSubscriptions.value = result.data.privateSubscriptions
         isPrivateSubscriptionsFetched.value = true
@@ -114,7 +117,7 @@ const getPrivateSubscriptions = () => {
 }
 
 const getBranches = () => {
-    axios.get('https://akademia.website/api/branches').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/branches').then((result) => {
         console.log(result.data);
         result.data.branches.forEach((branch : any) => {
             branches.value.push(branch.branch_name)
@@ -128,7 +131,7 @@ const getBranches = () => {
 const getCoachDetails = (coachId : number) => {
     isCoachFetched.value = false
     // isDialogVisible.value = true
-    axios.get(`https://akademia.website/api/coach/${coachId}`).then((result) => {
+    axios.get(`http://127.0.0.1:8000/api/coach/${coachId}`).then((result) => {
         activeCoach.value = result.data.coach
         activeCoach.value.numberOfSubscriptions = result.data.activeSubscriptions.length
         selectedBranches.value = {branchIds : []}
@@ -144,7 +147,7 @@ const getCoachDetails = (coachId : number) => {
 }
 
 const payInstallment = (installmentId : number) => {
-    axios.put(`https://akademia.website/api/payInstallment/${installmentId}`).then((result) => {
+    axios.put(`http://127.0.0.1:8000/api/payInstallment/${installmentId}`).then((result) => {
         console.log(result.data.installment);
         failedDeletions.value = failedDeletions.value.filter((installment : any) => installment.id !== installmentId);
     }).catch((err) => {
@@ -153,7 +156,7 @@ const payInstallment = (installmentId : number) => {
 }
 
 const deleteInstallment = (installmentId : number) => {
-    axios.delete(`https://akademia.website/api/deleteInstallment/${installmentId}`).then((result) => {
+    axios.delete(`http://127.0.0.1:8000/api/deleteInstallment/${installmentId}`).then((result) => {
         console.log(result.data);
         failedDeletions.value = failedDeletions.value.filter((installment : any) => installment.id !== installmentId);
     }).catch((err) => {
@@ -184,7 +187,7 @@ const bulkDelete = () => {
     let req : any = {
         customer_ids : customers_ids
     }
-    axios.post('https://akademia.website/api/customerBulkDelete', req).then((result) => {
+    axios.post('http://127.0.0.1:8000/api/customerBulkDelete', req).then((result) => {
         console.log(result);
         isBulkDeleteLoading.value = false
         deletedSuccessfully.value = true
@@ -215,7 +218,7 @@ const bulkDelete = () => {
 }
 
 const getCategories = () => {
-    axios.get('https://akademia.website/api/categories').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/categories').then((result) => {
         console.log(result.data);
         result.data.categories.forEach((category : any) => {
             categories.value.push(category.category_name)
@@ -440,14 +443,37 @@ const exportCSV = () => {
         <Column field="subscription_type"  header="الدفع" style="min-width: 9rem">
             <template #body="slotProps" >
                 <p v-if="slotProps.data.subscription_type == 'cash'">كاش</p>
+                <p v-if="slotProps.data.subscription_type == 'vodafone'">فودافون كاش</p>
+                <p v-if="slotProps.data.subscription_type == 'instapay'">انستا باي</p>
                 <p v-if="slotProps.data.subscription_type == 'installments'">تقسيط</p>
+                <p v-if="slotProps.data.subscription_type == 'visa'">فيزا</p>
             </template>
             <template #filter="{ filterModel, filterCallback }">
                 <Dropdown v-model="filterModel.value" @change="filterCallback()" :options="paymentsOptions" placeholder="اختر طريقة دفع" class="p-column-filter" style="min-width: 12rem" :showClear="true">
                     <template #option="slotProps">
                         <p v-if="slotProps.option == 'cash'">كاش</p>
+                        <p v-if="slotProps.option == 'vodafone'">فودافون كاش</p>
+                        <p v-if="slotProps.option == 'instapay'">انستا باي</p>
                         <p v-if="slotProps.option == 'installments'">تقسيط</p>
+                        <p v-if="slotProps.option == 'visa'">فيزا</p>
                     </template>
+                </Dropdown>
+            </template>
+            <template #filterapply="{ filterCallback }">
+                <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="تفعيل" />
+            </template>
+            <template #filterclear="{ filterCallback }">
+                <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="الغاء" outlined />
+            </template>
+        </Column>
+        <Column field="is_semi_private"  header="نوع الاشتراك"  style="min-width: 11rem">
+            <template #body="slotProps" >
+                <p v-if="slotProps.data.is_semi_private">سيمي برايفت</p>
+                <p v-else>برايفت</p>
+            </template>
+            <template #filter="{ filterModel, filterCallback }">
+                <Dropdown v-model="filterModel.value" @change="filterCallback()" option-value="value" option-label="label"
+                :options="[{label : 'سيمي برايفت' , value : 1} , {label : 'برايفت' , value : 0}]" placeholder="اختر نوع الاشتراك" class="p-column-filter" style="min-width: 12rem" :showClear="true">
                 </Dropdown>
             </template>
             <template #filterapply="{ filterCallback }">
@@ -460,6 +486,29 @@ const exportCSV = () => {
         <Column field="category_name"  header="نوع التمرين"  style="min-width: 11rem">
             <template #filter="{ filterModel, filterCallback }">
                 <Dropdown v-model="filterModel.value" @change="filterCallback()" :options="categories" placeholder="اختر نوع التمرين" class="p-column-filter" style="min-width: 12rem" :showClear="true">
+                </Dropdown>
+            </template>
+            <template #filterapply="{ filterCallback }">
+                <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="تفعيل" />
+            </template>
+            <template #filterclear="{ filterCallback }">
+                <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="الغاء" outlined />
+            </template>
+        </Column>
+        <Column field="academy_name"  header="الأكاديمية"  style="min-width: 11rem">
+            <template #filter="{ filterModel, filterCallback }">
+                <InputText v-model="filterModel.value" @input="filterCallback()" type="text" class="p-column-filter" placeholder="أدخل اسم الأكاديمية" />
+            </template>
+            <template #filterapply="{ filterCallback }">
+                <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="تفعيل" />
+            </template>
+            <template #filterclear="{ filterCallback }">
+                <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="الغاء" outlined />
+            </template>
+        </Column>
+        <Column field="branch.branch_name"  header="الفرع"  style="min-width: 11rem">
+            <template #filter="{ filterModel, filterCallback }">
+                <Dropdown v-model="filterModel.value" @change="filterCallback()" :options="branches" placeholder="اختر الفرع" class="p-column-filter" style="min-width: 12rem" :showClear="true">
                 </Dropdown>
             </template>
             <template #filterapply="{ filterCallback }">
@@ -510,7 +559,10 @@ const exportCSV = () => {
                     @click="selectedCustomers = [{customer_id : slotProps.data.customer_id}]; confirmDeletion($event , slotProps.data.subscription_type)">
                     delete_forever
                     </span>
-                    <span v-if="isEmpAuthorizedFor(empPermissions , 'تسجيل و تعديل التمرينات الفردية' , UserType)" @click="push({path : `/customer/update/${slotProps.data.customer_id}` , query : {isPrivate : 'true'} })" class="material-symbols-outlined cursor-pointer hoverIcon mx-2 textColor text-3xl p-2 borderRound">
+                    <span v-if="slotProps.data.is_semi_private" @click="push({path : `/customer/update/${slotProps.data.customer_id}` , query : {isPrivate : 'true' , isSemiPrivate : 'true'} })" class="material-symbols-outlined cursor-pointer hoverIcon mx-2 textColor text-3xl p-2 borderRound">
+                        edit
+                    </span>
+                    <span v-else @click="push({path : `/customer/update/${slotProps.data.customer_id}` , query : {isPrivate : 'true'} })" class="material-symbols-outlined cursor-pointer hoverIcon mx-2 textColor text-3xl p-2 borderRound">
                         edit
                     </span>
                     <span class="material-symbols-outlined cursor-pointer hoverIcon textColor text-3xl p-2 borderRound" 

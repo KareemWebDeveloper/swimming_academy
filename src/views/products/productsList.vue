@@ -29,6 +29,7 @@ const isDialogVisible : any = ref(false);
 const isPosView : any = ref(false);
 const selectedProducts : any = ref([]);
 const deletedSuccessfully = ref(false)
+const productsSearchQuery = ref()
 const Customers : any = ref([]);
 const isCustomersFetched = ref(false)
 const posProducts : any = ref()
@@ -95,7 +96,7 @@ const options = {
 const dateTimeFormatter = new Intl.DateTimeFormat('ar', options);
 
 const getProducts = () => {
-    axios.get('https://akademia.website/api/products').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/products').then((result) => {
         console.log(result.data);
         products.value = result.data.products
         isFetched.value = true
@@ -127,7 +128,7 @@ const createSellingOrder = (req : any) => {
         total_price : totalPrice.value
     }
     console.log(request);
-    axios.post('https://akademia.website/api/createSellingOrder', request ).then((result) => {
+    axios.post('http://127.0.0.1:8000/api/createSellingOrder', request ).then((result) => {
         console.log(result.data.order);
         createdOrder.value = result.data.order
         isDialogVisible.value = true
@@ -147,7 +148,7 @@ const bulkDelete = () => {
     let req : any = {
         product_ids : product_ids
     }
-    axios.post('https://akademia.website/api/productsBulkDelete', req ).then((result) => {
+    axios.post('http://127.0.0.1:8000/api/productsBulkDelete', req ).then((result) => {
         console.log(result);
         deletedSuccessfully.value = true
         getProducts()
@@ -188,7 +189,7 @@ onBeforeMount(() => {
 })
 const getBranches = () => {
     return new Promise<any[]>((resolve) => {
-    axios.get('https://akademia.website/api/branches').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/branches').then((result) => {
         console.log(result.data);
         const branches : any = []
         result.data.branches.forEach((branch : any) => {
@@ -200,8 +201,17 @@ const getBranches = () => {
     });
 })
 }
+
+const filterProducts = (query : any) => {
+    console.log(query , 'query');
+    const tmp = products.value
+    let filteredProducts = tmp.filter((product : any) => product.product_name.toLowerCase().includes(query.toLowerCase()))
+    posProducts.value[0] = filteredProducts
+    console.log(filteredProducts);
+    
+}
 const getCustomers = () => {
-    axios.get('https://akademia.website/api/customers').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/customers').then((result) => {
         console.log(result.data);
         result.data.customers.forEach((customer : any) => {
             Customers.value.push({label : customer.customer_name , value : customer.id})
@@ -356,7 +366,12 @@ const exportCSV = () => {
     <!-- pos view -->
     <div v-else style="direction: ltr;">
         <PickList v-model="posProducts" @move-to-source="updateTotalPrice" @move-to-target="updateTotalPrice" listStyle="height:442px" dataKey="id" breakpoint="1400px">
-            <template #sourceheader> المنتجات </template>
+            <template #sourceheader> 
+                <div class="flex justify-content-between align-items-center">
+                    <h4>المنتجات</h4>
+                    <InputText @update:modelValue="filterProducts" v-model="productsSearchQuery" placeholder="ابحث في المنتجات" />
+                </div>
+            </template>
             <template #targetheader> الطلب <span class="material-symbols-outlined">
                 receipt_long
                 </span></template>

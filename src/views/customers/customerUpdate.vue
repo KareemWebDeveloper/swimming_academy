@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import axios from 'axios';
-import { ref, onBeforeMount , watch } from 'vue';
+import { ref, onBeforeMount , computed } from 'vue';
 import type {Ref} from 'vue'
 import Button from 'primevue/button';
 import { useRouter } from 'vue-router';
@@ -17,6 +17,7 @@ const branches : any = ref([])
 const allBranches : any = ref()
 // const lastSubscription : any = ref()
 const coaches : any = ref([])
+let lastSubscriptionDate : any = null
 const categories : any = ref([])
 const allAcademies : any = ref([])
 const updatedSuccessfully = ref(false)
@@ -26,6 +27,7 @@ const subscriptionSavedPrice = ref()
 const isErrorReturned = ref(false)
 const isSubscriptionDialogVisible = ref(false)
 const isSubscriptionLoading = ref(false)
+const isSemiPrivateSubscription = ref(false)
 const stayAtTheSamePage = ref(false)
 const isSaleFieldVisible = ref(false)
 const installments = ref()
@@ -51,9 +53,24 @@ const trainingTimeError = ref()
 const updateCustomer = (req : any) => {
     isLoading.value = true
     console.log(req);
-    req.birthdate = new Date(req.birthdate);
-    req.birthdate = req.birthdate.toISOString().substr(0, 19).replace('T', ' ');
-    axios.put(`https://akademia.website/api/updateCustomer/${CustomerId}` , req).then((result) => {
+    if(isSemiPrivateSubscription.value){
+        req.customer_name = ''
+        req.subscripers_names.forEach((subscriper : any , index : number) => {
+            if(subscriper.fname && subscriper.lname){
+                if(index == req.subscripers_names.length - 1){
+                    req.customer_name += subscriper.fname + ' ' + subscriper.lname
+                }
+                else{
+                    req.customer_name += subscriper.fname + ' ' + subscriper.lname + ' / '
+                }
+            }
+        });
+    }
+    else{
+        req.birthdate = new Date(req.birthdate);
+        req.birthdate = req.birthdate.toISOString().substr(0, 19).replace('T', ' ');
+    }
+    axios.put(`http://127.0.0.1:8000/api/updateCustomer/${CustomerId}` , req).then((result) => {
         createdCustomer.value = result.data.customer
         isLoading.value = false
         isErrorReturned.value = false
@@ -85,8 +102,23 @@ const updateCustomer = (req : any) => {
         console.log(err);
     });
 }
+
+const defaultExpirationDate = computed(() => {
+    if(new Date(lastSubscription.value.subscription_date).setHours(0) !== new Date(lastSubscriptionDate).setHours(0)){
+        console.log(new Date(lastSubscription.value.subscription_date).setHours(0) , 'lastSubscription');
+        console.log(new Date(lastSubscriptionDate).setHours(0) , 'lastSubscriptionDate');
+        let defaultDate = new Date(lastSubscription.value.subscription_date)
+        defaultDate.setDate(defaultDate.getDate() + 30);
+        lastSubscription.value.expiration_date = defaultDate
+        return defaultDate
+    }
+    else{
+        return new Date(lastSubscription.value.expiration_date)
+    }
+});
+
 const getBranches = () => {
-    axios.get('https://akademia.website/api/branches').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/branches').then((result) => {
         console.log(result.data);
         allBranches.value = result.data.branches
         result.data.branches.forEach((branch : any) => {
@@ -100,7 +132,7 @@ const getBranches = () => {
 
 const coachesOptions = () => {
     return new Promise<any[]>((resolve) => {
-        axios.get(`https://akademia.website/api/coachesOfBranch/${lastSubscription.value.branch_id}`).then((result) => {
+        axios.get(`http://127.0.0.1:8000/api/coachesOfBranch/${lastSubscription.value.branch_id}`).then((result) => {
         console.log(result.data);
         coaches.value = []
         result.data.coaches.forEach((coach : any) => {
@@ -112,7 +144,7 @@ const coachesOptions = () => {
 }
 const categoriesOptions = () => {
     return new Promise<any[]>((resolve) => {
-        axios.get(`https://akademia.website/api/categoriesOfBranch/${lastSubscription.value.branch_id}`).then((result) => {
+        axios.get(`http://127.0.0.1:8000/api/categoriesOfBranch/${lastSubscription.value.branch_id}`).then((result) => {
         console.log(result.data);
         categories.value = []
         result.data.categories.forEach((category : any) => {
@@ -124,22 +156,48 @@ const categoriesOptions = () => {
 }
 
 const getCustomerDetailes = () => {
-    axios.get(`https://akademia.website/api/customer/${CustomerId}`).then((result) => {
+    axios.get(`http://127.0.0.1:8000/api/customer/${CustomerId}`).then((result) => {
         console.log(result.data);
         customerInfo.value = result.data.customer
         lastSubscription.value = result.data.lastSubscription
+        lastSubscriptionDate = lastSubscription.value.subscription_date
         coachesOptions()
         isCustomerFetched.value = true
     }).catch((err) => {
         console.log(err);
     });
 }
+
+const splitSubscribersNames = (subscribers : string) => {
+    const names = subscribers.split(" / ");
+    // Create an empty array to store the objects
+    const nameObjects = [];
+
+    for (const name of names) {
+    // Split each name into first and second name, handling potential extra spaces
+    const [fname, ...lastNameParts] = name.trim().split(" ");
+    const lname = lastNameParts.join(" ");
+
+    // Create an object with first and second names
+    const nameObject = {
+        fname,
+        lname,
+    };
+
+    // Add the object to the nameObjects array
+    nameObjects.push(nameObject);
+    }
+
+    customerInfo.value.subscripers_names = nameObjects
+}
+
 const getCustomerWithPrivateSubscription = () => {
-    axios.get(`https://akademia.website/api/customer/private/${CustomerId}`).then((result) => {
+    axios.get(`http://127.0.0.1:8000/api/customer/private/${CustomerId}`).then((result) => {
         console.log(result.data);
         customerInfo.value = result.data.customer
         lastSubscription.value = result.data.lastSubscription
         coachesOptions()
+        splitSubscribersNames(result.data.customer.customer_name)
         isCustomerFetched.value = true
     }).catch((err) => {
         console.log(err);
@@ -149,9 +207,11 @@ const getCustomerWithPrivateSubscription = () => {
 const updateSubscription = () => {
     isSubscriptionLoading.value = true
     lastSubscription.value.subscription_date = new Date(lastSubscription.value.subscription_date);
+    lastSubscription.value.subscription_date.setHours(13)
     lastSubscription.value.subscription_date = lastSubscription.value.subscription_date.toISOString().substr(0, 19).replace('T', ' ');
     lastSubscription.value.expiration_date = new Date(lastSubscription.value.expiration_date);
-    lastSubscription.value.expiration_date = lastSubscription.value.expiration_date.toISOString().substr(0, 19).replace('T', ' ');
+    lastSubscription.value.expiration_date.setHours(13)
+    lastSubscription.value.expiration_date = new Date(lastSubscription.value.expiration_date).toISOString().substr(0, 19).replace('T', ' ');
     lastSubscription.value.customer_id = CustomerId
     let schedulesIds : any = []
     lastSubscription.value.training_schedules.forEach((schedule : any) => {
@@ -160,7 +220,7 @@ const updateSubscription = () => {
     lastSubscription.value.is_private = isPrivate.value
     lastSubscription.value.schedulesIds = schedulesIds
     console.log(lastSubscription.value);
-    axios.put(`https://akademia.website/api/updateSubscription/${lastSubscription.value.id}` , lastSubscription.value).then((result) => {
+    axios.put(`http://127.0.0.1:8000/api/updateSubscription/${lastSubscription.value.id}` , lastSubscription.value).then((result) => {
         createdSubscription.value = result.data.subscription
         isSubscriptionLoading.value = false
         isErrorReturned.value = false
@@ -242,7 +302,7 @@ const showSavedSchedule = (req : any) => {
 
 const workingDaysOptions = () => {
     return new Promise<any[]>((resolve) => {
-        axios.get(`https://akademia.website/api/branch/workingDays/${lastSubscription.value.branch_id}`).then((result) => {
+        axios.get(`http://127.0.0.1:8000/api/branch/workingDays/${lastSubscription.value.branch_id}`).then((result) => {
         console.log(result.data);
         workingSchedule.value = result.data.workingDays
         workingDays.value = []
@@ -255,7 +315,7 @@ const workingDaysOptions = () => {
 }
 
 const getAcademies = () => {
-    axios.get('https://akademia.website/api/academies').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/academies').then((result) => {
         console.log(result.data);
         // allAcademies.value = result.data.academies
         result.data.academies.forEach((academy : any) => {
@@ -288,6 +348,9 @@ onBeforeMount(() => {
                     isPrivate.value = true
                     getCustomerWithPrivateSubscription()
                 }
+                if(currentRoute.value.query.isSemiPrivate == 'true'){
+                    isSemiPrivateSubscription.value = true
+                }
                 else{
                     getCustomerDetailes()
                 }
@@ -303,6 +366,9 @@ onBeforeMount(() => {
             if(currentRoute.value.query.isPrivate == 'true'){
                 isPrivate.value = true
                 getCustomerWithPrivateSubscription()
+            }
+            if(currentRoute.value.query.isSemiPrivate == 'true'){
+                isSemiPrivateSubscription.value = true
             }
             else{
                 getCustomerDetailes()
@@ -400,7 +466,20 @@ onBeforeMount(() => {
             <!-- Customer Update Form -->
             <FormKit type="form" v-model="customerInfo" :actions="false" @submit="updateCustomer">
                 <div class="flex grid w-full">
-                <div class="mt-3 col-12">
+                <div v-if="isSemiPrivateSubscription" class="w-full m-auto repeater">
+                    <FormKit id="repeater" name="subscripers_names" type="repeater" add-label="اضافة مشترك"
+                        label="أسماء المشتركين" #default="{ index }">
+                        <div class="flex grid w-full align-items-center">
+                        <div class="md:col-6 col-12">
+                            <FormKit prefix-icon="avatarMan" id="name" type="text" label="الاسم الأول للمشترك" placeholder="أدخل الاسم الأول " name="fname" validation="required|length:2" />
+                        </div>
+                        <div class="md:col-6 col-12">
+                            <FormKit prefix-icon="avatarMan" id="name" type="text" label="اسم العائلة" placeholder="أدخل اسم العائلة " name="lname" validation="required|length:2" />
+                        </div>
+                    </div>
+                    </FormKit>
+                </div>
+                <div v-else class="mt-3 col-12">
                     <div class="flex align-items-center">
                         <label for="name" class="px-3 py-1 text-white text-sm">اسم المشترك</label>
                     </div>
@@ -418,7 +497,7 @@ onBeforeMount(() => {
                         </div>
                         <FormKit prefix-icon="telephone" id="phone" type="text" label="رقم الهاتف" placeholder="أدخل رقم هاتف المشترك" name="customer_phone" validation="required|length:10" />
                     </div>
-                    <div class="col-12 md:col-6">
+                    <div v-if="!isSemiPrivateSubscription" class="col-12 md:col-6">
                         <div class="flex align-items-center">
                             <label for="birthdate" class="px-3 py-1 text-white text-sm">تاريخ الميلاد</label>
                         </div>
@@ -427,10 +506,11 @@ onBeforeMount(() => {
                         name="birthdate"
                         label="تاريخ الميلاد"
                         id="birthdate"
+                        validation="required"
                         :format="{ date: 'short' }"
                       />
                     </div>
-                    <div class="col-12 md:col-6">
+                    <div v-if="!isSemiPrivateSubscription" class="col-12 md:col-6">
                         <div class="flex align-items-center">
                             <label for="job" class="px-3 py-1 text-white text-sm">الوظيفة</label>
                         </div>
@@ -442,7 +522,7 @@ onBeforeMount(() => {
                         </div>
                         <FormKit prefix-icon="text" id="address" type="textarea" label="العنوان" placeholder="أدخل عنوان للمشترك " name="customer_address" validation="required|length:3" />
                     </div>
-                    <div class="col-12">
+                    <div v-if="!isSemiPrivateSubscription" class="col-12">
                         <div class="flex align-items-center">
                             <label for="gender" class="px-3 py-1 text-white text-sm">الجنس</label>
                         </div>
@@ -492,7 +572,6 @@ onBeforeMount(() => {
                             id="subscription_date"
                             :format="{ date: 'short' }"
                             validation="required"
-                            :value="new Date()"
                         />
                         </div>
                         <div class="col-12 md:col-6">
@@ -500,7 +579,7 @@ onBeforeMount(() => {
                                 <label for="expiration_date" class="px-3 py-1 text-white text-sm">تاريخ انتهاء الاشتراك</label>
                             </div>
                             <FormKit type="datepicker" name="expiration_date"  label="تاريخ الانتهاء" id="expiration_date"
-                            :min-date="new Date()" validation="required" :format="{ date: 'short' }" />
+                            :min-date="new Date()" :value="new Date(defaultExpirationDate)" validation="required" :format="{ date: 'short' }" />
                         </div>
     
                         <div class="mt-3 col-12 md:col-6">

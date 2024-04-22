@@ -34,7 +34,7 @@ const handleViewPassword = (node : any, e : any) => {
 
 const adminLogin = (req : any) => {
     loading.value = true
-    axios.post('https://akademia.website/api/adminLogin' , req).then((result) => {
+    axios.post('http://127.0.0.1:8000/api/adminLogin' , req).then((result) => {
         console.log(result);
         adminLoginError.value = false
         internalServerError.value = false
@@ -56,7 +56,7 @@ const adminLogin = (req : any) => {
 
 const coachLogin = (req : any) => {
     loading.value = true
-    axios.post('https://akademia.website/api/coachLogin' , req).then((result) => {
+    axios.post('http://127.0.0.1:8000/api/coachLogin' , req).then((result) => {
         console.log(result);
         coachLoginError.value = false
         internalServerError.value = false
@@ -77,7 +77,7 @@ const coachLogin = (req : any) => {
 } 
 const employeeLogin = (req : any) => {
     loading.value = true
-    axios.post('https://akademia.website/api/employeeLogin' , req).then((result) => {
+    axios.post('http://127.0.0.1:8000/api/employeeLogin' , req).then((result) => {
         console.log(result);
         employeeLoginError.value = false
         internalServerError.value = false
@@ -98,7 +98,7 @@ const employeeLogin = (req : any) => {
 } 
 const customerLogin = (req : any) => {
     loading.value = true
-    axios.post('https://akademia.website/api/customerLogin' , req).then((result) => {
+    axios.post('http://127.0.0.1:8000/api/customerLogin' , req).then((result) => {
         console.log(result);
         customerLoginError.value = false
         internalServerError.value = false
@@ -122,7 +122,7 @@ const customerLogin = (req : any) => {
     <div class="flex w-full align-items-center justify-content-center lg:justify-content-start">
         <img src="../assets/swimming_bg(1).jpg" class="max-h-screen hidden lg:flex" alt="">
         <div v-if="userType == 'admin'" class="marginnnx w-11 lg:w-3 m-auto">
-            <h1 class="text-center py-5 lg:py-2 textColor">أكاديمية السباحة</h1>
+            <h1 v-if="!currentRoute.query.userType" class="text-center py-5 lg:py-2 textColor">أكاديمية السباحة</h1>
             <br class="bg-white w-2 h-1">
             <FormKit type="form" :actions="false" @submit="adminLogin">
             <h5 v-if="adminLoginError" class="px-3 py-2 textColor text-center borderRound error">اسم المستخدم او كلمة المرور غير صحيح</h5>
@@ -147,7 +147,7 @@ const customerLogin = (req : any) => {
             </FormKit>
         </div>
         <div v-if="userType == 'coach'" class="marginnnx w-11 lg:w-3 m-auto">
-                <h1 class="text-center py-5 lg:py-2 textColor">أكاديمية السباحة</h1>
+                <h2 class="text-center py-5 lg:py-2 textColor">تسجيل دخول المدربين</h2>
                 <br class="bg-white w-2 h-1">
                 <h5 v-if="coachLoginError" class="px-3 py-2 textColor text-center borderRound error">كود المدرب او كلمة المرور غير صحيح</h5>
                 <h5 v-if="internalServerError" class="px-3 py-2 textColor text-center borderRound error">خطأ في الخادم الداخلي</h5>
@@ -170,7 +170,7 @@ const customerLogin = (req : any) => {
             </FormKit>
         </div>
         <div v-if="userType == 'employee'" class="marginnnx w-11 lg:w-3 m-auto">
-                <h1 class="text-center py-5 lg:py-2 textColor">أكاديمية السباحة</h1>
+                <h2 class="text-center py-5 lg:py-2 textColor">تسجيل دخول الموظفين</h2>
                 <br class="bg-white w-2 h-1">
                 <h5 v-if="employeeLoginError" class="px-3 py-2 textColor text-center borderRound error">كود الموظف او كلمة المرور غير صحيح</h5>
                 <h5 v-if="internalServerError" class="px-3 py-2 textColor text-center borderRound error">خطأ في الخادم الداخلي</h5>
@@ -193,7 +193,7 @@ const customerLogin = (req : any) => {
             </FormKit>
         </div>
         <div v-if="userType == 'customer'" class="marginnnx w-11 lg:w-3 m-auto">
-                <h1 class="text-center py-5 lg:py-2 textColor">أكاديمية السباحة</h1>
+                <h2 class="text-center py-5 lg:py-1 textColor">تسجيل دخول المشتركين</h2>
                 <br class="bg-white w-2 h-1">
                 <h5 v-if="customerLoginError" class="px-3 py-2 textColor text-center borderRound error">كود اللاعب غير صحيح</h5>
                 <h5 v-if="internalServerError" class="px-3 py-2 textColor text-center borderRound error">خطأ في الخادم الداخلي</h5>

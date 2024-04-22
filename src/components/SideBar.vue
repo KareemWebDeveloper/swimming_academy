@@ -5,9 +5,14 @@ import Sidebar from 'primevue/sidebar';
 import { useRouter } from 'vue-router';
 import { adminAuthorize } from '@/global-functions/checkUserRole';
 import { employeeAuthorize } from '@/global-functions/isEmployeeAuthorized';
+import SplitButton from 'primevue/splitbutton';
+import Dialog from 'primevue/dialog';
+import Button from 'primevue/button';
+import axios from 'axios';
 const { push , currentRoute } = useRouter();
 const isExpanded = ref(false)
 const empPermissions = ref()
+const showPrivateCategories = ref()
 const isMobExpanded = ref(false)
 const fetched = ref(false)
 const visible = ref(true)
@@ -20,6 +25,71 @@ const showBracnhesCategories = ref(false)
 const showFinancialsCategories = ref(false)
 const showCustomersCategories = ref(false)
 
+const isProfileDialogVisible = ref(false)
+const isResetPasswordFormVisible = ref(false)
+const isUserProfileUpdating = ref(false)
+const errMsg = ref()
+
+const loggedInUserInfo = ref()
+const adminControlOptions = [
+    {
+        label: 'تعديل البيانات',
+        icon: 'pi pi-pencil',
+        command: () => {
+          isProfileDialogVisible.value = true
+        }
+    },
+    {
+        label: 'تسجيل دخول كموظف',
+        icon: 'pi pi-external-link',
+        command: () => {
+          localStorage.removeItem('SwimmingToken');
+          push({
+            path : '/login',
+            query : {
+              userType : 'employee'
+            }
+          })
+        }
+    },
+    {
+        label: 'تسجيل دخول كمدرب',
+        icon: 'pi pi-external-link',
+        command: () => {
+          localStorage.removeItem('SwimmingToken');
+          push({
+            path : '/login',
+            query : {
+              userType : 'coach'
+            }
+          })
+        }
+    },
+    { 
+      label: 'تسجيل خروج', 
+      icon: 'pi pi-sign-out',
+      command: () => {
+        logOut()
+      }
+    }
+];
+const employeeControlOptions = [
+    {
+        label: 'تعديل البيانات',
+        icon: 'pi pi-pencil',
+        command: () => {
+          isProfileDialogVisible.value = true
+        }
+    },
+    { 
+      label: 'تسجيل خروج', 
+      icon: 'pi pi-sign-out',
+      command: () => {
+        logOut()
+      }
+    }
+];
+
 const logOut = () => {
   localStorage.removeItem('SwimmingToken');
   if(type.value == 'employee'){
@@ -28,7 +98,6 @@ const logOut = () => {
   else{
     push({name : 'login'})
   }
-  location.reload()
 }
 onBeforeMount(() => {
     adminAuthorize().then((isAuthorized) => {
@@ -40,15 +109,44 @@ onBeforeMount(() => {
                 empPermissions.value = employee.permissions
                 type.value = 'employee'
                 fetched.value = true
+                loggedInUserInfo.value = JSON.parse(localStorage.getItem('user_info') as string)
                 console.log(empPermissions.value);
             })
         }
         else{
+          loggedInUserInfo.value = JSON.parse(localStorage.getItem('user_info') as string)
           type.value = 'admin'
           fetched.value = true
         }
     })
 })
+
+const updateUserProfile = (req : any) => {
+  isUserProfileUpdating.value = true
+  axios.post('http://127.0.0.1:8000/api/userUpdate', req).then((result) => {
+    localStorage.setItem('user_info' , JSON.stringify(result.data.user))
+    isUserProfileUpdating.value = false
+    isProfileDialogVisible.value = false
+  }).catch((err) => {
+    errMsg.value = 'البريد الالكتروني موجود بالفعل'
+    isUserProfileUpdating.value = false
+  });
+}
+const resetUserPassword = (req : any) => {
+  isUserProfileUpdating.value = true
+  axios.post('http://127.0.0.1:8000/api/resetPw', req).then((result) => {
+    isUserProfileUpdating.value = false
+    isProfileDialogVisible.value = false
+  }).catch((err) => {
+    errMsg.value = 'كلمة السر الحالية غير صحيحة'
+    isUserProfileUpdating.value = false
+  });
+}
+
+const handleViewPassword = (node : any, e : any) => {
+    node.props.suffixIcon = node.props.suffixIcon === 'eye' ? 'eyeClosed' : 'eye'
+    node.props.type = node.props.type === 'password' ? 'text' : 'password'
+}
 
 const isEmpAuthorizedFor = (PermissionName : string) => {
   if(type.value == 'admin'){
@@ -70,12 +168,57 @@ const closeSideBar = () => {
 }
 </script>
 <template>
-  <div class="fixed cursor-pointer" style="top: 2vh; left: 2vh;" @click="logOut">
-    <span class="material-symbols-outlined bg-card text-white p-3 borderRound" >
-      logout
-    </span>
-  </div>
+
+  <Dialog v-model:visible="isProfileDialogVisible" header="البيانات الشخصية" modal :style="{ width: '40rem' }" @after-hide="isResetPasswordFormVisible = false; errMsg = null">
+    <div class="w-full py-1 p-4 flex flex-column justify-content-center">
+      <div v-if="errMsg" class="formkit-message">
+        <h4 class="text-center fadein animation-duration-200">{{ errMsg }}</h4>
+      </div>
+        <FormKit v-if="isResetPasswordFormVisible" :actions="false" type="form" @submit="resetUserPassword">
+            <FormKit prefixIcon="password" name="current_password" outerClass="my-3" type="password" label="كلمة السر الحالية"
+            placeholder="أدخل كلمة السر الحالية" suffix-icon="eyeClosed" @suffix-icon-click="handleViewPassword"
+            suffix-icon-class="hover:text-blue-500" validation="required|length:8,16" />
+
+            <FormKit prefixIcon="password" name="new_password" outerClass="my-3" type="password" label="كلمة السر"
+            placeholder="أدخل كلمة السر" suffix-icon="eyeClosed" @suffix-icon-click="handleViewPassword"
+            suffix-icon-class="hover:text-blue-500" validation="contains_numeric|contains_alpha|required|length:8,16" />
+
+            <FormKit type="password" name="new_password_confirm" prefixIcon="password" label="تأكيد كلمة السر"
+            placeholder="أعد ادخال كلمة السر" suffix-icon="eyeClosed" @suffix-icon-click="handleViewPassword"
+            suffix-icon-class="hover:text-blue-500" validation="required|confirm" />
+
+            <div class="flex my-3 justify-content-between my-2 p-3">
+                <Button label="حفظ كلمة السر" :loading="isUserProfileUpdating" class="text-sm" type="submit" />
+                <Button label="تعديل البيانات" @click="isResetPasswordFormVisible = false" class="text-sm" />
+            </div>
+        </FormKit>
+
+        <FormKit v-else :actions="false" v-model="loggedInUserInfo" type="form" @submit="updateUserProfile"> 
+            <FormKit type="text" name="name" prefixIcon="avatarMan" validation="required"
+             outer-class="mx-auto my-2" label="الاسم" placeholder="Please enter your full name .." />
+
+             <FormKit v-if="type == 'admin'" type="text" name="username" prefixIcon="telephone" outer-class="mx-auto my-2"
+            label="اسم المستخدم" validation="required" />
+
+            <FormKit type="email" name="email" prefixIcon="email" outer-class="mx-auto my-2"
+             label="البريد الالكتروني" validation="required|email" />
+
+            <FormKit v-if="type == 'employee'" type="text" name="phone" prefixIcon="telephone" outer-class="mx-auto my-2"
+             label="رقم الهاتف" validation="required" />
+
+             
+            <div class="flex justify-content-between my-2 p-3">
+                <Button label="حفظ" :loading="isUserProfileUpdating" class="text-sm" type="submit" />
+                <Button label="تغيير كلمة المرور" @click="isResetPasswordFormVisible = true" class="text-sm" />
+            </div>
+        </FormKit>
+    </div>
+</Dialog>
   <div v-if="visible && fetched">
+    <div class="fixed cursor-pointer" style="top: 2vh; left: 2vh; direction: ltr;">
+      <SplitButton v-if="type == 'admin'" :model="adminControlOptions" menuButtonIcon="pi pi-cog"  :label="loggedInUserInfo.name" rounded severity="secondary"></SplitButton>
+      <SplitButton v-else :model="employeeControlOptions" menuButtonIcon="pi pi-cog"  :label="loggedInUserInfo.name" rounded severity="secondary"></SplitButton>
+    </div>
     <span @click="isMobExpanded = true; isExpanded = true" class="fixed top-0 right-0 m-3 material-symbols-outlined textColor text-4xl bgColor p-2 borderRound flex lg:hidden">
       menu
       </span>
@@ -100,11 +243,17 @@ const closeSideBar = () => {
           </div>
           <!-- Sub Categories for Customers   -->
           <div v-if="showCustomersCategories" class="px-3 py-1 fadein animation-duration-400 animation-iteration-1 borderRound" style="background: rgba(255, 255, 255, 0.066);">
-            <div class="flex align-items-center my-3 div-hover" @click="push('/customers')" :class="{'justify-content-center' : !isExpanded , 'activeDivBg' : currentRoute.path.includes('/customers') }" >
+            <div class="flex align-items-center my-3 div-hover" @click="push('/customers')" :class="{'justify-content-center' : !isExpanded , 'activeDivBg' : currentRoute.path == ('/customers') }" >
               <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
                 group
               </span>            
               <router-link v-if="isExpanded" to="/customers"><h5 class="textColor">المشتركين</h5></router-link>
+            </div>
+            <div class="flex align-items-center my-3 div-hover" @click="push('/customers/reservedOnly')" :class="{'justify-content-center' : !isExpanded , 'activeDivBg' : currentRoute.path.includes('/customers/reservedOnly') }" >
+              <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
+                group
+              </span>            
+              <router-link v-if="isExpanded" to="/customers/reservedOnly"><h5 class="textColor">عملاء - حجز فقط</h5></router-link>
             </div>
             <div v-if="isEmpAuthorizedFor('تجديد و تسجيل اشتراكات')" class="flex align-items-center my-3 div-hover" @click="push('/customer/create')" :class="{'justify-content-center' : !isExpanded , 'activeDivBg' : currentRoute.path.includes('/customer/create') }" >
               <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
@@ -158,11 +307,11 @@ const closeSideBar = () => {
               </span>            
               <router-link v-if="isExpanded" to="/branches"><h5 class="textColor">الفروع</h5></router-link>
             </div>
-            <div v-if="isEmpAuthorizedFor('انشاء أكاديمية')" class="flex align-items-center my-3 div-hover"  @click="push('/academies/create')" :class="{'justify-content-center' : !isExpanded }" >
+            <div v-if="isEmpAuthorizedFor('انشاء أكاديمية')" class="flex align-items-center my-3 div-hover"  @click="push('/academies')" :class="{'justify-content-center' : !isExpanded }" >
               <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
                 groups_2
               </span>            
-              <router-link v-if="isExpanded" to="/academies/create"><h5 class="textColor">انشاء أكاديمية</h5></router-link>
+              <router-link v-if="isExpanded" to="/academies"><h5 class="textColor">الأكاديميات</h5></router-link>
             </div>
             <div v-if="isEmpAuthorizedFor('عرض أنواع التمارين')" class="flex align-items-center my-3 div-hover" @click="push('/categories')" :class="{'justify-content-center' : !isExpanded }" >
               <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
@@ -204,11 +353,32 @@ const closeSideBar = () => {
             </span>            
             <router-link v-if="isExpanded" to="/daily/attendances"><h5 class="textColor">الحضور اليومي</h5></router-link>
           </div>
-          <div v-if="isEmpAuthorizedFor('عرض التمرينات الفردية')" class="flex align-items-center my-5 div-hover" @click="push('/privateSubscriptions')" :class="{'justify-content-center' : !isExpanded }" >
+          <div v-if="isEmpAuthorizedFor('عرض التمرينات الفردية')" class="flex align-items-center mt-5 mb-3 div-hover" @click="showPrivateCategories = !showPrivateCategories" :class="{'justify-content-center' : !isExpanded }" >
             <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
               pool
             </span>            
-            <router-link v-if="isExpanded" to="/privateSubscriptions"><h5 class="textColor">تمرينات فردية</h5></router-link>
+            <h4 v-if="isExpanded"><h5 class="textColor">تمرينات برايفت</h5></h4>  
+          </div>
+          <div v-if="showPrivateCategories" class="px-4 py-1 fadein animation-duration-400 animation-iteration-1 borderRound" style="background: rgba(255, 255, 255, 0.066);">
+            <div class="flex align-items-center my-3 div-hover" @click="push({path : '/customer/create' , query : {isPrivate : 'true'} })" :class="{'justify-content-center' : !isExpanded }" >
+              <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
+                badge
+              </span>            
+              <router-link v-if="isExpanded" :to="{
+                path : '/customer/create' , query : {isPrivate : 'true'}
+              }"><h5 class="textColor">تسجيل برايفت</h5></router-link>
+            </div>
+            <div class="flex align-items-center my-3 div-hover" @click="push({path : '/customer/create' , query : {isPrivate : 'true' , isSemiPrivate : 'true'} })" :class="{'justify-content-center' : !isExpanded }" >
+              <router-link v-if="isExpanded" :to="{
+                path : '/customer/create' , query : {isPrivate : 'true' , isSemiPrivate : 'true'}
+              }"><h5 class="textColor mx-3 text-center">تسجيل سيمي برايفت</h5></router-link>
+            </div>
+            <div v-if="isEmpAuthorizedFor('عرض التمرينات الفردية')" class="flex align-items-center my-3 div-hover" @click="push('/privateSubscriptions')" :class="{'justify-content-center' : !isExpanded }" >
+              <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
+                pool
+              </span>            
+              <router-link v-if="isExpanded" to="/privateSubscriptions"><h5 class="textColor">تمرينات برايفت</h5></router-link>
+            </div>
           </div>
 
           <div v-if="isEmpAuthorizedFor('السلف و الخصومات')" class="flex align-items-center mt-5 mb-3 div-hover" @click="showManagementCategories = !showManagementCategories" :class="{'justify-content-center' : !isExpanded }" >
@@ -341,9 +511,15 @@ const closeSideBar = () => {
           <div v-if="showCustomersCategories" class="px-3 py-1 fadein animation-duration-400 animation-iteration-1 borderRound" style="background: rgba(255, 255, 255, 0.066);">
             <div class="flex align-items-center my-3 div-hover" @click="closeSideBar(); push('/customers')" :class="{'justify-content-center' : !isExpanded , 'activeDivBg' : currentRoute.path.includes('/customers') }" >
               <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
-                home
+                group
               </span>            
               <router-link v-if="isExpanded" to="/customers"><h5 class="textColor">المشتركين</h5></router-link>
+            </div>
+            <div class="flex align-items-center my-3 div-hover" @click="closeSideBar(); push('/customers/reservedOnly')" :class="{'justify-content-center' : !isExpanded , 'activeDivBg' : currentRoute.path.includes('/customers/reservedOnly') }" >
+              <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
+                group
+              </span>            
+              <router-link v-if="isExpanded" to="/customers/reservedOnly"><h5 class="textColor">عملاء - حجز فقط</h5></router-link>
             </div>
             <div v-if="isEmpAuthorizedFor('تجديد و تسجيل اشتراكات')" class="flex align-items-center my-3 div-hover" @click="closeSideBar(); push('/customer/create')" :class="{'justify-content-center' : !isExpanded , 'activeDivBg' : currentRoute.path.includes('/customer/create') }" >
               <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
@@ -396,11 +572,11 @@ const closeSideBar = () => {
               </span>            
               <router-link v-if="isExpanded" to="/branches"><h5 class="textColor">الفروع</h5></router-link>
             </div>
-            <div v-if="isEmpAuthorizedFor('انشاء أكاديمية')" class="flex align-items-center my-3 div-hover"  @click="closeSideBar(); push('/academies/create')" :class="{'justify-content-center' : !isExpanded }" >
+            <div class="flex align-items-center my-3 div-hover"  @click="closeSideBar(); push('/academies')" :class="{'justify-content-center' : !isExpanded }" >
               <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
                 groups_2
               </span>            
-              <router-link v-if="isExpanded" to="/academies/create"><h5 class="textColor">انشاء أكاديمية</h5></router-link>
+              <router-link v-if="isExpanded" to="/academies"><h5 class="textColor">الأكاديميات</h5></router-link>
             </div>
             <div v-if="isEmpAuthorizedFor('عرض أنواع التمارين')" class="flex align-items-center my-5 div-hover" @click="closeSideBar(); push('/categories')" :class="{'justify-content-center' : !isExpanded }" >
               <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
@@ -443,11 +619,32 @@ const closeSideBar = () => {
             </span>           
             <router-link v-if="isExpanded" to="/daily/attendances"><h5 class="textColor">الحضور اليومي</h5></router-link>
           </div>
-          <div v-if="isEmpAuthorizedFor('عرض التمرينات الفردية')" class="flex align-items-center my-5 div-hover" @click="closeSideBar(); push('/privateSubscriptions')" :class="{'justify-content-center' : !isExpanded }" >
+          <div v-if="isEmpAuthorizedFor('عرض التمرينات الفردية')" class="flex align-items-center mt-5 mb-3 div-hover" @click="showPrivateCategories = !showPrivateCategories" :class="{'justify-content-center' : !isExpanded }" >
             <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
               pool
             </span>            
-            <router-link v-if="isExpanded" to="/privateSubscriptions"><h5 class="textColor">تمرينات فردية</h5></router-link>
+            <h4 v-if="isExpanded"><h5 class="textColor">تمرينات برايفت</h5></h4>  
+          </div>
+          <div v-if="showPrivateCategories" class="px-4 py-1 fadein animation-duration-400 animation-iteration-1 borderRound" style="background: rgba(255, 255, 255, 0.066);">
+            <div class="flex align-items-center my-3 div-hover" @click="closeSideBar(); push({path : '/customer/create' , query : {isPrivate : 'true'} })" :class="{'justify-content-center' : !isExpanded }" >
+              <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
+                badge
+              </span>            
+              <router-link v-if="isExpanded" :to="{
+                path : '/customer/create' , query : {isPrivate : 'true'}
+              }"><h5 class="textColor">تسجيل برايفت</h5></router-link>
+            </div>
+            <div class="flex align-items-center my-3 div-hover" @click="closeSideBar(); push({path : '/customer/create' , query : {isPrivate : 'true' , isSemiPrivate : 'true'} })" :class="{'justify-content-center' : !isExpanded }" >
+              <router-link v-if="isExpanded" :to="{
+                path : '/customer/create' , query : {isPrivate : 'true' , isSemiPrivate : 'true'}
+              }"><h5 class="textColor mx-3 text-center">تسجيل سيمي برايفت</h5></router-link>
+            </div>
+            <div v-if="isEmpAuthorizedFor('عرض التمرينات الفردية')" class="flex align-items-center my-3 div-hover" @click="closeSideBar(); push('/privateSubscriptions')" :class="{'justify-content-center' : !isExpanded }" >
+              <span class="material-symbols-outlined text-3xl textColor" :class="{'mx-3' : isExpanded }">
+                pool
+              </span>            
+              <router-link v-if="isExpanded" to="/privateSubscriptions"><h5 class="textColor">تمرينات برايفت</h5></router-link>
+            </div>
           </div>
           
           <div  v-if="isEmpAuthorizedFor('السلف و الخصومات')" class="flex align-items-center mt-5 mb-3 div-hover" @click="showManagementCategories = !showManagementCategories" :class="{'justify-content-center' : !isExpanded }" >
@@ -553,7 +750,35 @@ const closeSideBar = () => {
 </template>
 
 <style>
-
+.formkit-messages{
+  list-style: none;
+  padding: 0;
+}
+.formkit-message{
+  color: white !important;
+  background-color: rgba(255, 0, 0, 0.684);
+  padding: 1.5vh !important;
+  margin: 1vh 2vh !important;
+  border-radius: 3px;
+}
+.p-menuitem-link {
+  font-size: 14px;
+}
+.p-menuitem{
+  padding: 5px;
+}
+.p-menuitem-icon{
+  margin: 0.5rem;
+}
+.p-splitbutton{
+  background: var(--bg-card);
+}
+.p-splitbutton.p-button-secondary > .p-button {
+  background: none !important;
+  border: none !important;
+  font-size: small;
+  padding: 0.75rem 1rem;
+}
 .p-sidebar .p-sidebar-header .p-sidebar-close, .p-sidebar .p-sidebar-header .p-sidebar-icon {
   display: none !important ;
 }

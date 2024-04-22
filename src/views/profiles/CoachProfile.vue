@@ -51,7 +51,7 @@ const options = {
 const dateTimeFormatter = new Intl.DateTimeFormat('ar', options);
 
 const coachAuthorize = () => {
-    axios.post('https://akademia.website/api/coachAuthorize').then((result) => {
+    axios.post('http://127.0.0.1:8000/api/coachAuthorize').then((result) => {
         coach.value = result.data.coach
         subscriptions.value = result.data.subscriptions
         salaries.value = result.data.salaries
@@ -203,7 +203,8 @@ onBeforeMount(() => {
                         <h4 class="primaryColor">عدد ساعات العمل</h4>
                         <h4 class="text-green-500">{{ salary.hours_worked }} ساعات</h4>
                     </div>
-                    <h5 v-if="salary.discount" class="w-full text-white text-center mt-3">تم صرف الراتب في : {{ new Date(salary.created_at).toLocaleDateString() }}</h5>
+                    <h3 class="w-full text-white text-center mt-3">الفترة</h3>
+                    <h5 class="w-full text-white text-center mt-3"> <span v-if="salary.from_date">منذ {{ new Date(salary.from_date).toLocaleDateString() }} - </span> تم الصرف في : {{ new Date(salary.created_at).toLocaleDateString() }}</h5>
                     <div class="flex w-full flex-column justify-content-center align-items-center">
                         <h5 v-if="salary.discount" class="text-red-500 mt-3">خصم : -{{ parseFloat(salary.discount).toFixed(2) }} ج.م</h5>
                         <h5 v-if="salary.bonus" class="text-green-500 mt-2">بونص : +{{ parseFloat(salary.bonus).toFixed(2) }} ج.م</h5>

@@ -83,6 +83,7 @@ const failedDeletionsFilters = ref(
 const filters = ref(
     {
         global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        created_by: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.CONTAINS }] },
         name: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.CONTAINS }] },
         phone: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }] },
         id: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.EQUALS }] },
@@ -104,7 +105,7 @@ const options = {
 const dateTimeFormatter = new Intl.DateTimeFormat('ar', options);
 
 const getCoaches = () => {
-    axios.get('https://akademia.website/api/coaches').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/coaches').then((result) => {
         console.log(result.data);
         coaches.value = result.data.coaches
         isCoachesFetched.value = true
@@ -118,7 +119,7 @@ const getCoaches = () => {
 }
 
 const getBranches = () => {
-    axios.get('https://akademia.website/api/branches').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/branches').then((result) => {
         console.log(result.data);
         result.data.branches.forEach((branch : any) => {
             branches.value.push({label : branch.branch_name , value : branch.id})
@@ -132,7 +133,7 @@ const getBranches = () => {
 const getCoachDetails = (coachId : number) => {
     isCoachFetched.value = false
     isDialogVisible.value = true
-    axios.get(`https://akademia.website/api/coach/${coachId}`).then((result) => {
+    axios.get(`http://127.0.0.1:8000/api/coach/${coachId}`).then((result) => {
         activeCoach.value = result.data.coach
         activeCoach.value.numberOfSubscriptions = result.data.activeSubscriptions.length
         selectedBranches.value = {branchIds : []}
@@ -149,7 +150,7 @@ const getCoachDetails = (coachId : number) => {
 
 const attachBranches = (req : any) => {
     isAttachBranchLoading.value = true
-    axios.put(`https://akademia.website/api/coach/attachBranches/${activeCoach.value.id}` , req).then((result) => {
+    axios.put(`http://127.0.0.1:8000/api/coach/attachBranches/${activeCoach.value.id}` , req).then((result) => {
         console.log(result);
         isAttachBranchLoading.value = false
         isCoachFetched.value = false
@@ -169,7 +170,7 @@ const UpdateCoachesSubscriptions = () => {
         });
     });
     console.log(subscriptionsNewCoaches);
-    axios.post(`https://akademia.website/api/subscriptionCoaches/update` , subscriptionsNewCoaches).then((result) => {
+    axios.post(`http://127.0.0.1:8000/api/subscriptionCoaches/update` , subscriptionsNewCoaches).then((result) => {
         isUpdateCoachesSubscriptionsLoading.value = false
         bulkDelete()
     }).catch((err) => {
@@ -196,7 +197,7 @@ const bulkDelete = () => {
     let req : any = {
         coaches_ids : coaches_ids
     }
-    axios.post('https://akademia.website/api/coachBulkDelete', req).then((result) => {
+    axios.post('http://127.0.0.1:8000/api/coachBulkDelete', req).then((result) => {
         console.log(result);
         deletedSuccessfully.value = true
         isFailedDeletionDialogVisible.value = false
@@ -392,7 +393,7 @@ const exportCSV = () => {
     <div>
         <DataTable v-model:filters="filters" ref="dt" export-filename="المدربين"  stripedRows :value="coaches"  v-model:selection="selectedCoaches"
         stateStorage="session" stateKey="coaches-state-session" paginator :rows="10" :rowsPerPageOptions="[10, 15 , 20, 50]" filterDisplay="menu" :loading="!isCoachesFetched"
-         dataKey="id" removableSort :globalFilterFields="['id', 'name']" tableStyle="min-width: 50rem">
+         dataKey="id" removableSort :globalFilterFields="['id', 'name' , 'created_by' , 'phone' , 'salary_per_hour']" tableStyle="min-width: 50rem">
         <template #header>
             <div class="flex flex-column lg:flex-row justify-content-between align-items-center">
                 <div class="flex align-items-center">
@@ -414,6 +415,21 @@ const exportCSV = () => {
         <Column field="name" sortable  header="الاسم" style="width: 28%;">
             <template #body="slotProps" >
                 <p>كابتن / {{ slotProps.data.name }}</p>
+            </template>
+        </Column>
+        <Column field="created_by"  header="المسجل" style="min-width: 8rem">
+            <template #body="slotProps" >
+                <p v-if="slotProps.data.created_by">{{ slotProps.data.created_by }}</p>
+                <p v-else>غير محدد</p>
+            </template>
+            <template #filter="{ filterModel , filterCallback }">
+                <InputText v-model="filterModel.value" @input="filterCallback()" type="text" class="p-column-filter" placeholder="أدخل اسم المسجل" />
+            </template>
+            <template #filterapply="{ filterCallback }">
+                <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="تفعيل" />
+            </template>
+            <template #filterclear="{ filterCallback }">
+                <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="الغاء" outlined />
             </template>
         </Column>
         <Column field="phone"  header="الهاتف" style="width: 20%;"></Column>

@@ -78,6 +78,15 @@ const filters = ref(
     }
 );
 
+const coachAttendancesFilters = ref(
+    {
+        global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        'branch.branch_name': { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.CONTAINS }] },
+        'session_duration': { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.CONTAINS }] },
+        // id: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.EQUALS }] },
+    }
+);
+
 const options = {
     weekday: 'long',
     year: 'numeric',
@@ -93,8 +102,11 @@ const dateTimeFormatter = new Intl.DateTimeFormat('ar', options);
 
 const getCoachAttendances = (coachId : number) => {
     isDialogLoading.value = true
-    axios.get(`https://akademia.website/api/coach/attendances/${coachId}`).then((result) => {
+    axios.get(`http://127.0.0.1:8000/api/coach/attendances/${coachId}`).then((result) => {
         activeCoachAttendances.value = result.data.attendances
+        coachSalaryInfo.value = {}
+        coachSalaryInfo.value.amount = activeCoachInfo.value.expected_salary
+        coachSalaryInfo.value.discount = activeCoachInfo.value.discount
         isDialogVisible.value = true
         isDialogLoading.value = false
     }).catch((err) => {
@@ -104,7 +116,7 @@ const getCoachAttendances = (coachId : number) => {
 
 const getExpectedSalaries = () => {
     isFetched.value = false
-    axios.get('https://akademia.website/api/expectedSalaries').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/expectedSalaries').then((result) => {
         ExpectedSalaries.value = []
         result.data.coaches.forEach((coach : any ) => {
             ExpectedSalaries.value.push({
@@ -147,7 +159,7 @@ const branchesOptions : any = ref([])
 const academies : any = ref([])
 
 const getBranches = () => {
-    axios.get('https://akademia.website/api/branches').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/branches').then((result) => {
         console.log(result.data);
         result.data.branches.forEach((branch : any) => {
             branches.value.push({label : branch.branch_name , value : branch.id})
@@ -160,7 +172,7 @@ const getBranches = () => {
     });
 }
 const payEmployeeSalary = (id : number) => {
-        axios.post(`https://akademia.website/api/payEmployeeSalary/${id}`).then((result) => {
+        axios.post(`http://127.0.0.1:8000/api/payEmployeeSalary/${id}`).then((result) => {
             console.log(result.data);
             window.scrollTo({
                 top: 0,
@@ -178,7 +190,7 @@ const payEmployeeSalary = (id : number) => {
 
 const payCoachSalary = (req : any) => {
         isPayingSalary.value = true
-        axios.post(`https://akademia.website/api/payCoachSalary/${activeCoachInfo.value.id}` , req).then((result) => {
+        axios.post(`http://127.0.0.1:8000/api/payCoachSalary/${activeCoachInfo.value.id}` , req).then((result) => {
             isPayingSalary.value = false
             console.log(result.data);
             window.scrollTo({
@@ -308,15 +320,15 @@ const exportCSV = () => {
     <!-- Coach Attendances Dialog  -->
     <Dialog v-model:visible="isDialogVisible" class="attendancesDialog" maximizable modal header="جدول حضور المدرب" :style="{ width: '65vw' }" :breakpoints="{ '960px': '75vw', '641px': '100vw' }">
 
-        <DataTable v-model:filters="filters" ref="dt"  stripedRows :value="activeCoachAttendances" paginator :rows="10" 
+        <DataTable v-model:filters="coachAttendancesFilters" ref="dt"  stripedRows :value="activeCoachAttendances" paginator :rows="10" 
         :rowsPerPageOptions="[10, 20, 50]" filterDisplay="menu"
-         dataKey="id" removableSort :globalFilterFields="['id', 'category_name']" tableStyle="min-width: 50rem">
+         dataKey="id" removableSort :globalFilterFields="['branch.branch_name', 'session_duration']" tableStyle="min-width: 50rem">
             <template #header>
                 <div class="flex flex-column lg:flex-row justify-content-between align-items-center">
                     <h3 class="hidden md:my-2 lg:my-0 md:flex">كابتن / {{ activeCoachInfo.name }}</h3>
                     <span class="p-input-icon-left">
                         <i class="pi pi-search" />
-                        <InputText v-model="filters['global'].value" placeholder="بحث شامل" />
+                        <InputText v-model="coachAttendancesFilters['global'].value" placeholder="بحث شامل" />
                     </span>
                 </div>
             </template>
@@ -477,7 +489,7 @@ const exportCSV = () => {
                     </div>
                     <div v-if="slotProps.data.job == 'مدرب'" class="flex align-items-center">
                         <span v-if="!isDialogLoading" class="material-symbols-outlined cursor-pointer hoverIcon textColor text-4xl p-2 borderRound" 
-                        @click="getCoachAttendances(slotProps.data.id); activeCoachInfo = slotProps.data">
+                        @click="activeCoachInfo = slotProps.data; getCoachAttendances(slotProps.data.id);">
                         finance_chip
                         </span>
                         <span v-else class="material-symbols-outlined cursor-pointer hoverIcon textColor text-4xl p-2 borderRound" 

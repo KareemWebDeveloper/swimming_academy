@@ -74,6 +74,8 @@ const coachBranchesFilters = ref(
 const filters = ref(
     {
         global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        salary: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }] },
+        created_by: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.CONTAINS }] },
         name: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.CONTAINS }] },
         phone: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }] },
         id: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.EQUALS }] },
@@ -95,7 +97,7 @@ const options = {
 const dateTimeFormatter = new Intl.DateTimeFormat('ar', options);
 
 const getEmployees = () => {
-    axios.get('https://akademia.website/api/employees').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/employees').then((result) => {
         console.log(result.data);
         employees.value = result.data.employees
         isEmployeesFetched.value = true
@@ -108,7 +110,7 @@ const getEmployees = () => {
 }
 
 const getBranches = () => {
-    axios.get('https://akademia.website/api/branches').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/branches').then((result) => {
         console.log(result.data);
         result.data.branches.forEach((branch : any) => {
             branches.value.push({label : branch.branch_name , value : branch.id})
@@ -122,7 +124,7 @@ const getBranches = () => {
 const getEmployeeDetails = (employeeId : number) => {
     isEmployeeFetched.value = false
     isDialogVisible.value = true
-    axios.get(`https://akademia.website/api/employee/${employeeId}`).then((result) => {
+    axios.get(`http://127.0.0.1:8000/api/employee/${employeeId}`).then((result) => {
         activeEmployee.value = result.data.employee
         selectedBranches.value = {branchIds : []}
         result.data.employee.branches.forEach((branch : any) => {
@@ -138,7 +140,7 @@ const getEmployeeDetails = (employeeId : number) => {
 
 const attachBranches = (req : any) => {
     isAttachBranchLoading.value = true
-    axios.put(`https://akademia.website/api/employee/attachBranches/${activeEmployee.value.id}` , req).then((result) => {
+    axios.put(`http://127.0.0.1:8000/api/employee/attachBranches/${activeEmployee.value.id}` , req).then((result) => {
         console.log(result);
         isAttachBranchLoading.value = false
         isEmployeeFetched.value = false
@@ -158,7 +160,7 @@ const bulkDelete = () => {
     let req : any = {
         employees_ids : employees_ids
     }
-    axios.post('https://akademia.website/api/employeeBulkDelete', req).then((result) => {
+    axios.post('http://127.0.0.1:8000/api/employeeBulkDelete', req).then((result) => {
         console.log(result);
         deletedSuccessfully.value = true
         selectedCoaches.value = []
@@ -273,7 +275,7 @@ const exportCSV = () => {
     <div v-if="isEmployeesFetched">
         <DataTable v-model:filters="filters" ref="dt" export-filename="الموظفين" stripedRows :value="employees"  v-model:selection="selectedCoaches"
         stateStorage="session" stateKey="employees-state-session" paginator :rows="10" :rowsPerPageOptions="[10, 15 , 20, 50]" filterDisplay="menu"
-         dataKey="id" removableSort :globalFilterFields="['id', 'name']" tableStyle="min-width: 50rem">
+         dataKey="id" removableSort :globalFilterFields="['id', 'name' , 'created_by' , 'salary' , 'phone']" tableStyle="min-width: 50rem">
         <template #header>
             <div class="flex flex-column lg:flex-row justify-content-between align-items-center">
                 <div class="flex align-items-center">
@@ -295,8 +297,23 @@ const exportCSV = () => {
                 <p>{{ slotProps.data.name }}</p>
             </template>
         </Column>
+        <Column field="created_by"  header="المسجل" style="min-width: 8rem">
+            <template #body="slotProps" >
+                <p v-if="slotProps.data.created_by">{{ slotProps.data.created_by }}</p>
+                <p v-else>غير محدد</p>
+            </template>
+            <template #filter="{ filterModel , filterCallback }">
+                <InputText v-model="filterModel.value" @input="filterCallback()" type="text" class="p-column-filter" placeholder="أدخل اسم المسجل" />
+            </template>
+            <template #filterapply="{ filterCallback }">
+                <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="تفعيل" />
+            </template>
+            <template #filterclear="{ filterCallback }">
+                <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="الغاء" outlined />
+            </template>
+        </Column>
         <Column field="phone"  header="الهاتف" style="width: 20%;"></Column>
-        <Column field="salary_per_hour" sortable  header="الراتب" style="width: 23%;">
+        <Column field="salary" sortable  header="الراتب" style="width: 23%;">
             <template #body="slotProps" >
                 <p>{{ slotProps.data.salary }}ج.م / شهر</p>
             </template>

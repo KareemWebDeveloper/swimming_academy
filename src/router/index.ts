@@ -88,6 +88,11 @@ const router = createRouter({
       component: () => import('../views/customers/customersList.vue')
     },
     {
+      path: '/customers/reservedOnly',
+      name: 'customers_reservedOnly',
+      component: () => import('../views/customers/reservedOnlyCustomers.vue')
+    },
+    {
       path: '/customer/update/:id',
       name: 'customers_update',
       component: () => import('../views/customers/customerUpdate.vue')
@@ -96,6 +101,11 @@ const router = createRouter({
       path: '/customer/:id',
       name: 'customer_find',
       component: () => import('../views/customers/customerFind.vue')
+    },
+    {
+      path: '/customers/submission/form',
+      name: 'customers_submissionForm',
+      component: () => import('../views/customers/unAuthorizedCustomerCreate.vue')
     },
     {
       path: '/privateSubscriptions',
@@ -151,6 +161,11 @@ const router = createRouter({
       path: '/level/update/:id',
       name: 'level_update',
       component: () => import('../views/Levels/LevelUpdate.vue')
+    },
+    {
+      path: '/academies',
+      name: 'academies_list',
+      component: () => import('../views/academies/academiesList.vue')
     },
     {
       path: '/academies/create',

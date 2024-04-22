@@ -15,37 +15,38 @@ const isSideBarVisible = ref(true)
 onMounted(() => {
   const urlParams = new URLSearchParams(window.location.search);
   const userType = urlParams.get('userType');
-      if(!token){
-        console.log('problem here in the app (no token )');
-        
-        push({ path : '/login' , query : userType ? {userType : userType} : undefined})
-      }
-      if(currentRoute.value.path == '/login' || currentRoute.value.path.includes('/profile')){
-        isSideBarVisible.value = false
-      }
-      setTimeout(() => {
-        isloading.value = false
-      }, 3000);
+  setTimeout(() => {
+    if(currentRoute.value.path.includes('/customers/submission/form')){
+      console.log('heeeeey');
+      isloading.value = false
+      return
+    }
+    if(!token){
+      push({ path : '/login' , query : userType ? {userType : userType} : undefined})
+    }
+    setTimeout(() => {
+      isloading.value = false
+    }, 3000);
 
-      userAuthorize().then((isAuthorized) => {
-        if(isAuthorized == false){
-            console.log('problem here in the app (not authorized)');
-            push({ path : '/login' , query : userType ? {userType : userType} : undefined})
-        }  
-        else{
-          axios.post('https://akademia.website/api/checkFreezeStatuses').then((result) => {
-            console.log(result.data);
-            axios.post('https://akademia.website/api/checkSubscriptionStatuses').then((result) => {
-            console.log(result.data); 
-            }).catch((err) => {
-                console.log(err);
-            });
+  userAuthorize().then((isAuthorized) => {
+      if(isAuthorized == false){
+          push({ path : '/login' , query : userType ? {userType : userType} : undefined})
+      }  
+      else{
+        axios.post('http://127.0.0.1:8000/api/checkFreezeStatuses').then((result) => {
+          console.log(result.data);
+          axios.post('http://127.0.0.1:8000/api/checkSubscriptionStatuses').then((result) => {
+          console.log(result.data); 
           }).catch((err) => {
               console.log(err);
           });
-        }
-    })
+        }).catch((err) => {
+            console.log(err);
+        });
+      }
   })
+  }, 500  );
+})
 
 const router = useRouter()
 router.beforeEach(() => {
@@ -60,7 +61,8 @@ router.beforeEach(() => {
 <template>
   <loading v-if="isloading"></loading>
   <header>
-  <SideBar :key="$route.fullPath" v-if="!currentRoute.path.includes('/login') && !currentRoute.path.includes('/profile')"></SideBar>
+  <SideBar :key="$route.fullPath" v-if="!currentRoute.path.includes('/login') && !currentRoute.path.includes('/profile') &&
+  !currentRoute.path.includes('/customers/submission/form')"></SideBar>
   </header>
   <RouterView :key="$route.fullPath" />
 </template>

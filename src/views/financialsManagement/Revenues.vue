@@ -54,6 +54,8 @@ const filters = ref(
     {
         global: { value: null, matchMode: FilterMatchMode.CONTAINS },
         academy_name: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }] },
+        created_by: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }] },
+        customer: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.CONTAINS }] },
         // paid_date: { value: null, matchMode: FilterMatchMode.DATE_IS },
         paid_date: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.DATE_AFTER } , { value: null, matchMode: FilterMatchMode.DATE_BEFORE }] },
         id: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.EQUALS }] },
@@ -74,7 +76,7 @@ const options = {
 const dateTimeFormatter = new Intl.DateTimeFormat('ar', options);
 
 const getRevenues = (branchId : number) => {
-    axios.get(`https://akademia.website/api/revenues/${branchId}`).then((result) => {
+    axios.get(`http://127.0.0.1:8000/api/revenues/${branchId}`).then((result) => {
         result.data.installments.forEach((installment : any ) => {
             Revenues.value.push({
                 amount : installment.amount,
@@ -82,8 +84,10 @@ const getRevenues = (branchId : number) => {
                 subscription_date : new Date(installment.subscription.subscription_date),
                 expiration_date : new Date(installment.subscription.subscription_date).toLocaleDateString() + ' إلي ' +  new Date(installment.subscription.expiration_date).toLocaleDateString(),
                 type : 'تقسيط' ,
+                created_by : installment.subscription.created_by ,
                 branch : installment.subscription.branch.branch_name,
                 academy_name : installment.subscription.academy_name,
+                customer : `${installment.subscription.customer.customer_name} - ${installment.subscription.customer.customer_phone}`,
                 category_name : installment.subscription.category_name,
             })
         });
@@ -92,9 +96,11 @@ const getRevenues = (branchId : number) => {
                 amount : subscription.sale ? subscription.price - subscription.sale : subscription.price,
                 paid_date : new Date(subscription.subscription_date),
                 subscription_date : new Date(subscription.subscription_date),
+                created_by : subscription.created_by,
                 expiration_date : new Date(subscription.subscription_date).toLocaleDateString() + ' إلي ' + new Date(subscription.expiration_date).toLocaleDateString(),
                 type : subscription.subscription_type == 'cash' ? 'كاش'  : subscription.subscription_type ,
                 branch : subscription.branch.branch_name,
+                customer : `${subscription.customer.customer_name} - ${subscription.customer.customer_phone}`,
                 academy_name : subscription.academy_name,
                 category_name : subscription.category_name,
             })
@@ -117,7 +123,7 @@ const academies : any = ref([])
 const branchNames : any = []
 
 const getBranches = () => {
-    axios.get('https://akademia.website/api/branches').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/branches').then((result) => {
         console.log(result.data);
         result.data.branches.forEach((branch : any) => {
             branches.value.push({label : branch.branch_name , value : branch.id})
@@ -129,7 +135,7 @@ const getBranches = () => {
     });
 }
 const getAcademies = () => {
-    axios.get('https://akademia.website/api/academies').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/academies').then((result) => {
         console.log(result.data);
         result.data.academies.forEach((academy : any) => {
             academies.value.push({label : academy.academy_name , value : academy.id})
@@ -302,10 +308,16 @@ const exportCSV = () => {
     </div>
 
     <div v-else-if="!chooseTargetBranch">
+        <div @click="chooseTargetBranch = true" class="bg-card w-8rem text-center my-3 py-2 px-3 borderRound cursor-pointer flex justify-content-center align-items-center text-white">
+            <h5>الرجوع</h5>
+            <span class="material-symbols-outlined mx-2">
+                arrow_back
+            </span>
+        </div>
         <successMsg v-if="deletedSuccessfully" class="fadeinright animation-duration-500 animation-iteration-1 my-4">تم الحذف بنجاح</successMsg>
             <DataTable v-model:filters="filters" :loading="!isFetched" ref="dt" :export-filename="ReportName" stripedRows :value="Revenues"
              filterDisplay="menu" paginator :rows="10" :rowsPerPageOptions="[10, 20, 50 , 100]"
-             dataKey="id" removableSort :globalFilterFields="['academy_name']" tableStyle="min-width: 50rem">
+             dataKey="id" removableSort :globalFilterFields="['academy_name' , 'amount' , 'branch' , 'customer' , 'created_by']" tableStyle="min-width: 50rem">
             <template #header>
                 <div class="flex flex-column lg:flex-row justify-content-between align-items-center">
                     <h3 class="hidden md:my-2 lg:my-0 md:flex">تقرير الايرادات</h3>
@@ -330,7 +342,7 @@ const exportCSV = () => {
                     <p>{{ parseFloat(slotProps.data.amount).toFixed(2) }} ج.م</p>
                 </template>
             </Column>
-            <Column field="type"  header="طريقة الدفع" style="width: 14%;"></Column>
+            <Column field="type"  header="طريقة الدفع" style="min-width : 9rem;"></Column>
             <Column field="paid_date" filterField="paid_date" dataType="date" sortable  header="تاريخ الدفع" style="width: 22%;">
                 <template #body="slotProps" >
                     <p>{{ dateTimeFormatter.format(slotProps.data.paid_date) }}</p>
@@ -345,14 +357,40 @@ const exportCSV = () => {
                     <Button type="button" @click="filterCallback(); calculateTotalRevenues()" class="mb-3 lg:mb-0 mx-2" label="الغاء" outlined />
                 </template>
             </Column>
+            <Column field="created_by" sortable  header="المسجل">
+                <template #body="slotProps" >
+                    <p v-if="slotProps.data.created_by">{{ slotProps.data.created_by }}</p>
+                    <p v-else>غير محدد</p>
+                </template>
+                <template #filter="{ filterModel , filterCallback }">
+                    <InputText v-model="filterModel.value" @input="filterCallback()" type="text" class="p-column-filter" placeholder="أدخل اسم المسجل" />
+                </template>
+                <template #filterapply="{ filterCallback }">
+                    <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="تفعيل" />
+                </template>
+                <template #filterclear="{ filterCallback }">
+                    <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="الغاء" outlined />
+                </template>
+            </Column>
             <Column field="expiration_date" sortable  header="مدة الاشتراك" style="width: 22%;">
                 <!-- <template #body="slotProps" >
                     <p>{{ slotProps.data.subscription_date.toLocaleDateString() }} إلي {{ slotProps.data.expiration_date.toLocaleDateString() }}</p>
                 </template> -->
             </Column>
-            <Column field="branch"  header="الفرع" style="width: 13%;">
+            <Column field="branch"  header="الفرع" style="min-width: 11rem;">
             </Column>
-            <Column field="academy_name"  header="الأكاديمية">
+            <Column field="customer"  header="العميل" style="min-width: 14rem;">
+            </Column>
+            <Column field="academy_name"  header="الأكاديمية" style="min-width: 11rem;">
+                <template #filter="{ filterModel , filterCallback }">
+                    <InputText v-model="filterModel.value" @input="filterCallback()" type="text" class="p-column-filter" placeholder="أدخل اسم الأكاديمية" />
+                </template>
+                <template #filterapply="{ filterCallback }">
+                    <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="تفعيل" />
+                </template>
+                <template #filterclear="{ filterCallback }">
+                    <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="الغاء" outlined />
+                </template>
             </Column>
                 
             <template #empty> <InlineMessage severity="info">غير موجود</InlineMessage></template>

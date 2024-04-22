@@ -26,16 +26,19 @@ const isFetched : any = ref(false);
 const isDialogVisible : any = ref(false);
 const isErrorReturned : any = ref(false);
 const dbError : any = ref(false);
-const isBranchFetched : any = ref(false);
-const activeBranch : any = ref();
-const selectedBranches : any = ref([]);
+const isAcademyFetched : any = ref(false);
+const activeAcademy : any = ref();
+const selectedAcademies : any = ref([]);
 const deletedSuccessfully = ref(false)
+const isUpdateFormDialogVisible = ref(false)
+const updatedSuccessfully = ref(false)
+const updateLoading = ref(false)
 
 // breadCrumbs
 const breadCrumbs : any = ref([]);
 breadCrumbs.value = [
-    {label: 'الفروع' , route: '/branches', to:'/branches'},
-    {label: 'عرض الفروع' , route: '/branches', to:'/branches' },
+    {label: 'الأكاديميات' , route: '/academies', to:'/academies'},
+    {label: 'عرض الأكاديميات' , route: '/academies', to:'/academies' },
 ]; 
 const home = ref({
     icon: 'pi pi-home',
@@ -46,7 +49,7 @@ const home = ref({
 const confirmDeletion = (event : any) => {
     confirm.require({
         target: event.currentTarget,
-        message: 'هل متأكد أنك تريد حذف هذا الفرع ؟',
+        message: 'هل متأكد أنك تريد حذف هذه الأكاديمية ؟',
         icon: 'pi pi-exclamation-triangle',
         acceptLabel : 'نعم',
         rejectLabel : 'لا',
@@ -58,19 +61,18 @@ const confirmDeletion = (event : any) => {
     });
 };
 
-const branches = ref()
-const branchCategoriesFilters = ref(
+const academies = ref()
+const academyBranchesFilters = ref(
     {
         global: { value: null, matchMode: FilterMatchMode.CONTAINS },
-        category_name: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }] },
-        duration: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.EQUALS }] },
-        price_per_1: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO }] },
+        branch_name: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }] },
+        id: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.EQUALS }] },
     }
 );
 const filters = ref(
     {
         global: { value: null, matchMode: FilterMatchMode.CONTAINS },
-        branch_name: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }] },
+        academy_name: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }] },
         id: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.EQUALS }] },
     }
 );
@@ -88,80 +90,78 @@ const options = {
     };
 const dateTimeFormatter = new Intl.DateTimeFormat('ar', options);
 
-const getBranches = () => {
-    axios.get('http://127.0.0.1:8000/api/branches').then((result) => {
+const getAcademies = () => {
+    axios.get('http://127.0.0.1:8000/api/academies').then((result) => {
         console.log(result.data);
-        branches.value = result.data.branches
+        academies.value = result.data.academies
         isFetched.value = true
-        branches.value.forEach((branch : any) => {
-            branch.created_at = new Date(branch.created_at)
+        academies.value.forEach((academy : any) => {
+            academy.created_at = new Date(academy.created_at)
         });
-        
     }).catch((err) => {
         console.log(err);
     });
 }
 
-const getBranchDetails = (branchId : number) => {
-    isBranchFetched.value = false
+const getAcademyDetails = (academyId : number) => {
+    isAcademyFetched.value = false
     isDialogVisible.value = true
-    axios.get(`http://127.0.0.1:8000/api/branch/${branchId}`).then((result) => {
-        activeBranch.value = result.data.branch
-        let workingDays : any[] = []
-        activeBranch.value.categories = activeBranch.value.categories.map((category : any) => {
-            const { category_name } = category;
-            const { category_id, ...pivotRest } = category.pivot;
-            return {
-                category_name,
-                categoryId : category_id,
-                ...pivotRest
-            };
-        });
-        activeBranch.value.categories.forEach((category : any , index : number) => {
-            activeBranch.value.categories[index].session_prices = JSON.parse(category.session_prices)
-            activeBranch.value.categories[index].prices_per_sessions = []
-            activeBranch.value.categories[index].session_prices.forEach((sessionPrice : any) => {
-                activeBranch.value.categories[index].prices_per_sessions+= `( ${sessionPrice.sessions} sessions / ${sessionPrice.price} ج.م ) , ` 
-            });
-        });
-        console.log(activeBranch.value.categories);
-        
-        activeBranch.value.working_days.forEach((day : any) => {
-            workingDays.push({day : day.day , start_time : day.start_time , end_time: day.end_time})
-        });
-        activeBranch.value.working_days = workingDays
-        isBranchFetched.value = true
-        console.log(activeBranch.value , 'activeBranchhh');
-        
+    axios.get(`http://127.0.0.1:8000/api/academy/${academyId}`).then((result) => {
+        activeAcademy.value = result.data.academy
+        activeAcademy.value.activeSubscriptions = result.data.activeSubscriptions
+        isAcademyFetched.value = true
     }).catch((err) => {
+        console.log(err);
+    });
+}
+
+const updateAcademy = (req : any) => {
+    updateLoading.value = true
+    axios.put(`http://127.0.0.1:8000/api/academy/update/${activeAcademy.value.id}`, req).then((result) => {
+        updateLoading.value = false
+        updatedSuccessfully.value = true
+        isErrorReturned.value = false
+        setTimeout(() => {
+            isUpdateFormDialogVisible.value = false
+            updatedSuccessfully.value = false
+        }, 1500);
+    }).catch((err) => {
+        updateLoading.value = false
+        isErrorReturned.value = true
+        if(err.response.data.message.includes('The academy name has already been taken')){
+            dbError.value = 'هذه الأكاديمية موجود بالفعل';
+        }   
+        else{
+            dbError.value = err.response.data.message
+        }
         console.log(err);
     });
 }
 
 const bulkDelete = () => {
-    console.log(selectedBranches.value);
-    let branch_ids : any = [];
-    selectedBranches.value.forEach((branch:any) => {
-        branch_ids.push(branch.id)
+    console.log(selectedAcademies.value);
+    let academy_ids : any = [];
+    selectedAcademies.value.forEach((branch:any) => {
+        academy_ids.push(branch.id)
     });
     let req : any = {
-        branch_ids : branch_ids
+        academy_ids : academy_ids
     }
-    axios.post('http://127.0.0.1:8000/api/branchBulkDelete', req ).then((result) => {
+    axios.post('http://127.0.0.1:8000/api/academyBulkDelete', req ).then((result) => {
         console.log(result);
         deletedSuccessfully.value = true
         isErrorReturned.value = false
-        selectedBranches.value = []
-        getBranches()
+        selectedAcademies.value = []
+        getAcademies()
         setTimeout(() => {
             deletedSuccessfully.value = false
         }, 4500);
     }).catch((err) => {
-        selectedBranches.value = []
+        selectedAcademies.value = []
         console.log(err);
         isErrorReturned.value = true
-        if(err.response.data.message.includes('Branch has active subscriptions')){
-            dbError.value = 'الفروع التي تريد حذفها لديها اشتراكات نشطة'
+        if(err.response.data.message.includes('Academy has active subscriptions')){
+            dbError.value = 'الأكاديمية التي تريد حذفها لديها اشتراكات نشطة'
         }
     });
     
@@ -186,11 +186,11 @@ onBeforeMount(() => {
                     push({path : '/login', query : currentRoute.value.query})
                 }
                 console.log(empPermissions.value);
-                getBranches()
+                getAcademies()
             })
         }
         else{
-            getBranches()
+            getAcademies()
         }
     })
 })
@@ -202,60 +202,61 @@ const exportCSV = () => {
 </script>
 
 <template>
-    <Dialog v-model:visible="isDialogVisible" maximizable modal header="تفاصيل الفرع" :style="{ width: '60vw' }" :breakpoints="{ '960px': '75vw', '641px': '100vw' }">
-        <loading v-if="!isBranchFetched"></loading>
+    <Dialog v-model:visible="isDialogVisible" maximizable modal header="تفاصيل الأكاديمية" :style="{ width: '60vw' }" :breakpoints="{ '960px': '75vw', '641px': '100vw' }">
+        <loading v-if="!isAcademyFetched"></loading>
         <div v-else class="branchDetails">
-            <div class="flex justify-content-center">
-                <h4 v-for="academy in activeBranch.academies" class="m-2"> {{ academy.academy_name }} </h4> 
+            <div class="flex justify-content-between p-5">
+                <h5>{{ activeAcademy.academy_name }}</h5>
+                <h5>مجموع الاشتراكات النشطة : {{ activeAcademy.activeSubscriptions }} اشتراك</h5>
             </div>
-            <DataTable v-model:filters="branchCategoriesFilters"  :export-filename="`تفاصيل فرع ${activeBranch.branch_name}`"  ref="dt"  stripedRows :value="activeBranch.categories"
-            paginator :rows="10" :rowsPerPageOptions="[10, 20, 50]" filterDisplay="menu"
-             dataKey="id" removableSort :globalFilterFields="['duration', 'category_name']" tableStyle="min-width: 50rem">
+            <DataTable v-model:filters="academyBranchesFilters"  :export-filename="`تفاصيل أكاديمية ${activeAcademy.academy_name}`"  ref="dt"
+              stripedRows :value="activeAcademy.branches" paginator :rows="10" :rowsPerPageOptions="[10, 20, 50]" filterDisplay="menu"
+             dataKey="id" removableSort :globalFilterFields="['id', 'branch_name']" tableStyle="min-width: 50rem">
             <template #header>
                 <div class="flex flex-column lg:flex-row justify-content-between align-items-center">
-                    <h3 style="color : black;">{{ activeBranch.branch_name }}</h3>
+                    <h3 style="color : black;">الفروع المتواجدة بها</h3>
                     <span class="p-input-icon-left">
                         <i class="pi pi-search" />
-                        <InputText v-model="branchCategoriesFilters['global'].value" placeholder="بحث شامل" />
+                        <InputText v-model="academyBranchesFilters['global'].value" placeholder="بحث شامل" />
                     </span>
                 </div>
             </template>
-            <Column field="category_name" sortable  header="نوع التمرينة"></Column>
-            <Column field="duration" sortable  header="مدة التمرينة">
-                <template #body="slotProps" >
-                    <p>{{ slotProps.data.duration }} ساعة</p>
-                </template>
-            </Column>
-            <Column field="price_per_session" sortable  header="سعر 1 تمرينة">
-                <template #body="slotProps" >
-                    <p>{{ slotProps.data.price_per_session }} ج.م</p> 
-                </template>
-            </Column>
-            <Column field="prices_per_sessions" sortable  header="عدد الحصص / السعر">
-                <template #body="slotProps" >
-                    <div v-for="(sessionPrice , index) in slotProps.data.session_prices" :key="index">
-                        <p>{{ sessionPrice.sessions }} حصص / {{ sessionPrice.price }} ج.م</p> 
-                    </div>
-                </template>
+            <Column field="id" sortable  header="كود الفرع"></Column>
+            <Column field="branch_name" sortable  header="الفرع">
             </Column>
     
-            <template #empty> <InlineMessage severity="info">لا يوجد تمارين</InlineMessage></template>
+            <template #empty> <InlineMessage severity="info">لا يوجد فروع</InlineMessage></template>
             <template #paginatorend>
                 <Button type="button" icon="pi pi-download" @click="exportCSV($event)" text />
             </template>
-            <template #footer> في المجموع هناك {{ branches ? branches.length : 0 }} أنواع </template>
+            <template #footer> في المجموع هناك {{ activeAcademy.branches ? activeAcademy.branches.length : 0 }} فروع </template>
             </DataTable>
-            <div class="text-center" v-for="workingDay in activeBranch.working_days">
-                <h3 v-if="workingDay.start_time && workingDay.end_time">{{ workingDay.day }} : من {{ workingDay.start_time }} إلي {{ workingDay.end_time }}</h3>
-            </div>
         </div>
 
         <template #footer>
-            <Button type="button" class="mb-3 lg:mb-0 mx-2" @click="push(`/branch/update/${activeBranch.id}`)" label="تعديل" />
+            <Button type="button" class="mb-3 lg:mb-0 mx-2" @click="isDialogVisible = false; isUpdateFormDialogVisible = true" label="تعديل" />
         </template>
     </Dialog>
 
-    <div class="w-12 md:w-10 my-5 m-auto p-2 md:p-5 branchesList" style="direction: rtl;">
+        <!-- Update Dialog  -->
+        <Dialog v-model:visible="isUpdateFormDialogVisible" @after-hide="getAcademies" maximizable 
+        modal header="تعديل الأكاديمية" :style="{ width: '50vw' }" :breakpoints="{ '960px': '75vw', '641px': '100vw' }">
+            <FormKit v-model="activeAcademy" type="form" :actions="false" @submit="updateAcademy">
+            <successMsg v-if="updatedSuccessfully" class="fadeinright animation-duration-500 animation-iteration-1 my-4">تم التعديل بنجاح</successMsg>
+            <h5 v-if="isErrorReturned" class="px-3 py-2 textColor text-center borderRound error">{{ dbError }}</h5>
+                <div class="mt-3">
+                    <div class="flex align-items-center">
+                        <label for="academyName" class="px-3 py-1 text-white text-sm">اسم الأكاديمية</label>
+                    </div>
+                    <FormKit prefix-icon="text" id="academyName" type="text" label="الأكاديمية" placeholder="أدخل اسم الأكاديمية" name="academy_name" validation="required|length:3" />
+                </div>
+                <Button type="submit" class="submitBtn" label="حفظ" :loading="updateLoading" />
+            </FormKit>
+            <template #footer>
+            </template>
+        </Dialog>
+
+    <div class="w-12 md:w-10 my-5 m-auto p-2 md:p-5 academiesList" style="direction: rtl;">
             <!-- Breadcrumb -->
     <div class="w-full m-auto flex justify-content-center p-4 MargAutoMob padding-1-breadcrumbs" style="direction: ltr;">
         <Breadcrumb :home="home" :model="breadCrumbs" />
@@ -265,16 +266,16 @@ const exportCSV = () => {
         <h5 v-if="isErrorReturned" class="px-3 py-2 textColor text-center borderRound error my-3">{{ dbError }}</h5>
         <successMsg v-if="deletedSuccessfully" class="fadeinright animation-duration-500 animation-iteration-1 my-4">تم الحذف بنجاح</successMsg>
     <div v-if="isFetched">
-        <DataTable v-model:filters="filters" ref="dt" export-filename="تفاصيل الفروع"  stripedRows :value="branches"  v-model:selection="selectedBranches"
-        stateStorage="session" stateKey="branches-state-session" paginator :rows="10" :rowsPerPageOptions="[10, 20, 50]" filterDisplay="menu"
-         dataKey="id" removableSort :globalFilterFields="['id', 'branch_name']" tableStyle="min-width: 50rem">
+        <DataTable v-model:filters="filters" ref="dt" export-filename="تفاصيل الأكاديميات"  stripedRows :value="academies"  v-model:selection="selectedAcademies"
+        stateStorage="session" stateKey="academies-state-session" paginator :rows="10" :rowsPerPageOptions="[10, 20, 50]" filterDisplay="menu"
+         dataKey="id" removableSort :globalFilterFields="['id', 'academy_name']" tableStyle="min-width: 50rem">
         <template #header>
             <div class="flex flex-column lg:flex-row justify-content-between align-items-center">
                 <div class="flex align-items-center">
-                    <Button v-if="isEmpAuthorizedFor(empPermissions , 'تسجيل و تعديل الفروع' , UserType)" type="button" class="mb-3 lg:mb-0 mx-2" @click="push('/branch/create')" label="انشاء فرع" />
-                    <Button v-if="isEmpAuthorizedFor(empPermissions , 'تسجيل و تعديل الفروع' , UserType)" type="button" @click="bulkDelete" :disabled="selectedBranches.length == 0" severity="danger" class="mb-3 lg:mb-0 mx-2" label="حذف المحدد" />
+                    <Button v-if="isEmpAuthorizedFor(empPermissions , 'انشاء أكاديمية' , UserType)" type="button" class="mb-3 lg:mb-0 mx-2" @click="push('/academies/create')" label="انشاء أكاديمية" />
+                    <Button v-if="isEmpAuthorizedFor(empPermissions , 'انشاء أكاديمية' , UserType)" type="button" @click="bulkDelete" :disabled="selectedAcademies.length == 0" severity="danger" class="mb-3 lg:mb-0 mx-2" label="حذف المحدد" />
                 </div>
-                <h3 class="hidden md:my-2 lg:my-0 md:flex">الفروع</h3>
+                <h3 class="hidden md:my-2 lg:my-0 md:flex">الأكاديميات</h3>
                 <span class="p-input-icon-left">
                     <i class="pi pi-search" />
                     <InputText v-model="filters['global'].value" placeholder="بحث شامل" />
@@ -284,7 +285,7 @@ const exportCSV = () => {
         <!-- <Column field="id" header="Code"></Column> -->
         <Column selectionMode="multiple" headerStyle="width: 3rem"></Column>
         <Column field="id" sortable  header="الكود"></Column>
-        <Column field="branch_name" sortable  header="الفرع"></Column>
+        <Column field="academy_name" sortable  header="الأكاديمية"></Column>
         <Column field="created_at" sortable  header="تاريخ الانشاء" style="width: 36%;">
             <template #body="slotProps" >
                 <p>{{ dateTimeFormatter.format(slotProps.data.created_at) }}</p>
@@ -293,27 +294,28 @@ const exportCSV = () => {
         <Column  header="تعديل" style="width: 14%;">
             <template #body="slotProps">
                 <div class="flex align-items-center">
-                <span v-if="isEmpAuthorizedFor(empPermissions , 'تسجيل و تعديل الفروع' , UserType)" class="material-symbols-outlined cursor-pointer hoverIcon textColor text-3xl p-2 borderRound" 
-                    @click="selectedBranches = [{id : slotProps.data.id}]; confirmDeletion($event)">
+                <span v-if="isEmpAuthorizedFor(empPermissions , 'انشاء أكاديمية' , UserType)" class="material-symbols-outlined cursor-pointer hoverIcon textColor text-3xl p-2 borderRound" 
+                    @click="selectedAcademies = [{id : slotProps.data.id}]; confirmDeletion($event)">
                     delete_forever
                 </span>
-                <span v-if="isEmpAuthorizedFor(empPermissions , 'تسجيل و تعديل الفروع' , UserType)" @click="push(`/branch/update/${slotProps.data.id}`)" class="material-symbols-outlined cursor-pointer hoverIcon mx-2 textColor text-3xl p-2 borderRound">
+                <span v-if="isEmpAuthorizedFor(empPermissions , 'انشاء أكاديمية' , UserType)" 
+                @click="isUpdateFormDialogVisible = true; activeAcademy = slotProps.data" class="material-symbols-outlined cursor-pointer hoverIcon mx-2 textColor text-3xl p-2 borderRound">
                     edit
                 </span>
                 <span class="material-symbols-outlined cursor-pointer hoverIcon textColor text-3xl p-2 borderRound" 
-                @click="getBranchDetails(slotProps.data.id)">
+                @click="getAcademyDetails(slotProps.data.id)">
                     visibility
                 </span>
                 </div>
             </template>
         </Column>
             
-        <template #empty> <InlineMessage severity="info">لا يوجد فروع</InlineMessage></template>
+        <template #empty> <InlineMessage severity="info">لا يوجد أكاديميات</InlineMessage></template>
         <template #paginatorend>
             <Button type="button" icon="pi pi-download" @click="exportCSV($event)" text />
         </template>
         <!-- <template #footer> In total there are {{ products ? products.length : 0 }} products. </template> -->
-        <template #footer> في المجموع هناك {{ branches ? branches.length : 0 }} فروع </template>
+        <template #footer> في المجموع هناك {{ academies ? academies.length : 0 }} أكاديمية </template>
         </DataTable>
     </div>
     </div>
@@ -386,7 +388,7 @@ td{
     margin: 0 1.2vh;
 }
 @media screen and (max-width : 500px){
-    .branchesList{
+    .academiesList{
         margin-top: 10vh !important;
     }
 }

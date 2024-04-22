@@ -30,7 +30,10 @@ const employeeDetails = ref()
 const updateEmployee = (req : any) => {
     isLoading.value = true
     console.log(req);
-    axios.put(`https://akademia.website/api/updateEmployee/${employeeId}` , req).then((result) => {
+    if(!req.password){
+        delete req.password
+    }
+    axios.put(`http://127.0.0.1:8000/api/updateEmployee/${employeeId}` , req).then((result) => {
         createdEmployee.value = result.data.employee
         isLoading.value = false
         isErrorReturned.value = false
@@ -63,7 +66,7 @@ const updateEmployee = (req : any) => {
     });
 }
 const getBranches = () => {
-    axios.get('https://akademia.website/api/branches').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/branches').then((result) => {
         console.log(result.data);
         result.data.branches.forEach((branch : any) => {
             branches.value.push({label : branch.branch_name , value : branch.id})
@@ -74,7 +77,7 @@ const getBranches = () => {
     });
 }
 const getRoles = () => {
-    axios.get('https://akademia.website/api/roles').then((result) => {
+    axios.get('http://127.0.0.1:8000/api/roles').then((result) => {
         console.log(result.data);
         result.data.roles.forEach((role : any) => {
             Roles.value.push({label : role.role_name , value : role.id})
@@ -89,7 +92,7 @@ const handleDialogClosed = () => {
         push('/employees')
 }
 const getEmployeeDetails = () => {
-    axios.get(`https://akademia.website/api/employee/${employeeId}`).then((result) => {
+    axios.get(`http://127.0.0.1:8000/api/employee/${employeeId}`).then((result) => {
         employeeDetails.value = result.data.employee
         employeeDetails.value.password = ''
         employeeDetails.value.branchIds = []
@@ -208,7 +211,7 @@ onBeforeMount(() => {
                         <div class="flex align-items-center">
                             <label for="Pw" class="px-3 py-1 text-white text-sm">كلمة السر</label>
                         </div>
-                        <FormKit prefix-icon="password" id="Pw" type="password" label="كلمة السر" placeholder="أدخل كلمة السر للموظف" name="password" validation="required|length:8" />
+                        <FormKit prefix-icon="password" id="Pw" type="password" label="كلمة السر" placeholder="أدخل كلمة السر للموظف" name="password" validation="length:8" />
                     </div>
                     <div class="col-12 md:col-6">
                         <div class="flex align-items-center">
