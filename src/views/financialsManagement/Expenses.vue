@@ -41,6 +41,7 @@ const targetRevenue = ref()
 const ReportName = ref()
 const Expenses : any = ref([])
 const TotalExpenses : any = ref(0)
+const ExpensesCount : any = ref(0)
 const activeBranch : any = ref()
 
 // breadCrumbs
@@ -124,7 +125,7 @@ const getExpenses = (branchId : number) => {
                 })
             });
         }
-        calculateTotalExpenses()
+        updateTotalExpenses(Expenses.value)
         isTargetBranchReportLoading.value = false
         chooseTargetBranch.value = false
         isFetched.value = true
@@ -236,73 +237,40 @@ const submitTargetExpenses = (req : any) => {
 }
 const dt = ref();
 
-const calculateTotalExpenses = () => {
-    let tmp = Expenses.value
-    let hasNoFilters = true
-    let totalExp = 0
-    console.log(tmp);
-    
-    filters.value.created_at.constraints.forEach((filter : any) => {
-        if(filter.value){
-            hasNoFilters = false
-            if(filter.matchMode == 'dateAfter'){
-                if(tmp.length > 0){
-                    tmp = tmp.filter((obj : any) => obj.created_at > new Date(filter.value));
-                }
-            }
-            if(filter.matchMode == 'dateBefore'){
-                if(tmp.length > 0){
-                tmp = tmp.filter((obj : any) => obj.created_at < new Date(filter.value));
-                }
-            }
-            if(filter.matchMode == 'dateIs'){
-                if(tmp.length > 0){
-                filter.value = new Date(filter.value)
-                filter.value.setHours(0, 0, 0, 0);
-                tmp = tmp.filter((obj : any) => {
-                    console.log(obj);
-                    console.log(obj.created_at , 'from inside filter');
-                
-                    const objDate = new Date(obj.created_at);
-                    objDate.setHours(0, 0, 0, 0); // Set time to midnight
-                    return objDate.getTime() == filter.value.getTime();
-                });
-            }
-            }
-            if(filter.matchMode == 'dateIsNot'){
-                if(tmp.length > 0){
-                filter.value = new Date(filter.value)
-                filter.value.setHours(0, 0, 0, 0);
-                tmp = tmp.filter((obj : any) => {
-                    const objDate = new Date(obj.created_at);
-                    objDate.setHours(0, 0, 0, 0); // Set time to midnight
-                    return objDate.getTime() !== filter.value.getTime();
-                });
-                }
-            }
-        }
-    });
-    filters.value.type.constraints.forEach((filter : any) => {
-        if(filter.value){
-            hasNoFilters = false
-            if(tmp.length > 0){
-                tmp = tmp.filter((obj : any) => obj.type.includes(filter.value));
-            }
-        }
-    });
-    if(hasNoFilters){
-        Expenses.value.forEach((expense : any) => {
-            totalExp += parseFloat(expense.cost as string)
-        });
-        TotalExpenses.value = totalExp
-    }
-    else{
-        tmp.forEach((expense : any) => {
-            totalExp += parseFloat(expense.cost as string)
-        });
-        TotalExpenses.value = totalExp
-    }
+function formatNumberWithComma(number : number) {
+  
+  // Convert the number to a string for manipulation
+  const numberString = number.toString();
+  
+  const digits = numberString.split(/[-+]/)[1] ? numberString.split(/[-+]/)[1].split('') : numberString.split('');
+
+  // Reverse the digits array for easier processing
+  digits.reverse();
+
+  // Insert commas after every 3rd digit (except the first 3)
+  for (let i = 3; i < digits.length; i += 4) {
+    digits.splice(i, 0, ',');
+  }
+
+  // Reverse the digits array back to the original order
+  digits.reverse();
+
+  // Join the digits array back into a string
+  const formattedNumber = digits.join('');
+
+  return formattedNumber;
 }
+
+const updateTotalExpenses = (value : any[]) => {
+    console.log(value);
+    let total = 0
+    value.forEach(element => {
+        total += parseFloat(element.cost as string)
+    });
+    ExpensesCount.value = value.length
+    TotalExpenses.value = formatNumberWithComma(total) 
+}
+
 const empPermissions = ref()
 type userType = 'admin' | 'employee' 
 const UserType : Ref<userType> = ref('admin')
@@ -312,15 +280,13 @@ onBeforeMount(() => {
             employeeAuthorize().then((employee) => {
                 if(employee == false){
                     localStorage.removeItem('SwimmingToken')
-                    location.reload()
                     push({path : '/login', query : currentRoute.value.query})
                 }
                 empPermissions.value = employee.permissions
                 UserType.value = 'employee'
-                if(!isEmpAuthorizedFor(empPermissions.value , 'الحسابات المالية' , UserType.value)){
+                if(!isEmpAuthorizedFor(empPermissions.value , 'تقرير المصروفات' , UserType.value)){
                     localStorage.removeItem('SwimmingToken')
-                    location.reload()
-                    push({path : '/login', query : currentRoute.value.query})
+                    push({path : '/login', query : {userType : 'employee'}})
                 }
                 if(currentRoute.value.query.branchId){
                     let branchId = {
@@ -429,12 +395,12 @@ const exportCSV = () => {
     <div v-else-if="!chooseTargetBranch">
         <successMsg v-if="deletedSuccessfully" class="fadeinright animation-duration-500 animation-iteration-1 my-4">تم الحذف بنجاح</successMsg>
             <h2 class="text-center my-3 text-white">تقرير المصروفات</h2>
-            <DataTable v-model:filters="filters" ref="dt" :export-filename="ReportName" stripedRows :value="Expenses"
+            <DataTable v-model:filters="filters" ref="dt" :export-filename="ReportName" stripedRows :value="Expenses" @value-change="updateTotalExpenses"
              filterDisplay="menu" paginator :rows="10" :loading="!isFetched" :rowsPerPageOptions="[10, 20, 50 , 100]"
              dataKey="id" removableSort :globalFilterFields="['branch' , 'type' , 'description' , 'cost']" tableStyle="min-width: 50rem">
             <template #header>
                 <div class="flex flex-column lg:flex-row justify-content-between align-items-center">
-                    <Button type="button" class="mb-2 lg:mb-0 mx-2" @click="isDialogVisible = true;" label="تسجيل مصروفات" />
+                    <Button v-if="isEmpAuthorizedFor(empPermissions , 'تسجيل و تعديل المصروفات' , UserType)" type="button" class="mb-2 lg:mb-0 mx-2" @click="isDialogVisible = true;" label="تسجيل مصروفات" />
                     <div class="flex align-content-center justify-content-center">
                         <div v-for="(filter,index) in filters.created_at.constraints" class="flex">
                             <!-- {{ filter }} -->
@@ -460,10 +426,10 @@ const exportCSV = () => {
                         </Dropdown>
                     </template>
                     <template #filterapply="{ filterCallback }">
-                        <Button type="button" @click="filterCallback(); calculateTotalExpenses()" class="mb-3 lg:mb-0 mx-2" label="تفعيل" />
+                        <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="تفعيل" />
                     </template>
                     <template #filterclear="{ filterCallback }">
-                        <Button type="button" @click="filterCallback(); calculateTotalExpenses()" class="mb-3 lg:mb-0 mx-2" label="الغاء" outlined />
+                        <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="الغاء" outlined />
                     </template>
                 </Column>
             </div>
@@ -475,10 +441,10 @@ const exportCSV = () => {
                     <Calendar v-model="filterModel.value" dateFormat="mm/dd/yy" placeholder="أختر التاريخ " mask="99/99/9999" />
                 </template>
                 <template #filterapply="{ filterCallback }">
-                    <Button type="button" @click="filterCallback(); calculateTotalExpenses()" class="mb-3 lg:mb-0 mx-2" label="تفعيل" />
+                    <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="تفعيل" />
                 </template>
                 <template #filterclear="{ filterCallback }">
-                    <Button type="button" @click="filterCallback(); calculateTotalExpenses()" class="mb-3 lg:mb-0 mx-2" label="الغاء" outlined />
+                    <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="الغاء" outlined />
                 </template>
             </Column>
             <Column field="cost" sortable header="التكلفة">
@@ -492,14 +458,14 @@ const exportCSV = () => {
             </Column>
             <Column  header="تعديل">
                 <template #body="slotProps">
-                    <div v-if="slotProps.data.type !== 'دفع مرتبات'" class="flex align-items-center">
+                    <div v-if="slotProps.data.type !== 'دفع مرتبات' && isEmpAuthorizedFor(empPermissions , 'تسجيل و تعديل المصروفات' , UserType)" class="flex align-items-center">
                         <span class="material-symbols-outlined cursor-pointer hoverIcon textColor text-3xl p-2 borderRound" 
                         @click="confirmDeletion($event , slotProps.data.id)">
-                        delete_forever
-                    </span>
-                    <span @click="updateExpenseRow(slotProps.data)" class="material-symbols-outlined cursor-pointer hoverIcon mx-2 textColor text-3xl p-2 borderRound">
-                        edit
-                    </span>
+                            delete_forever
+                        </span>
+                        <span @click="updateExpenseRow(slotProps.data)" class="material-symbols-outlined cursor-pointer hoverIcon mx-2 textColor text-3xl p-2 borderRound">
+                            edit
+                        </span>
                     </div>
                 </template>
             </Column>
@@ -510,8 +476,8 @@ const exportCSV = () => {
             </template>
             <template #footer>
                 <div class="py-2">
-                    <h4 class="textColor text-center mb-3">في المجموع هناك {{ Expenses ? Expenses.length : 0 }} مصادر مصروفات </h4>
-                    <h3 class="text-center textColor">اجمالي المصروفات : <span style="background: rgba(0, 128, 0, 0.932);" class="p-1 px-3 borderRound">{{ TotalExpenses.toFixed(2) }} ج.م</span></h3>
+                    <h4 class="textColor text-center mb-3">في المجموع هناك {{ ExpensesCount }} مصادر مصروفات </h4>
+                    <h3 class="text-center textColor">اجمالي المصروفات : <span style="background: rgba(0, 128, 0, 0.932);" class="p-1 px-3 borderRound">{{ TotalExpenses }} ج.م</span></h3>
                 </div>
             </template>
             <!-- <template #footer> 

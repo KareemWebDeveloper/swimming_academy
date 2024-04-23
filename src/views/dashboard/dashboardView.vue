@@ -13,6 +13,8 @@ import { employeeAuthorize } from '@/global-functions/isEmployeeAuthorized';
 import ConfirmPopup from 'primevue/confirmpopup';
 import { useConfirm } from "primevue/useconfirm";
 import Dialog from 'primevue/dialog';
+import { isEmpAuthorizedFor } from '@/global-functions/isEmployeeAuthorizedFor';
+import type { Ref } from 'vue';
 
 const confirm = useConfirm();
 
@@ -131,7 +133,8 @@ const getInsights = () => {
         console.log(err);
     });
 }
-
+type userType = 'admin' | 'employee' 
+const UserType : Ref<userType> = ref('admin')
 const dt = ref();
 
 onBeforeMount(() => {
@@ -140,9 +143,9 @@ onBeforeMount(() => {
             employeeAuthorize().then((employee) => {
                 if(employee == false){
                     localStorage.removeItem('SwimmingToken')
-                    location.reload()
                     push({path : '/login', query : currentRoute.value.query})
                 }
+                UserType.value = 'employee'
                 console.log(employee);
                 empPermissions.value = employee.permissions
                 getAnnualProfits()
@@ -207,20 +210,20 @@ const exportCSV = () => {
     <div v-if="isProfitsFetched && isInsightsFetched" class="w-12 md:w-10 my-5 m-auto p-2 md:p-5 branchesList" style="direction: rtl;">
         <h2 class="text-center text-white my-3">لوحة التحكم</h2>
         <ConfirmPopup></ConfirmPopup>
-        <div class="bg-card m-auto w-10 p-3 borderRound">
+        <div v-if="isEmpAuthorizedFor(empPermissions , 'احصائيات لوحة التحكم' , UserType)" class="bg-card m-auto w-10 p-3 borderRound">
             <Chart type="line" :data="chartData" :options="chartOptions" class="h-full " />
         </div>
 
         <div class="flex justify-content-center my-5">
-            <Button label="تسجيل اشتراك" class="py-3 px-4 mx-2" @click="openNewTab('customer_create')" />
+            <Button v-if="isEmpAuthorizedFor(empPermissions , 'تجديد و تسجيل اشتراكات' , UserType)" label="تسجيل اشتراك" class="py-3 px-4 mx-2" @click="openNewTab('customer_create')" />
             <Button label="تفاصيل الاشتراك بالكود" class="py-3 px-4 mx-2" @click="isDialogVisible = true" />
-            <Button label="تسجيل حضور" class="py-3 px-4 mx-2" @click="openNewTab('attendance_list')" />
+            <Button v-if="isEmpAuthorizedFor(empPermissions , 'تسجيل الحضور' , UserType)" label="تسجيل حضور" class="py-3 px-4 mx-2" @click="openNewTab('attendance_list')" />
         </div>
-        <div class="flex justify-content-center my-5">
+        <div v-if="isEmpAuthorizedFor(empPermissions , 'تقرير الحضور اليومي' , UserType)" class="flex justify-content-center my-5">
             <Button label="تقرير الحضور اليومي" class="py-3 px-4 mx-2" @click="openNewTab('daily_attendances')" />
         </div>
 
-        <div class="flex flex-wrap my-5 justify-content-center">
+        <div v-if="isEmpAuthorizedFor(empPermissions , 'احصائيات لوحة التحكم' , UserType)" class="flex flex-wrap my-5 justify-content-center">
             <div class="flex boxShadowRight w-20rem my-5 p-3 bg-card borderRound align-items-center mx-3 justify-content-center flex-column">
                 <div class="flex align-items-center my-2">
                     <h3 class=" primaryColor">عدد الأعضاء</h3>
@@ -352,7 +355,7 @@ const exportCSV = () => {
                 </div>
             </div>
         </div>
-        <div class="bg-card flex justify-content-center m-auto w-10 p-3 borderRound">
+        <div v-if="isEmpAuthorizedFor(empPermissions , 'احصائيات لوحة التحكم' , UserType)" class="bg-card flex justify-content-center m-auto w-10 p-3 borderRound">
             <Chart type="doughnut" :data="doughnutChartData" :options="chartData" class="md:h-30rem w-full md:w-7 m-auto flex justify-content-center" />
         </div>
     </div>

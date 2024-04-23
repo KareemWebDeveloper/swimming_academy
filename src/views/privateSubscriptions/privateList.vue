@@ -260,15 +260,13 @@ onBeforeMount(() => {
             employeeAuthorize().then((employee) => {
                 if(employee == false){
                     localStorage.removeItem('SwimmingToken')
-                    location.reload()
                     push({path : '/login', query : currentRoute.value.query})
                 }
                 empPermissions.value = employee.permissions
                 UserType.value = 'employee'
-                if(!isEmpAuthorizedFor(empPermissions.value , 'عرض التمرينات الفردية' , UserType.value)){
+                if(!isEmpAuthorizedFor(empPermissions.value , 'عرض التمرينات البرايفت' , UserType.value)){
                     localStorage.removeItem('SwimmingToken')
-                    location.reload()
-                    push({path : '/login', query : currentRoute.value.query})
+                    push({path : '/login', query : {userType : 'employee'}})
                 }
                 getPrivateSubscriptions()
                 getBranches()
@@ -387,8 +385,8 @@ const exportCSV = () => {
         <template #header>
             <div class="flex flex-column lg:flex-row justify-content-between align-items-center">
                 <div class="flex align-items-center">
-                    <Button type="button" v-if="isEmpAuthorizedFor(empPermissions , 'تسجيل و تعديل التمرينات الفردية' , UserType)" class="mb-3 lg:mb-0 mx-2" @click="push({path : '/customer/create' , query : {isPrivate : 'true'} })" label="تسجيل مشترك" />
-                    <Button type="button" v-if="isEmpAuthorizedFor(empPermissions , 'تسجيل و تعديل التمرينات الفردية' , UserType)" @click="bulkDelete" :disabled="selectedCustomers.length == 0" severity="danger" class="mb-3 lg:mb-0 mx-2" label="حذف المحدد" />
+                    <Button type="button" v-if="isEmpAuthorizedFor(empPermissions , 'تسجيل و تعديل التمرينات البرايفت' , UserType)" class="mb-3 lg:mb-0 mx-2" @click="push({path : '/customer/create' , query : {isPrivate : 'true'} })" label="تسجيل مشترك" />
+                    <Button type="button" v-if="isEmpAuthorizedFor(empPermissions , 'تسجيل و تعديل التمرينات البرايفت' , UserType)" @click="bulkDelete" :disabled="selectedCustomers.length == 0" severity="danger" class="mb-3 lg:mb-0 mx-2" label="حذف المحدد" />
                 </div>
                 <h3 class="hidden md:my-2 lg:my-0 md:flex">الاشتراكات الفردية</h3>
                 <div>
@@ -555,16 +553,18 @@ const exportCSV = () => {
         <Column  header="تعديل">
             <template #body="slotProps">
                 <div class="flex align-items-center">
-                    <span v-if="isEmpAuthorizedFor(empPermissions , 'تسجيل و تعديل التمرينات الفردية' , UserType)" class="material-symbols-outlined cursor-pointer hoverIcon textColor text-3xl p-2 borderRound" 
+                    <span v-if="isEmpAuthorizedFor(empPermissions , 'تسجيل و تعديل التمرينات البرايفت' , UserType)" class="material-symbols-outlined cursor-pointer hoverIcon textColor text-3xl p-2 borderRound" 
                     @click="selectedCustomers = [{customer_id : slotProps.data.customer_id}]; confirmDeletion($event , slotProps.data.subscription_type)">
                     delete_forever
                     </span>
-                    <span v-if="slotProps.data.is_semi_private" @click="push({path : `/customer/update/${slotProps.data.customer_id}` , query : {isPrivate : 'true' , isSemiPrivate : 'true'} })" class="material-symbols-outlined cursor-pointer hoverIcon mx-2 textColor text-3xl p-2 borderRound">
-                        edit
-                    </span>
-                    <span v-else @click="push({path : `/customer/update/${slotProps.data.customer_id}` , query : {isPrivate : 'true'} })" class="material-symbols-outlined cursor-pointer hoverIcon mx-2 textColor text-3xl p-2 borderRound">
-                        edit
-                    </span>
+                    <div v-if="isEmpAuthorizedFor(empPermissions , 'تسجيل و تعديل التمرينات البرايفت' , UserType)">
+                        <span v-if="slotProps.data.is_semi_private" @click="push({path : `/customer/update/${slotProps.data.customer_id}` , query : {isPrivate : 'true' , isSemiPrivate : 'true'} })" class="material-symbols-outlined cursor-pointer hoverIcon mx-2 textColor text-3xl p-2 borderRound">
+                            edit
+                        </span>
+                        <span v-else @click="push({path : `/customer/update/${slotProps.data.customer_id}` , query : {isPrivate : 'true'} })" class="material-symbols-outlined cursor-pointer hoverIcon mx-2 textColor text-3xl p-2 borderRound">
+                            edit
+                        </span>
+                    </div>
                     <span class="material-symbols-outlined cursor-pointer hoverIcon textColor text-3xl p-2 borderRound" 
                     @click="push(`/customer/${slotProps.data.id}`)">
                         visibility

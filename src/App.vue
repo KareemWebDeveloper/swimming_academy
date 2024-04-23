@@ -11,26 +11,32 @@ import { employeeAuthorize } from './global-functions/isEmployeeAuthorized';
 const { push , currentRoute } = useRouter();
 let token = localStorage.getItem('SwimmingToken')
 const isloading = ref(true)
+const renderView = ref(false)
 const isSideBarVisible = ref(true)
 onMounted(() => {
   const urlParams = new URLSearchParams(window.location.search);
   const userType = urlParams.get('userType');
+
   setTimeout(() => {
     if(currentRoute.value.path.includes('/customers/submission/form')){
-      console.log('heeeeey');
-      isloading.value = false
+      setTimeout(() => {
+        isloading.value = false
+      }, 2000);
+      renderView.value = true
       return
     }
     if(!token){
       push({ path : '/login' , query : userType ? {userType : userType} : undefined})
     }
     setTimeout(() => {
+      renderView.value = true
+    }, 200);
+    setTimeout(() => {
       isloading.value = false
     }, 3000);
-
-  userAuthorize().then((isAuthorized) => {
+    userAuthorize().then((isAuthorized) => {
       if(isAuthorized == false){
-          push({ path : '/login' , query : userType ? {userType : userType} : undefined})
+        push({ path : '/login' , query : userType ? {userType : userType} : undefined})
       }  
       else{
         axios.post('http://127.0.0.1:8000/api/checkFreezeStatuses').then((result) => {
@@ -45,7 +51,7 @@ onMounted(() => {
         });
       }
   })
-  }, 500  );
+  }, 200);
 })
 
 const router = useRouter()
@@ -60,11 +66,11 @@ router.beforeEach(() => {
 
 <template>
   <loading v-if="isloading"></loading>
-  <header>
-  <SideBar :key="$route.fullPath" v-if="!currentRoute.path.includes('/login') && !currentRoute.path.includes('/profile') &&
-  !currentRoute.path.includes('/customers/submission/form')"></SideBar>
+  <header v-if="renderView">
+    <SideBar :key="$route.fullPath" v-if="!currentRoute.path.includes('/login') && !currentRoute.path.includes('/profile') &&
+    !currentRoute.path.includes('/customers/submission/form')"></SideBar>
+    <RouterView :key="$route.fullPath" />
   </header>
-  <RouterView :key="$route.fullPath" />
 </template>
 
 <style scoped>

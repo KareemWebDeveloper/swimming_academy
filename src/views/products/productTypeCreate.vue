@@ -63,11 +63,9 @@ onBeforeMount(() => {
                 }
                 empPermissions.value = employee.permissions
                 UserType.value = 'employee'
-                if(!isEmpAuthorizedFor(empPermissions.value , '' , UserType.value)){
+                if(!isEmpAuthorizedFor(empPermissions.value , 'تسجيل أقسام المنتجات' , UserType.value)){
                     localStorage.removeItem('SwimmingToken')
-                    console.log('not authorized');
-                    location.reload()
-                    push({path : '/login', query : currentRoute.value.query})
+                    push({path : '/login', query : {userType : 'employee'}})
                 }
                 console.log(empPermissions.value);
             })

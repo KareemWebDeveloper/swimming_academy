@@ -210,10 +210,6 @@ const exportCSV = () => {
          dataKey="id" removableSort :globalFilterFields="['id' , 'customer_name' , 'customer_phone']" tableStyle="min-width: 50rem">
         <template #header>
             <div class="flex flex-column lg:flex-row justify-content-between align-items-center">
-                <!-- <div class="flex align-items-center">
-                    <Button type="button" v-if="isEmpAuthorizedFor(empPermissions , 'تجديد و تسجيل اشتراكات' , UserType)" class="mb-3 lg:mb-0 mx-2" @click="push('/customer/create')" label="تسجيل مشترك" />
-                    <Button type="button" v-if="isEmpAuthorizedFor(empPermissions , 'تجديد و تسجيل اشتراكات' , UserType)"  @click="bulkDelete" :disabled="selectedCustomers.length == 0" severity="danger" class="mb-3 lg:mb-0 mx-2" label="حذف المحدد" />
-                </div> -->
                 <h3 class="hidden md:my-2 lg:my-0 md:flex">العملاء - حجز فقط</h3>
                 <div class="flex flex-column md:flex-row ">
                     <span class="p-input-icon-left my-2">
@@ -249,10 +245,10 @@ const exportCSV = () => {
         <Column  header="تعديل">
             <template #body="slotProps">
                 <div class="flex align-items-center">
-                <span v-if="isEmpAuthorizedFor(empPermissions , 'تجديد و تسجيل اشتراكات' , UserType)" @click="push({ path : '/customer/create' , query : {isReservedCustomer : slotProps.data.id}})" class="material-symbols-outlined cursor-pointer hoverIcon mx-2 textColor text-3xl p-2 borderRound">
+                <span v-if="isEmpAuthorizedFor(empPermissions , 'تعديل عملاء حجز فقط' , UserType)" @click="push({ path : '/customer/create' , query : {isReservedCustomer : slotProps.data.id}})" class="material-symbols-outlined cursor-pointer hoverIcon mx-2 textColor text-3xl p-2 borderRound">
                     edit
                 </span>
-                <span v-if="isEmpAuthorizedFor(empPermissions , 'تجديد و تسجيل اشتراكات' , UserType)" @click="bulkDelete(slotProps.data.id)" class="material-symbols-outlined cursor-pointer hoverIcon mx-2 textColor text-3xl p-2 borderRound">
+                <span v-if="isEmpAuthorizedFor(empPermissions , 'تعديل عملاء حجز فقط' , UserType)" @click="bulkDelete(slotProps.data.id)" class="material-symbols-outlined cursor-pointer hoverIcon mx-2 textColor text-3xl p-2 borderRound">
                     delete
                 </span>
                 </div>

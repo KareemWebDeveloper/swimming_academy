@@ -407,7 +407,7 @@ const exportCSV = () => {
                         <p>{{ slotProps.data.due_date }}</p>
                     </template>
                 </Column>
-                <Column  header="تعديل" style="min-width: 11rem;">
+                <Column  header="تعديل" style="min-width: 14rem;">
                     <template #body="slotProps">
                         <div class="flex align-items-center">
                             <span class="cursor-pointer hoverIcon textColor text-sm p-2 borderRound" 
@@ -463,14 +463,14 @@ const exportCSV = () => {
                     <p>{{ slotProps.data.due_date }}</p>
                 </template>
             </Column>
-            <Column  header="تعديل" style="min-width: 11rem;">
+            <Column  header="تعديل" style="min-width: 14rem;">
                 <template #body="slotProps">
                     <div class="flex align-items-center">
-                        <span class="cursor-pointer hoverIcon textColor text-sm p-2 borderRound" 
+                        <span v-if="isEmpAuthorizedFor(empPermissions , 'دفع أقساط المشتركين' , UserType)" class="cursor-pointer hoverIcon textColor text-sm p-2 borderRound" 
                         @click="payInstallment(slotProps.data.id)">
                             تم الدفع
                         </span>
-                        <span @click="deleteInstallment(slotProps.data.id)" class="material-symbols-outlined cursor-pointer hoverIcon textColor mx-2 text-3xl p-2 borderRound">
+                        <span v-if="isEmpAuthorizedFor(empPermissions , 'دفع أقساط المشتركين' , UserType)" @click="deleteInstallment(slotProps.data.id)" class="material-symbols-outlined cursor-pointer hoverIcon textColor mx-2 text-3xl p-2 borderRound">
                             delete_forever
                         </span>
                         <span class="material-symbols-outlined cursor-pointer hoverIcon textColor text-3xl p-2 borderRound" 

@@ -160,9 +160,7 @@ onBeforeMount(() => {
                 UserType.value = 'employee'
                 if(!isEmpAuthorizedFor(empPermissions.value , 'السلف و الخصومات' , UserType.value)){
                     localStorage.removeItem('SwimmingToken')
-                    console.log('not authorized');
-                    location.reload()
-                    push({path : '/login', query : currentRoute.value.query})
+                    push({path : '/login', query : {userType : 'employee'}})
                 }
                 getWorkers()
             })

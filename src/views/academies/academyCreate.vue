@@ -59,15 +59,13 @@ onBeforeMount(() => {
             employeeAuthorize().then((employee) => {
                 if(employee == false){
                     localStorage.removeItem('SwimmingToken')
-                    location.reload()
                     push({path : '/login', query : currentRoute.value.query})
                 }
                 empPermissions.value = employee.permissions
                 UserType.value = 'employee'
                 if(!isEmpAuthorizedFor(empPermissions.value , 'انشاء أكاديمية' , UserType.value)){
                     localStorage.removeItem('SwimmingToken')
-                    location.reload()
-                    push({path : '/login', query : currentRoute.value.query})
+                    push({path : '/login', query : {userType : 'employee'}})
                 }
             })
         }   

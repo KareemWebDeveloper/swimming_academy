@@ -364,15 +364,13 @@ onBeforeMount(() => {
             employeeAuthorize().then((employee) => {
                 if(employee == false){
                     localStorage.removeItem('SwimmingToken')
-                    location.reload()
                     push({path : '/login', query : currentRoute.value.query})
                 }
                 empPermissions.value = employee.permissions
                 UserType.value = 'employee'
                 if(!isEmpAuthorizedFor(empPermissions.value , 'تسجيل الحضور' , UserType.value)){
                     localStorage.removeItem('SwimmingToken')
-                    location.reload()
-                    push({path : '/login', query : currentRoute.value.query})
+                    push({path : '/login', query : {userType : 'employee'}})
                 }
                 getBranches()
                 getCurrentTime()        
@@ -526,13 +524,13 @@ onBeforeMount(() => {
                     <h3>تسجيل حضور المدربين</h3>
                     <span class="p-input-icon-left">
                         <i class="pi pi-search" />
-                        <InputText v-model="filters['global'].value" placeholder="بحث شامل" />
+                        <InputText v-model="coachesFilters['global'].value" placeholder="بحث شامل" />
                     </span>
                 </div>
             </template>
             <Column selectionMode="multiple" headerStyle="width: 3rem"></Column>
             <Column field="id" sortable  header="الكود"></Column>
-            <Column field="customer_name" sortable  header="اسم المدرب">
+            <Column field="name" sortable  header="اسم المدرب">
                 <template #body="slotProps">
                     <p>كابتن / {{ slotProps.data.name }} </p>
                 </template>

@@ -182,17 +182,13 @@ onBeforeMount(() => {
             employeeAuthorize().then((employee) => {
                 if(employee == false){
                     localStorage.removeItem('SwimmingToken')
-                    location.reload()
-                    console.log('not employee');
                     push({path : '/login', query : currentRoute.value.query})
                 }
                 empPermissions.value = employee.permissions
                 UserType.value = 'employee'
                 if(!isEmpAuthorizedFor(empPermissions.value , 'عرض الموظفين' , UserType.value)){
                     localStorage.removeItem('SwimmingToken')
-                    console.log('not authorized');
-                    location.reload()
-                    push({path : '/login', query : currentRoute.value.query})
+                    push({path : '/login', query : {userType : 'employee'}})
                 }
                 getEmployees()
                 getBranches()
@@ -241,7 +237,7 @@ const exportCSV = () => {
             <template #footer> 
                 <h2 style="color: black;" class="text-center">الصلاحيات</h2>
             <div class="flex align-items-center flex-wrap justify-content-center">
-                <div class="p-3 borderRound mx-2" style="color: #256029; background-color: #c8e6c9d3;" v-for="role in activeEmployee.roles">
+                <div class="p-3 borderRound m-2" style="color: #256029; background-color: #c8e6c9d3;" v-for="role in activeEmployee.roles">
                     <p>{{ role.role_name }}</p>
                 </div>
             </div>

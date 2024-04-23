@@ -16,7 +16,7 @@ import Calendar from 'primevue/calendar';
 
 const days = ['السبت' , 'الأحد' , 'الاثنين' , 'الثلاثاء' , 'الأربعاء' , 'الخميس' , 'الجمعة']
 const isFetched : any = ref(false);
-const updateLoading : any = ref(false);
+const attendancesCount : any = ref();
 const loading : any = ref(true);
 const isCustomerFetched = ref(false)
 const coach = ref()
@@ -66,6 +66,7 @@ const coachAuthorize = () => {
                 trainingSchedules.value.push(schedule) 
             });
         });
+        attendancesCount.value = attendances.value.length
         isCustomerFetched.value = true
         solveSchedulesConflicts()
         console.log(trainingSchedules.value);
@@ -115,6 +116,10 @@ console.log(filteredData.value);
 
 }
 
+const updateAttendancesCount = (value : any[]) => {
+    attendancesCount.value = value.length
+}
+
 onBeforeMount(() => {
     let token = localStorage.getItem('SwimmingToken');
     if (token) {      
@@ -155,7 +160,7 @@ onBeforeMount(() => {
             <h2 class="textColor text-center my-5">جدول الحضور</h2>
             <div class="fadein animation-duration-1000 animation-iteration-1">
                 <DataTable v-model:filters="filters" ref="dt"  stripedRows :value="attendances" paginator :rows="10"
-                 :rowsPerPageOptions="[10, 20, 50 , 100]" filterDisplay="menu" dataKey="id" removableSort
+                 :rowsPerPageOptions="[10, 20, 50 , 100]" filterDisplay="menu" dataKey="id" removableSort @value-change="updateAttendancesCount"
                   :globalFilterFields="['id', 'category_name']" tableStyle="min-width: 50rem">
                     <template #header>
                     </template>
@@ -182,7 +187,7 @@ onBeforeMount(() => {
                     <Column field="category.category_name" sortable  header="نوع التمرين" style="width: 20%;"></Column>
                         
                     <template #empty> <InlineMessage severity="info">لا يوجد حضور</InlineMessage></template>
-                    <template #footer> في المجموع هناك {{ attendances ? attendances.length : 0 }} حضور للتمارين </template>
+                    <template #footer> في المجموع هناك {{ attendancesCount }} حضور للتمارين </template>
                 </DataTable>
             </div>
         </div>
@@ -203,8 +208,9 @@ onBeforeMount(() => {
                         <h4 class="primaryColor">عدد ساعات العمل</h4>
                         <h4 class="text-green-500">{{ salary.hours_worked }} ساعات</h4>
                     </div>
-                    <h3 class="w-full text-white text-center mt-3">الفترة</h3>
-                    <h5 class="w-full text-white text-center mt-3"> <span v-if="salary.from_date">منذ {{ new Date(salary.from_date).toLocaleDateString() }} - </span> تم الصرف في : {{ new Date(salary.created_at).toLocaleDateString() }}</h5>
+                    <h3 class="w-full text-white text-center my-3">الفترة</h3>
+                    <h5 class="w-full text-white text-center mt-1" v-if="salary.from_date">منذ : {{ new Date(salary.from_date).toLocaleDateString() }}</h5>
+                    <h5 class="w-full text-white text-center mt-1"> تم الصرف في : {{ new Date(salary.created_at).toLocaleDateString() }}</h5>
                     <div class="flex w-full flex-column justify-content-center align-items-center">
                         <h5 v-if="salary.discount" class="text-red-500 mt-3">خصم : -{{ parseFloat(salary.discount).toFixed(2) }} ج.م</h5>
                         <h5 v-if="salary.bonus" class="text-green-500 mt-2">بونص : +{{ parseFloat(salary.bonus).toFixed(2) }} ج.م</h5>

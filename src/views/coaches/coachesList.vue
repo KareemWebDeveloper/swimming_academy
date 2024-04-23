@@ -230,17 +230,13 @@ onBeforeMount(() => {
             employeeAuthorize().then((employee) => {
                 if(employee == false){
                     localStorage.removeItem('SwimmingToken')
-                    location.reload()
-                    console.log('not employee');
                     push({path : '/login', query : currentRoute.value.query})
                 }
                 empPermissions.value = employee.permissions
                 UserType.value = 'employee'
                 if(!isEmpAuthorizedFor(empPermissions.value , 'عرض المدربين' , UserType.value)){
                     localStorage.removeItem('SwimmingToken')
-                    console.log('not authorized');
-                    location.reload()
-                    push({path : '/login', query : currentRoute.value.query})
+                    push({path : '/login', query : {userType : 'employee'}})
                 }
                 console.log(empPermissions.value);
                 getCoaches()

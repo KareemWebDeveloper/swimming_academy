@@ -66,9 +66,7 @@ onBeforeMount(() => {
                 UserType.value = 'employee'
                 if(!isEmpAuthorizedFor(empPermissions.value , 'انشاء و تعديل أنواع التمارين' , UserType.value)){
                     localStorage.removeItem('SwimmingToken')
-                    console.log('not authorized');
-                    location.reload()
-                    push({path : '/login', query : currentRoute.value.query})
+                    push({path : '/login', query : {userType : 'employee'}})
                 }
                 console.log(empPermissions.value);
             })

@@ -215,15 +215,13 @@ onBeforeMount(() => {
             employeeAuthorize().then((employee) => {
                 if(employee == false){
                     localStorage.removeItem('SwimmingToken')
-                    location.reload()
                     push({path : '/login', query : currentRoute.value.query})
                 }
                 empPermissions.value = employee.permissions
                 UserType.value = 'employee'
-                if(!isEmpAuthorizedFor(empPermissions.value , 'المرتجعات' , UserType.value)){
+                if(!isEmpAuthorizedFor(empPermissions.value , 'المرتجعات' , UserType.value) || !isEmpAuthorizedFor(empPermissions.value , 'تقرير المبيعات' , UserType.value)){
                     localStorage.removeItem('SwimmingToken')
-                    location.reload()
-                    push({path : '/login', query : currentRoute.value.query})
+                    push({path : '/login', query : {userType : 'employee'}})
                 }
                 getBranches()
                 getOrders()
@@ -329,7 +327,7 @@ const exportCSV = () => {
             </Column>
             <Column field="" header="تسجيل مرتجع">
                 <template #body="slotProps" >
-                    <span v-if="isEmpAuthorizedFor(empPermissions , 'المرتجعات' , UserType)" class="material-symbols-outlined cursor-pointer hoverIcon textColor text-3xl p-2 borderRound" 
+                    <span v-if="isEmpAuthorizedFor(empPermissions , 'تسجيل مرتجع' , UserType)" class="material-symbols-outlined cursor-pointer hoverIcon textColor text-3xl p-2 borderRound" 
                     @click="confirmDeletion($event , slotProps.data.id , slotProps.index)">
                         currency_exchange
                     </span>

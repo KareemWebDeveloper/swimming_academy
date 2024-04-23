@@ -18,6 +18,7 @@ import { useConfirm } from "primevue/useconfirm";
 import Dialog from 'primevue/dialog';
 import Calendar from 'primevue/calendar';
 import { isEmpAuthorizedFor } from '@/global-functions/isEmployeeAuthorizedFor';
+import Dropdown from 'primevue/dropdown';
 
 const confirm = useConfirm();
 
@@ -38,6 +39,8 @@ const ReportName = ref()
 const Revenues : any = ref([])
 const TotalRevenue : any = ref(0)
 
+const paymentsOptions = ref(['cash','installments','vodafone','instapay' ,'visa'])
+
 // breadCrumbs
 const breadCrumbs : any = ref([]);
 breadCrumbs.value = [
@@ -56,6 +59,7 @@ const filters = ref(
         academy_name: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }] },
         created_by: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }] },
         customer: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.CONTAINS }] },
+        type: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.EQUALS }] },
         // paid_date: { value: null, matchMode: FilterMatchMode.DATE_IS },
         paid_date: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.DATE_AFTER } , { value: null, matchMode: FilterMatchMode.DATE_BEFORE }] },
         id: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.EQUALS }] },
@@ -83,7 +87,7 @@ const getRevenues = (branchId : number) => {
                 paid_date : new Date(installment.updated_at),
                 subscription_date : new Date(installment.subscription.subscription_date),
                 expiration_date : new Date(installment.subscription.subscription_date).toLocaleDateString() + ' إلي ' +  new Date(installment.subscription.expiration_date).toLocaleDateString(),
-                type : 'تقسيط' ,
+                type : 'installments' ,
                 created_by : installment.subscription.created_by ,
                 branch : installment.subscription.branch.branch_name,
                 academy_name : installment.subscription.academy_name,
@@ -98,14 +102,14 @@ const getRevenues = (branchId : number) => {
                 subscription_date : new Date(subscription.subscription_date),
                 created_by : subscription.created_by,
                 expiration_date : new Date(subscription.subscription_date).toLocaleDateString() + ' إلي ' + new Date(subscription.expiration_date).toLocaleDateString(),
-                type : subscription.subscription_type == 'cash' ? 'كاش'  : subscription.subscription_type ,
+                type : subscription.subscription_type == 'cash' ? 'cash'  : subscription.subscription_type ,
                 branch : subscription.branch.branch_name,
                 customer : `${subscription.customer.customer_name} - ${subscription.customer.customer_phone}`,
                 academy_name : subscription.academy_name,
                 category_name : subscription.category_name,
             })
         });
-        calculateTotalRevenues()
+        updateTotalRevenues(Revenues.value)
         if(currentRoute.value.query.filter == 'installments'){
             filterInstallmentsOnly()
         }
@@ -173,64 +177,37 @@ const filterInstallmentsOnly = () => {
     TotalRevenue.value = totalRev
 }
 
-const calculateTotalRevenues = () => {
-    let tmp = Revenues.value
-    let hasNoFilters = true
-    let totalRev = 0
-    console.log(tmp);
-    
-    filters.value.paid_date.constraints.forEach((filter : any) => {
-        if(filter.value){
-            hasNoFilters = false
-            if(filter.matchMode == 'dateAfter'){
-                if(tmp.length > 0){
-                    tmp = tmp.filter((obj : any) => obj.paid_date > new Date(filter.value));
-                }
-            }
-            if(filter.matchMode == 'dateBefore'){
-                if(tmp.length > 0){
-                tmp = tmp.filter((obj : any) => obj.paid_date < new Date(filter.value));
-                }
-            }
-            if(filter.matchMode == 'dateIs'){
-                if(tmp.length > 0){
-                filter.value = new Date(filter.value)
-                filter.value.setHours(0, 0, 0, 0);
-                tmp = tmp.filter((obj : any) => {
-                    console.log(obj);
-                    console.log(obj.paid_date , 'from inside filter');
-                
-                    const objDate = new Date(obj.paid_date);
-                    objDate.setHours(0, 0, 0, 0); // Set time to midnight
-                    return objDate.getTime() == filter.value.getTime();
-                });
-            }
-            }
-            if(filter.matchMode == 'dateIsNot'){
-                if(tmp.length > 0){
-                filter.value = new Date(filter.value)
-                filter.value.setHours(0, 0, 0, 0);
-                tmp = tmp.filter((obj : any) => {
-                    const objDate = new Date(obj.paid_date);
-                    objDate.setHours(0, 0, 0, 0); // Set time to midnight
-                    return objDate.getTime() !== filter.value.getTime();
-                });
-                }
-            }
-        }
+function formatNumberWithComma(number : number) {
+  
+  // Convert the number to a string for manipulation
+  const numberString = number.toString();
+  
+  const digits = numberString.split(/[-+]/)[1] ? numberString.split(/[-+]/)[1].split('') : numberString.split('');
+
+  // Reverse the digits array for easier processing
+  digits.reverse();
+
+  // Insert commas after every 3rd digit (except the first 3)
+  for (let i = 3; i < digits.length; i += 4) {
+    digits.splice(i, 0, ',');
+  }
+
+  // Reverse the digits array back to the original order
+  digits.reverse();
+
+  // Join the digits array back into a string
+  const formattedNumber = digits.join('');
+
+  return formattedNumber;
+}
+
+const updateTotalRevenues = (value : any[]) => {
+    console.log(value);
+    let total = 0
+    value.forEach(element => {
+        total += parseFloat(element.amount as string)
     });
-    if(hasNoFilters){
-        Revenues.value.forEach((revenue : any) => {
-            totalRev += parseFloat(revenue.amount as string)
-        });
-        TotalRevenue.value = totalRev
-    }
-    else{
-        tmp.forEach((revenue : any) => {
-            totalRev += parseFloat(revenue.amount as string)
-        });
-        TotalRevenue.value = totalRev
-    }
+    TotalRevenue.value = formatNumberWithComma(total) 
 }
 
 const empPermissions = ref()
@@ -247,10 +224,10 @@ onBeforeMount(() => {
                 }
                 empPermissions.value = employee.permissions
                 UserType.value = 'employee'
-                if(!isEmpAuthorizedFor(empPermissions.value , 'الحسابات المالية' , UserType.value)){
+                if(!isEmpAuthorizedFor(empPermissions.value , 'تقرير الإيرادات' , UserType.value)){
                     localStorage.removeItem('SwimmingToken')
                     location.reload()
-                    push({path : '/login', query : currentRoute.value.query})
+                    push({path : '/login', query : {userType : 'employee'}})
                 }
                 if(currentRoute.value.query.branchId){
                     let branchId = {
@@ -316,7 +293,7 @@ const exportCSV = () => {
         </div>
         <successMsg v-if="deletedSuccessfully" class="fadeinright animation-duration-500 animation-iteration-1 my-4">تم الحذف بنجاح</successMsg>
             <DataTable v-model:filters="filters" :loading="!isFetched" ref="dt" :export-filename="ReportName" stripedRows :value="Revenues"
-             filterDisplay="menu" paginator :rows="10" :rowsPerPageOptions="[10, 20, 50 , 100]"
+             filterDisplay="menu" paginator :rows="10" :rowsPerPageOptions="[10, 20, 50 , 100]" @value-change="updateTotalRevenues"
              dataKey="id" removableSort :globalFilterFields="['academy_name' , 'amount' , 'branch' , 'customer' , 'created_by']" tableStyle="min-width: 50rem">
             <template #header>
                 <div class="flex flex-column lg:flex-row justify-content-between align-items-center">
@@ -342,7 +319,32 @@ const exportCSV = () => {
                     <p>{{ parseFloat(slotProps.data.amount).toFixed(2) }} ج.م</p>
                 </template>
             </Column>
-            <Column field="type"  header="طريقة الدفع" style="min-width : 9rem;"></Column>
+            <Column field="type"  header="طريقة الدفع" style="min-width : 9rem;">
+                <template #body="slotProps" >
+                    <p v-if="slotProps.data.type == 'cash'">كاش</p>
+                    <p v-if="slotProps.data.type == 'installments'">تقسيط</p>
+                    <p v-if="slotProps.data.type == 'vodafone'">فودافون كاش</p>
+                    <p v-if="slotProps.data.type == 'instapay'">انستا باي</p>
+                    <p v-if="slotProps.data.type == 'visa'">فيزا</p>
+                </template>
+                <template #filter="{ filterModel, filterCallback }">
+                    <Dropdown v-model="filterModel.value" @change="filterCallback()" :options="paymentsOptions" placeholder="اختر طريقة دفع" class="p-column-filter" style="min-width: 12rem" :showClear="true">
+                        <template #option="slotProps">
+                            <p v-if="slotProps.option == 'cash'">كاش</p>
+                            <p v-if="slotProps.option == 'vodafone'">فودافون كاش</p>
+                            <p v-if="slotProps.option == 'instapay'">انستا باي</p>
+                            <p v-if="slotProps.option == 'installments'">تقسيط</p>
+                            <p v-if="slotProps.option == 'visa'">فيزا</p>
+                        </template>
+                    </Dropdown>
+                </template>
+                <template #filterapply="{ filterCallback }">
+                    <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="تفعيل" />
+                </template>
+                <template #filterclear="{ filterCallback }">
+                    <Button type="button" @click="filterCallback()" class="mb-3 lg:mb-0 mx-2" label="الغاء" outlined />
+                </template>
+            </Column>
             <Column field="paid_date" filterField="paid_date" dataType="date" sortable  header="تاريخ الدفع" style="width: 22%;">
                 <template #body="slotProps" >
                     <p>{{ dateTimeFormatter.format(slotProps.data.paid_date) }}</p>
@@ -351,10 +353,10 @@ const exportCSV = () => {
                     <Calendar v-model="filterModel.value" dateFormat="mm/dd/yy" placeholder="أختر التاريخ " mask="99/99/9999" />
                 </template>
                 <template #filterapply="{ filterCallback }">
-                    <Button type="button" @click="filterCallback(); calculateTotalRevenues()" class="mb-3 lg:mb-0 mx-2" label="تفعيل" />
+                    <Button type="button" @click="filterCallback();" class="mb-3 lg:mb-0 mx-2" label="تفعيل" />
                 </template>
                 <template #filterclear="{ filterCallback }">
-                    <Button type="button" @click="filterCallback(); calculateTotalRevenues()" class="mb-3 lg:mb-0 mx-2" label="الغاء" outlined />
+                    <Button type="button" @click="filterCallback();" class="mb-3 lg:mb-0 mx-2" label="الغاء" outlined />
                 </template>
             </Column>
             <Column field="created_by" sortable  header="المسجل">
@@ -400,7 +402,7 @@ const exportCSV = () => {
             <template #footer>
                 <div class="py-2">
                     <h4 class="textColor text-center mb-3">في المجموع هناك {{ Revenues ? Revenues.length : 0 }} مصادر ايرادات </h4>
-                    <h3 class="text-center textColor">اجمالي الايرادات : <span style="background: rgba(0, 128, 0, 0.932);" class="p-1 px-3 borderRound">{{ TotalRevenue.toFixed(2) }} ج.م</span></h3>
+                    <h3 class="text-center textColor">اجمالي الايرادات : <span style="background: rgba(0, 128, 0, 0.932);" class="p-1 px-3 borderRound">{{ TotalRevenue }} ج.م</span></h3>
                 </div>
             </template>
             <!-- <template #footer> 

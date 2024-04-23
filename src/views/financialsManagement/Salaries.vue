@@ -37,6 +37,7 @@ const isPayingSalary = ref(false)
 const ReportName = ref()
 const ExpectedSalaries : any = ref([])
 const TotalExpectedSalaries : any = ref(0)
+const ExpectedSalariesCount : any = ref(0)
 const coachSalaryInfo : any = ref()
 const activeCoachInfo : any = ref()
 
@@ -142,7 +143,7 @@ const getExpectedSalaries = () => {
                 expected_salary : parseFloat(employee.salary),
             })
         });
-        calculateTotalExpectedSalaries()
+        updateTotalSalaries(ExpectedSalaries.value)
         isTargetBranchReportLoading.value = false
         chooseTargetBranch.value = false
         isFetched.value = true
@@ -152,6 +153,42 @@ const getExpectedSalaries = () => {
         console.log(err);
     });
 }
+
+
+function formatNumberWithComma(number : number) {
+  
+  // Convert the number to a string for manipulation
+  const numberString = number.toString();
+  
+  const digits = numberString.split(/[-+]/)[1] ? numberString.split(/[-+]/)[1].split('') : numberString.split('');
+
+  // Reverse the digits array for easier processing
+  digits.reverse();
+
+  // Insert commas after every 3rd digit (except the first 3)
+  for (let i = 3; i < digits.length; i += 4) {
+    digits.splice(i, 0, ',');
+  }
+
+  // Reverse the digits array back to the original order
+  digits.reverse();
+
+  // Join the digits array back into a string
+  const formattedNumber = digits.join('');
+
+  return formattedNumber;
+}
+
+const updateTotalSalaries = (value : any[]) => {
+    console.log(value);
+    let total = 0
+    value.forEach(element => {
+        total += parseFloat(element.expected_salary as string)
+    });
+    ExpectedSalariesCount.value = value.length
+    TotalExpectedSalaries.value = formatNumberWithComma(total) 
+}
+
 
 const branchNames : any = []
 const branches : any = ref([{label : 'كل الفروع' , value : 0}])
@@ -221,65 +258,6 @@ const calculateFinalSalary = () => {
 
 const dt = ref();
 
-const calculateTotalExpectedSalaries = () => {
-    let tmp = ExpectedSalaries.value
-    let hasNoFilters = true
-    let totalExp = 0
-    console.log(tmp);
-    
-    filters.value.last_paid_date.constraints.forEach((filter : any) => {
-        if(filter.value){
-            hasNoFilters = false
-            if(filter.matchMode == 'dateAfter'){
-                if(tmp.length > 0){
-                    tmp = tmp.filter((obj : any) => obj.last_paid_date > new Date(filter.value));
-                }
-            }
-            if(filter.matchMode == 'dateBefore'){
-                if(tmp.length > 0){
-                tmp = tmp.filter((obj : any) => obj.last_paid_date < new Date(filter.value));
-                }
-            }
-            if(filter.matchMode == 'dateIs'){
-                if(tmp.length > 0){
-                filter.value = new Date(filter.value)
-                filter.value.setHours(0, 0, 0, 0);
-                tmp = tmp.filter((obj : any) => {
-                    console.log(obj);
-                    console.log(obj.last_paid_date , 'from inside filter');
-                
-                    const objDate = new Date(obj.last_paid_date);
-                    objDate.setHours(0, 0, 0, 0); // Set time to midnight
-                    return objDate.getTime() == filter.value.getTime();
-                });
-            }
-            }
-            if(filter.matchMode == 'dateIsNot'){
-                if(tmp.length > 0){
-                filter.value = new Date(filter.value)
-                filter.value.setHours(0, 0, 0, 0);
-                tmp = tmp.filter((obj : any) => {
-                    const objDate = new Date(obj.last_paid_date);
-                    objDate.setHours(0, 0, 0, 0); // Set time to midnight
-                    return objDate.getTime() !== filter.value.getTime();
-                });
-                }
-            }
-        }
-    });
-    if(hasNoFilters){
-        ExpectedSalaries.value.forEach((expense : any) => {
-            totalExp += parseFloat(expense.expected_salary as string)
-        });
-        TotalExpectedSalaries.value = totalExp
-    }
-    else{
-        tmp.forEach((expense : any) => {
-            totalExp += parseFloat(expense.cost as string)
-        });
-        TotalExpectedSalaries.value = totalExp
-    }
-}
 const empPermissions = ref()
 type userType = 'admin' | 'employee' 
 const UserType : Ref<userType> = ref('admin')
@@ -289,14 +267,12 @@ onBeforeMount(() => {
             employeeAuthorize().then((employee) => {
                 if(employee == false){
                     localStorage.removeItem('SwimmingToken')
-                    location.reload()
                     push({path : '/login'})
                 }
                 empPermissions.value = employee.permissions
                 UserType.value = 'employee'
-                if(!isEmpAuthorizedFor(empPermissions.value , 'الحسابات المالية' , UserType.value)){
+                if(!isEmpAuthorizedFor(empPermissions.value , 'تقرير المرتبات' , UserType.value)){
                     localStorage.removeItem('SwimmingToken')
-                    location.reload()
                     push({path : '/login'})
                 }
                 getBranches()
@@ -405,7 +381,7 @@ const exportCSV = () => {
         <successMsg v-if="paidSuccessfully" class="fadeinright animation-duration-500 animation-iteration-1 my-4">تم الصرف بنجاح</successMsg>
             <h2 class="text-center my-3 text-white">تقرير المرتبات</h2>
             <DataTable v-model:filters="filters" ref="dt" :export-filename="ReportName" stripedRows :value="ExpectedSalaries" :loading="!isFetched"
-             filterDisplay="menu" paginator :rows="10" :rowsPerPageOptions="[10, 20, 50 , 100]"
+             filterDisplay="menu" paginator :rows="10" :rowsPerPageOptions="[10, 20, 50 , 100]" @value-change="updateTotalSalaries"
              dataKey="id" removableSort :globalFilterFields="['name' , 'id' , 'job' , 'expected_salary']" tableStyle="min-width: 50rem">
             <template #header>
                 <div class="flex flex-column lg:flex-row justify-content-between align-items-center">
@@ -463,15 +439,6 @@ const exportCSV = () => {
                     <p v-if="slotProps.data.last_paid_date == 'لم يصرف له مرتب'">{{ slotProps.data.last_paid_date }}</p>
                     <p v-else>{{ dateTimeFormatter.format(new Date(slotProps.data.last_paid_date)) }}</p>
                 </template>
-                <!-- <template #filter="{ filterModel }">
-                    <Calendar v-model="filterModel.value" dateFormat="mm/dd/yy" placeholder="أختر التاريخ " mask="99/99/9999" />
-                </template>
-                <template #filterapply="{ filterCallback }">
-                    <Button type="button" @click="filterCallback(); calculateTotalExpectedSalaries()" class="mb-3 lg:mb-0 mx-2" label="تفعيل" />
-                </template>
-                <template #filterclear="{ filterCallback }">
-                    <Button type="button" @click="filterCallback(); calculateTotalExpectedSalaries()" class="mb-3 lg:mb-0 mx-2" label="الغاء" outlined />
-                </template> -->
             </Column>
             <Column field="expected_salary" sortable header="المرتب" style="min-width: 12rem;">
                 <template #body="slotProps" >
@@ -481,13 +448,13 @@ const exportCSV = () => {
             </Column>
             <Column  header="صرف">
                 <template #body="slotProps">
-                    <div v-if="slotProps.data.job == 'موظف'" class="flex align-items-center">
+                    <div v-if="slotProps.data.job == 'موظف' && isEmpAuthorizedFor(empPermissions , 'صرف المرتبات' , UserType)" class="flex align-items-center">
                         <span class="material-symbols-outlined cursor-pointer hoverIcon textColor text-4xl p-2 borderRound" 
                         @click="confirmPayment($event , slotProps.data.id)">
                         finance_chip
                         </span>
                     </div>
-                    <div v-if="slotProps.data.job == 'مدرب'" class="flex align-items-center">
+                    <div v-if="slotProps.data.job == 'مدرب' && isEmpAuthorizedFor(empPermissions , 'صرف المرتبات' , UserType)" class="flex align-items-center">
                         <span v-if="!isDialogLoading" class="material-symbols-outlined cursor-pointer hoverIcon textColor text-4xl p-2 borderRound" 
                         @click="activeCoachInfo = slotProps.data; getCoachAttendances(slotProps.data.id);">
                         finance_chip
@@ -506,8 +473,8 @@ const exportCSV = () => {
             </template>
             <template #footer>
                 <div class="py-2">
-                    <h4 class="textColor text-center mb-3">في المجموع هناك {{ ExpectedSalaries ? ExpectedSalaries.length : 0 }} مرتبات </h4>
-                    <h3 class="text-center textColor">اجمالي المرتبات : <span style="background: rgba(0, 128, 0, 0.932);" class="p-1 px-3 borderRound">{{ TotalExpectedSalaries.toFixed(2) }} ج.م</span></h3>
+                    <h4 class="textColor text-center mb-3">في المجموع هناك {{ ExpectedSalariesCount }} مرتبات </h4>
+                    <h3 class="text-center textColor">اجمالي المرتبات : <span style="background: rgba(0, 128, 0, 0.932);" class="p-1 px-3 borderRound">{{ TotalExpectedSalaries }} ج.م</span></h3>
                 </div>
             </template>
             </DataTable>

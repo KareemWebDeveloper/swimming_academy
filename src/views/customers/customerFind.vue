@@ -9,6 +9,7 @@ import Dialog from 'primevue/dialog';
 import Breadcrumb from 'primevue/breadcrumb';
 import Tag from 'primevue/tag';
 const { push , currentRoute } = useRouter();
+import { isEmpAuthorizedFor } from '@/global-functions/isEmployeeAuthorizedFor';
 import successMsg from '../../components/successMsg.vue';
 import TreeSelect from 'primevue/treeselect';
 import DataTable from 'primevue/datatable';
@@ -326,6 +327,10 @@ onBeforeMount(() => {
                 }
                 empPermissions.value = employee.permissions
                 UserType.value = 'employee'
+                if(!isEmpAuthorizedFor(empPermissions.value , 'عرض المشتركين' , UserType.value)){
+                    localStorage.removeItem('SwimmingToken')
+                    push({path : '/login', query : {userType : 'employee'}})
+                }
                 getCustomerDetailes()    
                 getLevelsTree()  
             })
@@ -562,7 +567,7 @@ onBeforeMount(() => {
                 </div>
                 <p class="textColor">{{ customerDetails.customer.customer_email }}</p>
             </div>
-            <Button type="button" class="mb-3 px-5 lg:mb-0 mx-2 mt-3" @click="push({path : `/customer/update/${customerDetails.customer.id}` , 
+            <Button v-if="isEmpAuthorizedFor(empPermissions , 'تجديد و تسجيل اشتراكات' , UserType)" type="button" class="mb-3 px-5 lg:mb-0 mx-2 mt-3" @click="push({path : `/customer/update/${customerDetails.customer.id}` , 
             query : {isPrivate : customerDetails.is_private ? 'true' : 'false'} })" label="تعديل" />
         </div>
         
@@ -710,11 +715,11 @@ onBeforeMount(() => {
                 </div>
                 <p class="textColor">{{ customerDetails.daysLeft }} يوم</p>
             </div>
-            <Button type="button" class="mb-3 px-5 lg:mb-0 mx-2 mt-3" label="تعديل"
+            <Button v-if="isEmpAuthorizedFor(empPermissions , 'تجديد و تسجيل اشتراكات' , UserType)" type="button" class="mb-3 px-5 lg:mb-0 mx-2 mt-3" label="تعديل"
              @click="push({path : `/customer/update/${customerDetails.customer.id}` , 
              query : {updateSubscription : 'true' , isPrivate : customerDetails.is_private ? 'true' : 'false'} })" />
         </div>
-        <div>
+        <div v-if="isEmpAuthorizedFor(empPermissions , 'تجميد الاشتراكات - فريز' , UserType)">
             <h3 class="flex text-right sm:text-center mb-2 mt-5 m-auto textColor">تجميد الاشتراك</h3>
             <div class="p-3 py-5 bg-card borderRound ">
                 <div class="flex flex-column md:flex-row align-items-center my-2" :class="{'justify-content-between' : customerDetails.isfrozen || daysLeftForFreezeStart , 'justify-content-center' : !customerDetails.isfrozen}">
@@ -839,7 +844,7 @@ onBeforeMount(() => {
             class="mb-3 px-5 w-6 lg:mb-0 m-auto" @click="isPenultimateSubscriptionVisible = true" label="تفاصيل اخر اشتراك" />
             <h4 v-if="PenultimateSubscription.length == 0 || PenultimateSubscription.id == SubscriptionId" class="text-center" style="color: rgba(255, 0, 0, 0.867);">ليس له اشتراكات سابقة</h4>
         </div>
-        <div class="m-auto my-3 w-full flex justify-content-center flex-column">
+        <div v-if="isEmpAuthorizedFor(empPermissions , 'تجديد و تسجيل اشتراكات' , UserType)" class="m-auto my-3 w-full flex justify-content-center flex-column">
             <Button type="button" :disabled="false"
             class="mb-3 px-5 w-6 lg:mb-0 m-auto" @click="subscriptionUpgrade" label="تجديد الاشتراك" />
         </div>
@@ -882,7 +887,7 @@ onBeforeMount(() => {
                         </div>
                     </div>
                 </div>
-                <Button type="button" class="mb-3 px-5 lg:mb-0 mx-2 mt-3" label="تعديل"
+                <Button v-if="isEmpAuthorizedFor(empPermissions , 'تجديد و تسجيل اشتراكات' , UserType)" type="button" class="mb-3 px-5 lg:mb-0 mx-2 mt-3" label="تعديل"
                  @click="push({path : `/customer/update/${customerDetails.customer.id}` , 
                  query : {updateSubscription : 'true' , isPrivate : customerDetails.is_private ? 'true' : 'false'} })" />
             </div>

@@ -175,15 +175,13 @@ onBeforeMount(() => {
             employeeAuthorize().then((employee) => {
                 if(employee == false){
                     localStorage.removeItem('SwimmingToken')
-                    location.reload()
                     push({path : '/login', query : currentRoute.value.query})
                 }
                 empPermissions.value = employee.permissions
                 UserType.value = 'employee'
-                if(!isEmpAuthorizedFor(empPermissions.value , 'عرض الفروع' , UserType.value)){
+                if(!isEmpAuthorizedFor(empPermissions.value , 'عرض الأكاديميات' , UserType.value)){
                     localStorage.removeItem('SwimmingToken')
-                    location.reload()
-                    push({path : '/login', query : currentRoute.value.query})
+                    push({path : '/login', query : {userType : 'employee'}})
                 }
                 console.log(empPermissions.value);
                 getAcademies()
@@ -273,7 +271,7 @@ const exportCSV = () => {
             <div class="flex flex-column lg:flex-row justify-content-between align-items-center">
                 <div class="flex align-items-center">
                     <Button v-if="isEmpAuthorizedFor(empPermissions , 'انشاء أكاديمية' , UserType)" type="button" class="mb-3 lg:mb-0 mx-2" @click="push('/academies/create')" label="انشاء أكاديمية" />
-                    <Button v-if="isEmpAuthorizedFor(empPermissions , 'انشاء أكاديمية' , UserType)" type="button" @click="bulkDelete" :disabled="selectedAcademies.length == 0" severity="danger" class="mb-3 lg:mb-0 mx-2" label="حذف المحدد" />
+                    <Button v-if="isEmpAuthorizedFor(empPermissions , 'تعديل الأكاديميات' , UserType)" type="button" @click="bulkDelete" :disabled="selectedAcademies.length == 0" severity="danger" class="mb-3 lg:mb-0 mx-2" label="حذف المحدد" />
                 </div>
                 <h3 class="hidden md:my-2 lg:my-0 md:flex">الأكاديميات</h3>
                 <span class="p-input-icon-left">
@@ -294,11 +292,11 @@ const exportCSV = () => {
         <Column  header="تعديل" style="width: 14%;">
             <template #body="slotProps">
                 <div class="flex align-items-center">
-                <span v-if="isEmpAuthorizedFor(empPermissions , 'انشاء أكاديمية' , UserType)" class="material-symbols-outlined cursor-pointer hoverIcon textColor text-3xl p-2 borderRound" 
+                <span v-if="isEmpAuthorizedFor(empPermissions , 'تعديل الأكاديميات' , UserType)" class="material-symbols-outlined cursor-pointer hoverIcon textColor text-3xl p-2 borderRound" 
                     @click="selectedAcademies = [{id : slotProps.data.id}]; confirmDeletion($event)">
                     delete_forever
                 </span>
-                <span v-if="isEmpAuthorizedFor(empPermissions , 'انشاء أكاديمية' , UserType)" 
+                <span v-if="isEmpAuthorizedFor(empPermissions , 'تعديل الأكاديميات' , UserType)" 
                 @click="isUpdateFormDialogVisible = true; activeAcademy = slotProps.data" class="material-symbols-outlined cursor-pointer hoverIcon mx-2 textColor text-3xl p-2 borderRound">
                     edit
                 </span>

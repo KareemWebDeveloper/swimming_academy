@@ -159,8 +159,7 @@ onBeforeMount(() => {
                 UserType.value = 'employee'
                 if(!isEmpAuthorizedFor(empPermissions.value , 'المستويات' , UserType.value)){
                     localStorage.removeItem('SwimmingToken')
-                    location.reload()
-                    push({path : '/login', query : currentRoute.value.query})
+                    push({path : '/login', query : {userType : 'employee'}})
                 }
                 getLevels()
             })

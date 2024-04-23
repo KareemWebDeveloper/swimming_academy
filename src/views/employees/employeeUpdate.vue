@@ -79,7 +79,12 @@ const getBranches = () => {
 const getRoles = () => {
     axios.get('http://127.0.0.1:8000/api/roles').then((result) => {
         console.log(result.data);
-        result.data.roles.forEach((role : any) => {
+        const sortedRoles = result.data.roles.sort((a : any, b : any) => {
+            const roleNameA = a.role_name.toLowerCase();
+            const roleNameB = b.role_name.toLowerCase();
+            return roleNameA.localeCompare(roleNameB);
+        });
+        sortedRoles.forEach((role : any) => {
             Roles.value.push({label : role.role_name , value : role.id})
         });
         isRolesFetched.value = true
@@ -118,17 +123,13 @@ onBeforeMount(() => {
             employeeAuthorize().then((employee) => {
                 if(employee == false){
                     localStorage.removeItem('SwimmingToken')
-                    location.reload()
-                    console.log('not employee');
                     push({path : '/login', query : currentRoute.value.query})
                 }
                 empPermissions.value = employee.permissions
                 UserType.value = 'employee'
                 if(!isEmpAuthorizedFor(empPermissions.value , 'تسجيل و تعديل الموظفين' , UserType.value)){
                     localStorage.removeItem('SwimmingToken')
-                    console.log('not authorized');
-                    location.reload()
-                    push({path : '/login', query : currentRoute.value.query})
+                    push({path : '/login', query : {userType : 'employee'}})
                 }
                 console.log(empPermissions.value);
                 getEmployeeDetails()
@@ -235,7 +236,7 @@ onBeforeMount(() => {
                         <div class="flex align-items-center">
                             <label for="address" class="px-3 py-1 text-white text-sm">الأدوار المتاحة</label>
                         </div>
-                        <FormKit type="dropdown" name="roleIds" label="الأدوار" placeholder="اختر الأدوار التي سيقوم بها الموظف" :options="Roles" multiple />
+                        <FormKit type="autocomplete" :close-on-select="false" name="roleIds" label="الأدوار" placeholder="اختر الأدوار التي سيقوم بها الموظف" :options="Roles" multiple />
                     </div>
                 </div>
                 <Button type="submit" class="submitBtn" label="تسجيل" :loading="isLoading" />
