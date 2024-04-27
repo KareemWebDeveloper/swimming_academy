@@ -100,14 +100,14 @@ const options = {
     // hour: 'numeric',
     // minute: 'numeric',
     // hour12: true,
-    timeZone: 'Africa/Cairo',
+    timeZone: 'Asia/Dubai',
     locale: 'ar'
 };
 
 const dateTimeFormatter = new Intl.DateTimeFormat('ar', options);
 
 const getCustomers = () => {
-    axios.get('http://127.0.0.1:8000/api/customersReservedOnly').then((result) => {
+    axios.get('https://akademia.website/api/customersReservedOnly').then((result) => {
         console.log(result.data);
         customers.value = result.data.customers
         isCustomersFetched.value = true
@@ -120,7 +120,7 @@ const getCustomers = () => {
 }
 
 const getBranches = () => {
-    axios.get('http://127.0.0.1:8000/api/branches').then((result) => {
+    axios.get('https://akademia.website/api/branches').then((result) => {
         console.log(result.data);
         result.data.branches.forEach((branch : any) => {
             branches.value.push(branch.branch_name)
@@ -148,7 +148,7 @@ const bulkDelete = (customerId : number) => {
     let req : any = {
         customer_ids : customers_ids
     }
-    axios.post('http://127.0.0.1:8000/api/customerBulkDelete', req).then((result) => {
+    axios.post('https://akademia.website/api/customerBulkDelete', req).then((result) => {
         console.log(result);
         deletedSuccessfully.value = true
         isFailedDeletionDialogVisible.value = false

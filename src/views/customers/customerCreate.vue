@@ -77,7 +77,7 @@ const createCustomer = (req : any) => {
     if(isReservationOnly.value){
         customerCreateReq = req
     }
-    axios.post('http://127.0.0.1:8000/api/createCustomer' , customerCreateReq).then((result) => {
+    axios.post('https://akademia.website/api/createCustomer' , customerCreateReq).then((result) => {
         createdCustomer.value = result.data.customer
         localStorage.setItem('waitingForSubscription' , JSON.stringify(result.data.customer))
         console.log(localStorage.getItem('waitingForSubscription'));
@@ -137,7 +137,7 @@ const openSubscriptionForm = (req : any) => {
         createCustomer(req)
         return
     }
-    axios.post('http://127.0.0.1:8000/api/validateCustomer' , req).then((result) => {
+    axios.post('https://akademia.website/api/validateCustomer' , req).then((result) => {
         if(result.data.validation){
             isLoading.value = false
             isErrorReturned.value = false
@@ -169,7 +169,7 @@ const openSubscriptionForm = (req : any) => {
 }
 
 const getBranches = () => {
-    axios.get('http://127.0.0.1:8000/api/branches').then((result) => {
+    axios.get('https://akademia.website/api/branches').then((result) => {
         console.log(result.data);
         allBranches.value = result.data.branches
         result.data.branches.forEach((branch : any) => {
@@ -192,7 +192,7 @@ const getBranches = () => {
 
 const getAcademies = () => {
     return new Promise<any[]>((resolve) => {
-    axios.get(`http://127.0.0.1:8000/api/academiesOfBranch/${subscriptionFields.value.branch_id}`).then((result) => {
+    axios.get(`https://akademia.website/api/academiesOfBranch/${subscriptionFields.value.branch_id}`).then((result) => {
         console.log(result.data);
         result.data.academies.forEach((academy : any) => {
             allAcademies.value.push({label : academy.academy_name , value : academy.id})
@@ -206,7 +206,7 @@ const getAcademies = () => {
 
 const coachesOptions = () => {
     return new Promise<any[]>((resolve) => {
-        axios.get(`http://127.0.0.1:8000/api/coachesOfBranch/${subscriptionFields.value.branch_id}`).then((result) => {
+        axios.get(`https://akademia.website/api/coachesOfBranch/${subscriptionFields.value.branch_id}`).then((result) => {
         console.log(result.data);
         coaches.value = []
         result.data.coaches.forEach((coach : any) => {
@@ -218,7 +218,7 @@ const coachesOptions = () => {
 }
 const categoriesOptions = () => {
     return new Promise<any[]>((resolve) => {
-        axios.get(`http://127.0.0.1:8000/api/categoriesOfBranch/${subscriptionFields.value.branch_id}`).then((result) => {
+        axios.get(`https://akademia.website/api/categoriesOfBranch/${subscriptionFields.value.branch_id}`).then((result) => {
         console.log(result.data);
         categories.value = []
         result.data.categories.forEach((category : any) => {
@@ -230,7 +230,7 @@ const categoriesOptions = () => {
 }
 const workingDaysOptions = () => {
     return new Promise<any[]>((resolve) => {
-        axios.get(`http://127.0.0.1:8000/api/branch/workingDays/${subscriptionFields.value.branch_id}`).then((result) => {
+        axios.get(`https://akademia.website/api/branch/workingDays/${subscriptionFields.value.branch_id}`).then((result) => {
         console.log(result.data);
         workingSchedule.value = result.data.workingDays
         workingDays.value = []
@@ -271,7 +271,7 @@ const createSubscription = (customerId : number) => {
         req.installments = installments.value.installments
     }
     console.log(req);
-    axios.post('http://127.0.0.1:8000/api/createSubscription' , req).then((result) => {
+    axios.post('https://akademia.website/api/createSubscription' , req).then((result) => {
         createdSubscription.value = result.data.subscription
         createdSubscription.value.customer_name = result.data.customer.customer_name
         isSubscriptionLoading.value = false
@@ -419,7 +419,7 @@ const fillBranchAndAcademy = (req : any) => {
 }
 
 const getCustomers = () => {
-    axios.get('http://127.0.0.1:8000/api/customersInputList').then((result) => {
+    axios.get('https://akademia.website/api/customersInputList').then((result) => {
         console.log(result.data);
         result.data.customers.forEach((customer : any) => {
             customers.value.push({label : `${customer.customer_name} - ${customer.customer_phone}` ,
@@ -608,7 +608,7 @@ onBeforeMount(() => {
                         <div class="flex align-items-center">
                             <label for="mail" class="px-3 py-1 text-white text-sm">البريد الالكتروني</label>
                         </div>
-                        <FormKit prefix-icon="email" id="mail" type="email" label="البريد الالكتروني" placeholder="أدخل البريد الالكتروني" name="customer_email" validation="required|email" />
+                        <FormKit prefix-icon="email" id="mail" type="email" label="البريد الالكتروني" placeholder="أدخل البريد الالكتروني" name="customer_email" validation="email" />
                     </div>
                     <div class="mt-3 col-12 md:col-6">
                         <div class="flex align-items-center">
@@ -633,14 +633,14 @@ onBeforeMount(() => {
                         <div class="flex align-items-center">
                             <label for="job" class="px-3 py-1 text-white text-sm">الوظيفة</label>
                         </div>
-                        <FormKit prefix-icon="text" id="job" type="text" label="الوظيفة" placeholder="أدخل وظيفة المشترك " name="job" validation="required" />
+                        <FormKit prefix-icon="text" id="job" type="text" label="الوظيفة" placeholder="أدخل وظيفة المشترك " name="job" validation="" />
                     </div>
                     <div class="col-12">
                         <div class="flex align-items-center">
                             <label v-if="!isSemiPrivateSubscription" for="address" class="px-3 py-1 text-white text-sm">عنوان المشترك</label>
                             <label v-else for="address" class="px-3 py-1 text-white text-sm">عنوان أحد المشتركين</label>
                         </div>
-                        <FormKit prefix-icon="text" id="address" type="textarea" label="العنوان" placeholder="أدخل عنوان " name="customer_address" validation="required|length:3" />
+                        <FormKit prefix-icon="text" id="address" type="textarea" label="العنوان" placeholder="أدخل عنوان " name="customer_address" validation="length:3" />
                     </div>
                     <div v-if="!isSemiPrivateSubscription" class="col-12">
                         <div class="flex align-items-center">

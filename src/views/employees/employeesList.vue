@@ -90,14 +90,14 @@ const options = {
     hour: 'numeric',
     minute: 'numeric',
     hour12: true,
-    timeZone: 'Africa/Cairo',
+    timeZone: 'Asia/Dubai',
     locale: 'ar'
 };
 
 const dateTimeFormatter = new Intl.DateTimeFormat('ar', options);
 
 const getEmployees = () => {
-    axios.get('http://127.0.0.1:8000/api/employees').then((result) => {
+    axios.get('https://akademia.website/api/employees').then((result) => {
         console.log(result.data);
         employees.value = result.data.employees
         isEmployeesFetched.value = true
@@ -110,7 +110,7 @@ const getEmployees = () => {
 }
 
 const getBranches = () => {
-    axios.get('http://127.0.0.1:8000/api/branches').then((result) => {
+    axios.get('https://akademia.website/api/branches').then((result) => {
         console.log(result.data);
         result.data.branches.forEach((branch : any) => {
             branches.value.push({label : branch.branch_name , value : branch.id})
@@ -124,7 +124,7 @@ const getBranches = () => {
 const getEmployeeDetails = (employeeId : number) => {
     isEmployeeFetched.value = false
     isDialogVisible.value = true
-    axios.get(`http://127.0.0.1:8000/api/employee/${employeeId}`).then((result) => {
+    axios.get(`https://akademia.website/api/employee/${employeeId}`).then((result) => {
         activeEmployee.value = result.data.employee
         selectedBranches.value = {branchIds : []}
         result.data.employee.branches.forEach((branch : any) => {
@@ -140,7 +140,7 @@ const getEmployeeDetails = (employeeId : number) => {
 
 const attachBranches = (req : any) => {
     isAttachBranchLoading.value = true
-    axios.put(`http://127.0.0.1:8000/api/employee/attachBranches/${activeEmployee.value.id}` , req).then((result) => {
+    axios.put(`https://akademia.website/api/employee/attachBranches/${activeEmployee.value.id}` , req).then((result) => {
         console.log(result);
         isAttachBranchLoading.value = false
         isEmployeeFetched.value = false
@@ -160,7 +160,7 @@ const bulkDelete = () => {
     let req : any = {
         employees_ids : employees_ids
     }
-    axios.post('http://127.0.0.1:8000/api/employeeBulkDelete', req).then((result) => {
+    axios.post('https://akademia.website/api/employeeBulkDelete', req).then((result) => {
         console.log(result);
         deletedSuccessfully.value = true
         selectedCoaches.value = []

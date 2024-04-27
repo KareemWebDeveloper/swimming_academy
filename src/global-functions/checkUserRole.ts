@@ -4,7 +4,7 @@ export async function adminAuthorize(): Promise<boolean> {
   if (token) {
     axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
     try {
-      let admin : any = await axios.post("http://127.0.0.1:8000/api/adminAuthorize");
+      let admin : any = await axios.post("https://akademia.website/api/adminAuthorize");
       localStorage.setItem('user_info' , JSON.stringify(admin.data.user))
       return true;
     } catch (err) {

@@ -85,13 +85,13 @@ const options = {
     hour: 'numeric',
     minute: 'numeric',
     hour12: true,
-    timeZone: 'Africa/Cairo',
+    timeZone: 'Asia/Dubai',
     locale: 'ar'
     };
 const dateTimeFormatter = new Intl.DateTimeFormat('ar', options);
 
 const getAcademies = () => {
-    axios.get('http://127.0.0.1:8000/api/academies').then((result) => {
+    axios.get('https://akademia.website/api/academies').then((result) => {
         console.log(result.data);
         academies.value = result.data.academies
         isFetched.value = true
@@ -106,7 +106,7 @@ const getAcademies = () => {
 const getAcademyDetails = (academyId : number) => {
     isAcademyFetched.value = false
     isDialogVisible.value = true
-    axios.get(`http://127.0.0.1:8000/api/academy/${academyId}`).then((result) => {
+    axios.get(`https://akademia.website/api/academy/${academyId}`).then((result) => {
         activeAcademy.value = result.data.academy
         activeAcademy.value.activeSubscriptions = result.data.activeSubscriptions
         isAcademyFetched.value = true
@@ -117,7 +117,7 @@ const getAcademyDetails = (academyId : number) => {
 
 const updateAcademy = (req : any) => {
     updateLoading.value = true
-    axios.put(`http://127.0.0.1:8000/api/academy/update/${activeAcademy.value.id}`, req).then((result) => {
+    axios.put(`https://akademia.website/api/academy/update/${activeAcademy.value.id}`, req).then((result) => {
         updateLoading.value = false
         updatedSuccessfully.value = true
         isErrorReturned.value = false
@@ -147,7 +147,7 @@ const bulkDelete = () => {
     let req : any = {
         academy_ids : academy_ids
     }
-    axios.post('http://127.0.0.1:8000/api/academyBulkDelete', req ).then((result) => {
+    axios.post('https://akademia.website/api/academyBulkDelete', req ).then((result) => {
         console.log(result);
         deletedSuccessfully.value = true
         isErrorReturned.value = false

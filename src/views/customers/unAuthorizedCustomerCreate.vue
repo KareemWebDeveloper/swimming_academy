@@ -30,7 +30,7 @@ const createCustomer = (req : any) => {
     req.customer_name = req.fname + ' ' + req.sname + ' ' + req.thirdName
     req.birthdate = new Date(req.birthdate);
     req.birthdate = req.birthdate.toISOString().substr(0, 19).replace('T', ' ');
-    axios.post('http://127.0.0.1:8000/api/unauthorized/customer/create' , req).then((result) => {
+    axios.post('https://akademia.website/api/unauthorized/customer/create' , req).then((result) => {
         createdCustomer.value = result.data.customer
         isSubscriptionLoading.value = false
         isErrorReturned.value = false

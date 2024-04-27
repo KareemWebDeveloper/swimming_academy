@@ -39,9 +39,9 @@ onMounted(() => {
         push({ path : '/login' , query : userType ? {userType : userType} : undefined})
       }  
       else{
-        axios.post('http://127.0.0.1:8000/api/checkFreezeStatuses').then((result) => {
+        axios.post('https://akademia.website/api/checkFreezeStatuses').then((result) => {
           console.log(result.data);
-          axios.post('http://127.0.0.1:8000/api/checkSubscriptionStatuses').then((result) => {
+          axios.post('https://akademia.website/api/checkSubscriptionStatuses').then((result) => {
           console.log(result.data); 
           }).catch((err) => {
               console.log(err);

@@ -33,7 +33,7 @@ const updateEmployee = (req : any) => {
     if(!req.password){
         delete req.password
     }
-    axios.put(`http://127.0.0.1:8000/api/updateEmployee/${employeeId}` , req).then((result) => {
+    axios.put(`https://akademia.website/api/updateEmployee/${employeeId}` , req).then((result) => {
         createdEmployee.value = result.data.employee
         isLoading.value = false
         isErrorReturned.value = false
@@ -66,7 +66,7 @@ const updateEmployee = (req : any) => {
     });
 }
 const getBranches = () => {
-    axios.get('http://127.0.0.1:8000/api/branches').then((result) => {
+    axios.get('https://akademia.website/api/branches').then((result) => {
         console.log(result.data);
         result.data.branches.forEach((branch : any) => {
             branches.value.push({label : branch.branch_name , value : branch.id})
@@ -77,7 +77,7 @@ const getBranches = () => {
     });
 }
 const getRoles = () => {
-    axios.get('http://127.0.0.1:8000/api/roles').then((result) => {
+    axios.get('https://akademia.website/api/roles').then((result) => {
         console.log(result.data);
         const sortedRoles = result.data.roles.sort((a : any, b : any) => {
             const roleNameA = a.role_name.toLowerCase();
@@ -97,7 +97,7 @@ const handleDialogClosed = () => {
         push('/employees')
 }
 const getEmployeeDetails = () => {
-    axios.get(`http://127.0.0.1:8000/api/employee/${employeeId}`).then((result) => {
+    axios.get(`https://akademia.website/api/employee/${employeeId}`).then((result) => {
         employeeDetails.value = result.data.employee
         employeeDetails.value.password = ''
         employeeDetails.value.branchIds = []

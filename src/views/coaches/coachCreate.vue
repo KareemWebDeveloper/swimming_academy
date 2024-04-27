@@ -25,7 +25,7 @@ const isDialogVisible = ref(false)
 const createCoach = (req : any) => {
     isLoading.value = true
     console.log(req);
-    axios.post('http://127.0.0.1:8000/api/createCoach' , req).then((result) => {
+    axios.post('https://akademia.website/api/createCoach' , req).then((result) => {
         createdCoach.value = result.data.coach
         isLoading.value = false
         isErrorReturned.value = false
@@ -58,7 +58,7 @@ const createCoach = (req : any) => {
     });
 }
 const getBranches = () => {
-    axios.get('http://127.0.0.1:8000/api/branches').then((result) => {
+    axios.get('https://akademia.website/api/branches').then((result) => {
         console.log(result.data);
         result.data.branches.forEach((branch : any) => {
             branches.value.push({label : branch.branch_name , value : branch.id})

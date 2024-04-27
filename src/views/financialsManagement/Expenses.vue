@@ -92,13 +92,13 @@ const options = {
     // hour: 'numeric',
     // minute: 'numeric',
     hour12: true,
-    timeZone: 'Africa/Cairo',
+    timeZone: 'Asia/Dubai',
     locale: 'ar'
     };
 const dateTimeFormatter = new Intl.DateTimeFormat('ar', options);
 
 const getExpenses = (branchId : number) => {
-    axios.get(`http://127.0.0.1:8000/api/expenses/${branchId}`).then((result) => {
+    axios.get(`https://akademia.website/api/expenses/${branchId}`).then((result) => {
         Expenses.value = []
         let today = new Date()
         result.data.expenses.forEach((expense : any ) => {
@@ -141,7 +141,7 @@ const branchesOptions : any = ref([])
 const academies : any = ref([])
 
 const getBranches = () => {
-    axios.get('http://127.0.0.1:8000/api/branches').then((result) => {
+    axios.get('https://akademia.website/api/branches').then((result) => {
         console.log(result.data);
         result.data.branches.forEach((branch : any) => {
             branches.value.push({label : branch.branch_name , value : branch.id})
@@ -154,7 +154,7 @@ const getBranches = () => {
     });
 }
 const deleteExpense = (expenseId : number) => {
-    axios.delete(`http://127.0.0.1:8000/api/deleteExpense/${expenseId}`).then((result) => {
+    axios.delete(`https://akademia.website/api/deleteExpense/${expenseId}`).then((result) => {
         console.log(result.data);
         window.scrollTo({
             top: 0,
@@ -172,7 +172,7 @@ const deleteExpense = (expenseId : number) => {
 const expenseCreateUpdate = (req : any) => {
     expenseLoading.value = true
     if(isUpdateExpense.value){
-        axios.put(`http://127.0.0.1:8000/api/updateExpense/${req.id}` , req).then((result) => {
+        axios.put(`https://akademia.website/api/updateExpense/${req.id}` , req).then((result) => {
             console.log(result.data);
             getExpenses(activeBranch.value)
             savedSuccessfully.value = true
@@ -187,7 +187,7 @@ const expenseCreateUpdate = (req : any) => {
         });
     }
     else{
-        axios.post('http://127.0.0.1:8000/api/createExpense' , req).then((result) => {
+        axios.post('https://akademia.website/api/createExpense' , req).then((result) => {
             console.log(result.data);
             getExpenses(activeBranch.value)
             savedSuccessfully.value = true
@@ -202,7 +202,7 @@ const expenseCreateUpdate = (req : any) => {
 }
 
 const updateExpenseRow = (expense : any) => {
-    axios.get(`http://127.0.0.1:8000/api/expense/${expense.id}`).then((result) => {
+    axios.get(`https://akademia.website/api/expense/${expense.id}`).then((result) => {
         activeExpense.value = result.data.expense
         isDialogVisible.value = true
         isUpdateExpense.value = true
@@ -212,7 +212,7 @@ const updateExpenseRow = (expense : any) => {
 }
 
 const getAcademies = () => {
-    axios.get('http://127.0.0.1:8000/api/academies').then((result) => {
+    axios.get('https://akademia.website/api/academies').then((result) => {
         console.log(result.data);
         result.data.academies.forEach((academy : any) => {
             academies.value.push({label : academy.academy_name , value : academy.id})

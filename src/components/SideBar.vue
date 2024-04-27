@@ -123,7 +123,7 @@ onBeforeMount(() => {
 
 const updateUserProfile = (req : any) => {
   isUserProfileUpdating.value = true
-  axios.post('http://127.0.0.1:8000/api/userUpdate', req).then((result) => {
+  axios.post('https://akademia.website/api/userUpdate', req).then((result) => {
     localStorage.setItem('user_info' , JSON.stringify(result.data.user))
     isUserProfileUpdating.value = false
     isProfileDialogVisible.value = false
@@ -134,7 +134,7 @@ const updateUserProfile = (req : any) => {
 }
 const resetUserPassword = (req : any) => {
   isUserProfileUpdating.value = true
-  axios.post('http://127.0.0.1:8000/api/resetPw', req).then((result) => {
+  axios.post('https://akademia.website/api/resetPw', req).then((result) => {
     isUserProfileUpdating.value = false
     isProfileDialogVisible.value = false
   }).catch((err) => {

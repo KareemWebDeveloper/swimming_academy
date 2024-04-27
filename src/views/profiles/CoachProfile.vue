@@ -44,14 +44,14 @@ const options = {
     hour: 'numeric',
     minute: 'numeric',
     hour12: true,
-    timeZone: 'Africa/Cairo',
+    timeZone: 'Asia/Dubai',
     locale: 'ar'
 };
 
 const dateTimeFormatter = new Intl.DateTimeFormat('ar', options);
 
 const coachAuthorize = () => {
-    axios.post('http://127.0.0.1:8000/api/coachAuthorize').then((result) => {
+    axios.post('https://akademia.website/api/coachAuthorize').then((result) => {
         coach.value = result.data.coach
         subscriptions.value = result.data.subscriptions
         salaries.value = result.data.salaries

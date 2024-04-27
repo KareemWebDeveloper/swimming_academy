@@ -61,14 +61,14 @@ const options = {
     hour: 'numeric',
     minute: 'numeric',
     hour12: true,
-    timeZone: 'Africa/Cairo',
+    timeZone: 'Asia/Dubai',
     locale: 'ar'
 };
 
 const dateTimeFormatter = new Intl.DateTimeFormat('ar', options);
 
 const getWorkers = () => {
-    axios.get('http://127.0.0.1:8000/api/allWorkers').then((result) => {
+    axios.get('https://akademia.website/api/allWorkers').then((result) => {
         console.log(result.data);
         result.data.employees.forEach((employee : any) => {
             workers.value.push({
@@ -118,7 +118,7 @@ const submitDiscount = (req : any) => {
         request.advance_payment = req.advance_payment
     }
     if(activeWorker.value.job == 'موظف'){
-        axios.put(`http://127.0.0.1:8000/api/updateEmployeeFinances/${activeWorker.value.id}` , request).then((result) => {
+        axios.put(`https://akademia.website/api/updateEmployeeFinances/${activeWorker.value.id}` , request).then((result) => {
             console.log(result);
             workers.value = []
             getWorkers()
@@ -130,7 +130,7 @@ const submitDiscount = (req : any) => {
         });
     }
     else{
-        axios.put(`http://127.0.0.1:8000/api/updateCoachFinances/${activeWorker.value.id}` , request).then((result) => {
+        axios.put(`https://akademia.website/api/updateCoachFinances/${activeWorker.value.id}` , request).then((result) => {
             console.log(result);
             workers.value = []
             getWorkers()

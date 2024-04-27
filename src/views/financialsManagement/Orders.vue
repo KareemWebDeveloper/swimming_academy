@@ -59,7 +59,7 @@ const confirmDeletion = (event : any , orderId : number , index : number) => {
 };
 
 const deleteOrder = (orderId : number , index : number) => {
-    axios.delete(`http://127.0.0.1:8000/api/deleteOrder/${orderId}`).then((result) => {
+    axios.delete(`https://akademia.website/api/deleteOrder/${orderId}`).then((result) => {
         console.log(result.data);
         orderDeletedSuccessfully.value = true
         window.scrollTo({
@@ -96,13 +96,13 @@ const options = {
     hour: 'numeric',
     minute: 'numeric',
     hour12: true,
-    timeZone: 'Africa/Cairo',
+    timeZone: 'Asia/Dubai',
     locale: 'ar'
     };
 const dateTimeFormatter = new Intl.DateTimeFormat('ar', options);
 
 const getOrders = () => {
-    axios.get('http://127.0.0.1:8000/api/orders').then((result) => {
+    axios.get('https://akademia.website/api/orders').then((result) => {
         result.data.orders.forEach((order : any ) => {
             Orders.value.push({
                 id : order.id,
@@ -127,7 +127,7 @@ const branches : any = ref(['مجموع الفروع'])
 const branchNames : any = []
 
 const getBranches = () => {
-    axios.get('http://127.0.0.1:8000/api/branches').then((result) => {
+    axios.get('https://akademia.website/api/branches').then((result) => {
         console.log(result.data);
         result.data.branches.forEach((branch : any) => {
             branches.value.push(branch.branch_name)

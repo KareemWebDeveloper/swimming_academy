@@ -22,7 +22,7 @@ const isLoading = ref(false)
 const updateLevel = (req : any) => {
     isLoading.value = true
     console.log(req);
-        axios.post(`http://127.0.0.1:8000/api/updateLevel/${LevelId}` , req).then((result) => {
+        axios.post(`https://akademia.website/api/updateLevel/${LevelId}` , req).then((result) => {
             console.log(result.data);
             isLoading.value = false
             isErrorReturned.value = false
@@ -62,7 +62,7 @@ const updateLevel = (req : any) => {
 }
 
 const getLevel = () => {
-    axios.get(`http://127.0.0.1:8000/api/level/${LevelId}`).then((result) => {
+    axios.get(`https://akademia.website/api/level/${LevelId}`).then((result) => {
         console.log(result.data);
         level.value = result.data.level
         isFetched.value = true

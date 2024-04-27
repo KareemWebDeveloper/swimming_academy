@@ -27,7 +27,7 @@ const isDialogVisible = ref(false)
 const createEmployee = (req : any) => {
     isLoading.value = true
     console.log(req);
-    axios.post('http://127.0.0.1:8000/api/createEmployee' , req).then((result) => {
+    axios.post('https://akademia.website/api/createEmployee' , req).then((result) => {
         createdEmployee.value = result.data.employee
         isLoading.value = false
         isErrorReturned.value = false
@@ -60,7 +60,7 @@ const createEmployee = (req : any) => {
     });
 }
 const getBranches = () => {
-    axios.get('http://127.0.0.1:8000/api/branches').then((result) => {
+    axios.get('https://akademia.website/api/branches').then((result) => {
         console.log(result.data);
         result.data.branches.forEach((branch : any) => {
             branches.value.push({label : branch.branch_name , value : branch.id})
@@ -71,7 +71,7 @@ const getBranches = () => {
     });
 }
 const getRoles = () => {
-    axios.get('http://127.0.0.1:8000/api/roles').then((result) => {
+    axios.get('https://akademia.website/api/roles').then((result) => {
         console.log(result.data);
         const sortedRoles = result.data.roles.sort((a : any, b : any) => {
             const roleNameA = a.role_name.toLowerCase();
